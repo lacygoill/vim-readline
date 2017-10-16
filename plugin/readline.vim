@@ -3,7 +3,6 @@ if exists('g:loaded_readline')
 endif
 let g:loaded_readline = 1
 
-
 if !has('nvim')
     " FIXME:
     " This mapping allows us  to use keys whose 1st keycode  is escape (left, right,
@@ -15,7 +14,6 @@ if !has('nvim')
     " use `c-o` instead
     set termkey=<c-o>
 endif
-
 
 " KEYSYMS {{{1
 
@@ -42,18 +40,15 @@ endif
 " keycodes as Vim in a terminal.
 
 if !has('gui_running') && !has('nvim')
-    exe "set <M-a>=\ea"
-    exe "set <M-b>=\eb"
-    exe "set <M-d>=\ed"
-    exe "set <M-e>=\ee"
-    exe "set <M-f>=\ef"
-    exe "set <M-m>=\em"
-    exe "set <M-n>=\en"
-    exe "set <M-p>=\ep"
-    exe "set <M-s>=\es"
-    exe "set <M-t>=\et"
-    exe "set <M-u>=\eu"
-    exe "set <M-v>=\ev"
+    exe "set <m-a>=\ea"
+    exe "set <m-b>=\eb"
+    exe "set <m-d>=\ed"
+    exe "set <m-e>=\ee"
+    exe "set <m-f>=\ef"
+    exe "set <m-n>=\en"
+    exe "set <m-p>=\ep"
+    exe "set <m-t>=\et"
+    exe "set <m-u>=\eu"
 endif
 
 " Problem1:
