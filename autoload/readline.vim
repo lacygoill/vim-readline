@@ -3,36 +3,17 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
-fu! readline#transpose_chars(insert_mode) abort
-
-    let [ pos, line ] = a:insert_mode
-                     \?     [ col('.'), getline('.') ]
-                     \:     [ getcmdpos(), getcmdline() ]
-
-    if pos > strlen(line)
-        " We use `matchstr()` because of potential multibyte characters.
-        " Test on this:
-        "
-        "     âêîôû
-        return a:insert_mode
-        \?         "\<c-g>U\<left>\<bs>\<c-g>U\<right>".matchstr(line, '.\ze.\%'.pos.'c')
-        \:         "\<left>\<bs>\<right>".matchstr(line, '.\ze.\%'.pos.'c')
-
-    elseif pos > 1
-        return a:insert_mode
-        \?         "\<bs>\<c-g>U\<right>".matchstr(line, '.\%'.pos.'c')
-        \:         "\<bs>\<right>".matchstr(line, '.\%'.pos.'c')
-
-    else
-        return ''
-    endif
-endfu
-
-fu! readline#upcase_word(mode) abort
+fu! readline#kill_word(mode) abort "{{{1
     let isk_save = &l:isk
     try
+        " Previously, we used this code:
+        "         setl isk-=_ isk-=- isk-=#
+        "
+        " But sometimes, the mapping behaves strangely.
+        " So, I prefer to give an explicit value to `isk`.
         setl isk=@,48-57,192-255
-        let [ line, pos ] = a:mode ==# 'i' || a:mode ==# 'n'
+
+        let [ line, pos ] = a:mode ==# 'i'
                          \?     [ getline('.'), col('.') ]
                          \: a:mode ==# 'c'
                          \?     [ getcmdline(), getcmdpos() ]
@@ -40,46 +21,58 @@ fu! readline#upcase_word(mode) abort
 
         let atom = a:mode ==# 't' ? 'v' : 'c'
 
-        let pat      = '\v\k*%'.pos.atom.'\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
-        let new_line = substitute(line, pat, '\U\0', '')
-        " FIXME:
-        " weird behavior when we're at the end of the command line in a terminal buffer
-        let new_pos  = a:mode ==# 't'
-    \?     strchars(matchstr(line, '\v.{-}%(\%|#)\s\zs.{-}\k*%'.pos.'v%(\k+|.{-}<\k+>|%(\k@!.)+)'), 1) + 1
-                    \:     match(line, pat.'\zs') + 1
+        "                         ┌ from the beginning of the word containing the cursor
+        "                         │ until the cursor
+        "                         │ if the cursor is outside of a word, the pattern
+        "                         │ still matches, because we use `*`, not `+`
+        "            ┌────────────┤
+        let pat = '\v\k*%'.pos.atom.'\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
+        "                                 └─┤ └───────┤ └───────┤
+        "                                   │         │         └ or all the non-word text we're in
+        "                                   │         └───────── or the next word if we're outside of a word
+        "                                   └─────────────────── the rest of the word after the cursor
 
-        if a:mode ==# 'i' || a:mode ==# 'n'
-            call setline(line('.'), new_line)
-            call cursor(line('.'), new_pos)
-            if a:mode ==# 'n'
-                call repeat#set("\<plug>(upcase_word)")
+        " TODO:
+        " understand the behavior of these regexes
+
+        " \v%2c(.{-}<\k+>|\W+)
+        " \v%2c(\W+|.{-}<\k+>)
+        " \v%2c\W+
+        " \v%2c(\k@!.)+
+        "
+        " \v%2c(.{-}\k+>| ééé)
+
+" ééé ààà
+" eee ààà
+" foo_bar_baz
+" ééé_ààà_îîî
+
+" eee aaa
+" \v.{-}\k+>| eee
+
+        if a:mode ==# 't'
+            if pos <= strlen(line)
+                call term_sendkeys('', repeat("\<c-d>", strchars(matchstr(line, pat), 1)))
             endif
             return ''
-        elseif a:mode ==# 'c'
-            call setcmdpos(new_pos)
-            if pos > strlen(line)
-                return line
-            else
-                return new_line
-            endif
         else
-            let new_line = matchstr(new_line, '\v.{-}%(\%|#)\s\zs.*')
-            call term_sendkeys('', "\<c-k>\<c-u>".new_line."\<c-a>".repeat("\<c-f>", new_pos))
-            return ''
+            return repeat("\<del>", strchars(matchstr(line, pat), 1))
         endif
 
     catch
-        echohl ErrorMsg
-        echo v:exception.' | '.v:throwpoint
-        echohl NONE
     finally
         let &l:isk = isk_save
     endtry
-
-    return ''
 endfu
 
-fu! readline#move_by_words(fwd, mode) abort
+fu! readline#move_by_words(fwd, mode) abort "{{{1
+" NOTE:
+" Implementing this function was tricky, it has to handle:
+"
+"    • multi-byte characters (éàî)
+"    • multi-cell characters (tab)
+"    • composing characters  ( ́)
+
     let isk_save = &l:isk
     try
         " Previously, we used this code:
@@ -152,69 +145,32 @@ fu! readline#move_by_words(fwd, mode) abort
     return ''
 endfu
 
-fu! readline#kill_word(mode) abort
-    let isk_save = &l:isk
-    try
-        " Previously, we used this code:
-        "         setl isk-=_ isk-=- isk-=#
+fu! readline#transpose_chars(insert_mode) abort "{{{1
+
+    let [ pos, line ] = a:insert_mode
+                     \?     [ col('.'), getline('.') ]
+                     \:     [ getcmdpos(), getcmdline() ]
+
+    if pos > strlen(line)
+        " We use `matchstr()` because of potential multibyte characters.
+        " Test on this:
         "
-        " But sometimes, the mapping behaves strangely.
-        " So, I prefer to give an explicit value to `isk`.
-        setl isk=@,48-57,192-255
+        "     âêîôû
+        return a:insert_mode
+        \?         "\<c-g>U\<left>\<bs>\<c-g>U\<right>".matchstr(line, '.\ze.\%'.pos.'c')
+        \:         "\<left>\<bs>\<right>".matchstr(line, '.\ze.\%'.pos.'c')
 
-        let [ line, pos ] = a:mode ==# 'i'
-                         \?     [ getline('.'), col('.') ]
-                         \: a:mode ==# 'c'
-                         \?     [ getcmdline(), getcmdpos() ]
-                         \:     [ term_getline('', '.'), term_getcursor('')[1] ]
+    elseif pos > 1
+        return a:insert_mode
+        \?         "\<bs>\<c-g>U\<right>".matchstr(line, '.\%'.pos.'c')
+        \:         "\<bs>\<right>".matchstr(line, '.\%'.pos.'c')
 
-        let atom = a:mode ==# 't' ? 'v' : 'c'
-
-        "                         ┌ from the beginning of the word containing the cursor
-        "                         │ until the cursor
-        "                         │ if the cursor is outside of a word, the pattern
-        "                         │ still matches, because we use `*`, not `+`
-        "            ┌────────────┤
-        let pat = '\v\k*%'.pos.atom.'\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
-        "                                 └─┤ └───────┤ └───────┤
-        "                                   │         │         └ or all the non-word text we're in
-        "                                   │         └───────── or the next word if we're outside of a word
-        "                                   └─────────────────── the rest of the word after the cursor
-
-        " TODO:
-        " understand the behavior of these regexes
-
-        " \v%2c(.{-}<\k+>|\W+)
-        " \v%2c(\W+|.{-}<\k+>)
-        " \v%2c\W+
-        " \v%2c(\k@!.)+
-        "
-        " \v%2c(.{-}\k+>| ééé)
-
-" ééé ààà
-" eee ààà
-" foo_bar_baz
-" ééé_ààà_îîî
-
-" eee aaa
-" \v.{-}\k+>| eee
-
-        if a:mode ==# 't'
-            if pos <= strlen(line)
-                call term_sendkeys('', repeat("\<c-d>", strchars(matchstr(line, pat), 1)))
-            endif
-            return ''
-        else
-            return repeat("\<del>", strchars(matchstr(line, pat), 1))
-        endif
-
-    catch
-    finally
-        let &l:isk = isk_save
-    endtry
+    else
+        return ''
+    endif
 endfu
 
-fu! readline#transpose_words(mode) abort
+fu! readline#transpose_words(mode) abort "{{{1
     " readline doesn't consider `-`, `#`, `_` as part of a word,
     " contrary to Vim which may disagree for some of them
     "
@@ -312,3 +268,54 @@ fu! readline#transpose_words(mode) abort
 
     return ''
 endfu
+fu! readline#upcase_word(mode) abort "{{{1
+    let isk_save = &l:isk
+    try
+        setl isk=@,48-57,192-255
+        let [ line, pos ] = a:mode ==# 'i' || a:mode ==# 'n'
+                         \?     [ getline('.'), col('.') ]
+                         \: a:mode ==# 'c'
+                         \?     [ getcmdline(), getcmdpos() ]
+                         \:     [ term_getline('', '.'), term_getcursor('')[1] ]
+
+        let atom = a:mode ==# 't' ? 'v' : 'c'
+
+        let pat      = '\v\k*%'.pos.atom.'\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
+        let new_line = substitute(line, pat, '\U\0', '')
+        " FIXME:
+        " weird behavior when we're at the end of the command line in a terminal buffer
+        let new_pos  = a:mode ==# 't'
+    \?     strchars(matchstr(line, '\v.{-}%(\%|#)\s\zs.{-}\k*%'.pos.'v%(\k+|.{-}<\k+>|%(\k@!.)+)'), 1) + 1
+                    \:     match(line, pat.'\zs') + 1
+
+        if a:mode ==# 'i' || a:mode ==# 'n'
+            call setline(line('.'), new_line)
+            call cursor(line('.'), new_pos)
+            if a:mode ==# 'n'
+                call repeat#set("\<plug>(upcase_word)")
+            endif
+            return ''
+        elseif a:mode ==# 'c'
+            call setcmdpos(new_pos)
+            if pos > strlen(line)
+                return line
+            else
+                return new_line
+            endif
+        else
+            let new_line = matchstr(new_line, '\v.{-}%(\%|#)\s\zs.*')
+            call term_sendkeys('', "\<c-k>\<c-u>".new_line."\<c-a>".repeat("\<c-f>", new_pos))
+            return ''
+        endif
+
+    catch
+        echohl ErrorMsg
+        echo v:exception.' | '.v:throwpoint
+        echohl NONE
+    finally
+        let &l:isk = isk_save
+    endtry
+
+    return ''
+endfu
+

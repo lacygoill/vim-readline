@@ -192,19 +192,14 @@ if !has('nvim')
     tno <expr> <M-f> readline#move_by_words(1, 't')
 endif
 
-" NOTE:
-" Implementing this function was tricky, it has to handle:
-"
-"    • multi-byte characters (éàî)
-"    • multi-cell characters (tab)
-"    • composing characters  ( ́)
-
 " M-d        kill-word {{{3
 
 " Delete until the beginning of the next word.
 " In bash, M-d does the same, and is bound to the function kill-word.
+
 ino <expr> <M-d>  readline#kill_word('i')
 cno <expr> <M-d>  readline#kill_word('c')
+
 if !has('nvim')
     tno <expr> <M-d>  readline#kill_word('t')
 endif
@@ -239,6 +234,7 @@ endif
 
 ino <silent>   <M-t>                       <c-r>=readline#transpose_words('i')<cr>
 cno            <M-t>                       <c-\>ereadline#transpose_words('c')<cr>
+
 if !has('nvim')
     tno <expr> <M-t>  readline#transpose_words('t')
 endif
