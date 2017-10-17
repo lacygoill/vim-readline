@@ -61,9 +61,6 @@ let g:loaded_readline = 1
 "
 " Use equivalence class in a search command
 "}}}
-" FIXME: Can't display a message in a terminal window{{{
-" Because we (re)set meta keys when we go into/leave the command-line.
-"}}}
 
 " COMMANDS {{{1
 

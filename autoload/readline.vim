@@ -31,7 +31,11 @@ endfu
 
 fu! s:enable_keysyms_on_command_line() abort "{{{1
     call readline#set_keysyms(1)
-    return ':'
+    " Do NOT return `:` immediately.
+    " The previous function call sets some special options, and for some reason,
+    " setting these prevents us from displaying a message with `:echo`.
+    call timer_start(0, {-> execute('call feedkeys(":", "int")')})
+    return ''
 endfu
 
 fu! s:get_line_pos(mode) abort "{{{1
