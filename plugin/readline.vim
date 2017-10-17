@@ -3,6 +3,13 @@ if exists('g:loaded_readline')
 endif
 let g:loaded_readline = 1
 
+" Commands {{{1
+
+" This command can be useful to temporarily disable meta keys before replaying
+" a macro.
+
+com! -bar FixMacro call readline#fix_macro('abdefnptu')
+
 " KEYSYMS {{{1
 
 " On my machine, Vim doesn't know what are the right keycodes produced by
@@ -14,19 +21,16 @@ let g:loaded_readline = 1
 "     ino <M-b> hello
 "
 " … then try to insert `â`. It will insert `hello`.
-" But Vim doesn't really know what's `M-b`, because if we `M-b` in insert
-" mode, it doesn't insert `hello`, it just escapes to normal mode then go back
-" a word.
+" But Vim doesn't really know what's `M-b`,  because if we press `M-b` in insert
+" mode, it doesn't insert `hello`, it just escapes to normal mode then go back a
+" word.
 " We need to teach it the correct keycodes which are produced by `M-b`.
 " To find the keycodes, insert the keysym literally (ex: C-v M-b).
 "
 " We do the same thing for other keysyms following the pattern `M-{char}`.
-"
-" Why do we test whether we are in a terminal and not in gVim?
-" Because gVim already knows these keysyms. No need to teach it.
-" Besides, when we hit M-{char}, we don't know whether gVim receives the same
-" keycodes as Vim in a terminal.
 
+"  ┌─ no need to teach anything for nvim or gVim (they already know)
+"  │
 if !has('nvim') && !has('gui_running')
     call readline#toggle_keysyms(1)
     augroup handle_keysyms
@@ -80,9 +84,9 @@ endif
 " Neovim isn't affected. Switch to Neovim.
 " OR, temporarily disable meta keys before replaying a macro (`@q`):
 "
-"     :FM
+"     :FixMacro
 "
-" … then reenable them once the macro has been used (`:FM` again).
+" … then reenable them once the macro has been used (`:FixMacro` again).
 
 " Problem2:
 "

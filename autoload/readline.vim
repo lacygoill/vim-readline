@@ -3,6 +3,49 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
+fu! readline#fix_macro(keys) abort "{{{1
+    let is_unset = execute('sil! set <M-p>') =~# 'E846'
+
+    for key in split(a:keys, '\zs')
+
+        let set_key  = "set <M-".key.">"
+        let value    = (is_unset ? "\e".key : '')
+        exe set_key.'='.value
+
+    endfor
+
+    " '' → execute NON-silently
+    call timer_start(0, { -> execute(
+                        \            "echom '[Fix Macro] Meta keys '."
+                        \            .(is_unset ? string('Enabled') : string('Disabled')),
+                        \            ''
+                        \           )
+                        \ })
+
+    " Why do we use a timer to display our message?
+    " Why not simply echo it now?
+    "
+    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
+    "         echo ''
+    "
+    " Because, it seems that `set <M-key>` redraws the command-line after
+    " we echo the next message. Therefore, it's erased, and we can't read it.
+    " We could echo a 2nd empty message to prevent Vim from redrawing the
+    " command-line:
+    "
+    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
+    "         echo ''
+    "
+    " But then, we would have to hit Enter to exit the prompt.
+    "
+    " MWE (Minimal Working Example) to reproduce the pb:
+    "
+    "     :set fdm=manual | echo 'hello'           ✔
+    "     :set <M-a>=     | echo 'hello'           ✘
+    "     :set <M-a>=     | echo "hello\nworld"    ✔
+endfu
+
+
 fu! readline#disable_keysyms_in_terminal() abort "{{{1
     nno <buffer> <expr> <nowait> : <sid>enable_keysyms_on_command_line()
 
