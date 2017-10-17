@@ -7,6 +7,9 @@ if !has('nvim')
     " FIXME:
     " This mapping allows us  to use keys whose 1st keycode  is escape (left, right,
     " M-…) as the lhs of other mappings. How does it work? Why is it necessary?
+    "
+    " However, it creates a timeout (3s) when we try to escape to normal mode.
+    " How to reduce the timeout to a few ms?
     tno <esc><c-a> <esc><c-a>
 
     " don't use `c-w` as a prefix to execute special commands in a terminal window
@@ -134,13 +137,13 @@ endif
 " CTRL {{{2
 " C-a        beginning-of-line {{{3
 
-cno <c-a> <Home>
+cno <c-a>  <home>
 
 " C-b        backward-char {{{3
 
-"                                    ┌─ close wildmenu
-"                                    │
-cno <expr> <c-b> (wildmenumode() ? '<down>' : '').'<left>'
+"                                     ┌─ close wildmenu
+"                                     │
+cno <expr> <c-b>  (wildmenumode() ? '<down>' : '').'<left>'
 
 " C-d        delete-char {{{3
 
@@ -150,46 +153,47 @@ cno <expr> <c-b> (wildmenumode() ? '<down>' : '').'<left>'
 " However, if it's before the end, we want C-d to delete the character after
 " it.
 
-cno <expr> <c-d> getcmdpos() > strlen(getcmdline()) ? '<c-d>' : '<Del>'
+cno <expr> <c-d>  getcmdpos() > strlen(getcmdline()) ? '<c-d>' : '<Del>'
 
 " C-f        forward-char {{{3
 
-cno        <c-f>       <Right>
+cno <c-f>  <right>
 
 " C-g        abort {{{3
 
-cno <expr> <c-g> '<c-c>'
+cno <expr> <c-g>  '<c-c>'
 
 " C-k        kill-line {{{3
 
-cno <c-k> <c-\>ematchstr(getcmdline(), '.*\%'.getcmdpos().'c')<cr>
+cno <c-k>  <c-\>ematchstr(getcmdline(), '.*\%'.getcmdpos().'c')<cr>
 
 " C-t        transpose-chars {{{3
 
-ino <expr> <c-t> readline#transpose_chars(1)
-cno <expr> <c-t> readline#transpose_chars(0)
+ino <expr> <c-t> readline#transpose_chars('i')
+cno <expr> <c-t> readline#transpose_chars('c')
 
 " META {{{2
 " M-b/f      forward-word backward-word {{{3
 
 " We can't use this:
-"     cno <M-b> <S-Left>
-"     cno <M-f> <S-Right>
+"
+"     cno <m-b> <s-left>
+"     cno <m-f> <s-right>
 "
 " Because it seems to consider `-` as part of a word.
 " `M-b`, `M-f` would move too far compared to readline.
 
-ino <expr> <M-b> readline#move_by_words(0, 'i')
-ino <expr> <M-f> readline#move_by_words(1, 'i')
+ino <expr> <m-b> readline#move_by_words(0, 'i')
+ino <expr> <m-f> readline#move_by_words(1, 'i')
 
 "                                    ┌─  close wildmenu
 "                                    │
-cno <expr> <M-b> (wildmenumode() ? '<down>' : '').readline#move_by_words(0, 'c')
-cno <expr> <M-f> (wildmenumode() ? '<down>' : '').readline#move_by_words(1, 'c')
+cno <expr> <m-b> (wildmenumode() ? '<down>' : '').readline#move_by_words(0, 'c')
+cno <expr> <m-f> (wildmenumode() ? '<down>' : '').readline#move_by_words(1, 'c')
 
 if !has('nvim')
-    tno <expr> <M-b> readline#move_by_words(0, 't')
-    tno <expr> <M-f> readline#move_by_words(1, 't')
+    tno <expr> <m-b> readline#move_by_words(0, 't')
+    tno <expr> <m-f> readline#move_by_words(1, 't')
 endif
 
 " M-d        kill-word {{{3
@@ -197,11 +201,11 @@ endif
 " Delete until the beginning of the next word.
 " In bash, M-d does the same, and is bound to the function kill-word.
 
-ino <expr> <M-d>  readline#kill_word('i')
-cno <expr> <M-d>  readline#kill_word('c')
+ino <expr> <m-d>  readline#kill_word('i')
+cno <expr> <m-d>  readline#kill_word('c')
 
 if !has('nvim')
-    tno <expr> <M-d>  readline#kill_word('t')
+    tno <expr> <m-d>  readline#kill_word('t')
 endif
 
 " M-n/p      down up {{{3
@@ -212,7 +216,7 @@ endif
 
 " For the `M-n` mapping to work, we need to give the same value for 'wildchar'
 " and 'wildcharm'. We gave them both the value `<Tab>`.
-cno <M-n> <Down>
+cno <m-n> <Down>
 
 " For more info:
 "
@@ -221,7 +225,7 @@ cno <M-n> <Down>
 
 " history-search-backward
 " history-search-forward
-cno <M-p> <Up>
+cno <m-p> <up>
 
 if !has('nvim')
     " FIXME:
@@ -232,14 +236,14 @@ endif
 
 " M-t        transpose-words {{{3
 
-ino <silent>   <M-t>                       <c-r>=readline#transpose_words('i')<cr>
-cno            <M-t>                       <c-\>ereadline#transpose_words('c')<cr>
+ino <silent>   <m-t>                       <c-r>=readline#transpose_words('i')<cr>
+cno            <m-t>                       <c-\>ereadline#transpose_words('c')<cr>
 
 if !has('nvim')
-    tno <expr> <M-t>  readline#transpose_words('t')
+    tno <expr> <m-t>  readline#transpose_words('t')
 endif
 
-nmap           <M-t>                    <plug>(transpose_words)
+nmap           <m-t>                    <plug>(transpose_words)
 nno  <silent>  <plug>(transpose_words)  :<c-u>exe readline#transpose_words('n')<cr>
 
 " M-u        upcase-word {{{3

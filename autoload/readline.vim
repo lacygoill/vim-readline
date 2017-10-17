@@ -3,23 +3,29 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
+fu! s:get_line_pos_atom(mode) abort "{{{1
+    let [ line, pos ] = a:mode ==# 'i' || a:mode ==# 'n'
+                     \?     [ getline('.'), col('.') ]
+                     \: a:mode ==# 'c'
+                     \?     [ getcmdline(), getcmdpos() ]
+                     \:     [ term_getline('', '.'), term_getcursor('')[1] ]
+                     "                     │    │                   │   │
+                     "                     │    │                   │   └─ cursor column
+                     "                     │    │                   └─ current buffer
+                     "                     │    └─ current line
+                     "                     └─ current buffer
+
+    let atom = a:mode ==# 't' ? 'v' : 'c'
+
+    return [ line, pos, atom ]
+endfu
+
 fu! readline#kill_word(mode) abort "{{{1
     let isk_save = &l:isk
     try
-        " Previously, we used this code:
-        "         setl isk-=_ isk-=- isk-=#
-        "
-        " But sometimes, the mapping behaves strangely.
-        " So, I prefer to give an explicit value to `isk`.
-        setl isk=@,48-57,192-255
+        call s:set_isk()
 
-        let [ line, pos ] = a:mode ==# 'i'
-                         \?     [ getline('.'), col('.') ]
-                         \: a:mode ==# 'c'
-                         \?     [ getcmdline(), getcmdpos() ]
-                         \:     [ term_getline('', '.'), term_getcursor('')[1] ]
-
-        let atom = a:mode ==# 't' ? 'v' : 'c'
+        let [ line, pos, atom ] = s:get_line_pos_atom(a:mode)
 
         "                         ┌ from the beginning of the word containing the cursor
         "                         │ until the cursor
@@ -75,48 +81,32 @@ fu! readline#move_by_words(fwd, mode) abort "{{{1
 
     let isk_save = &l:isk
     try
-        " Previously, we used this code:
-        "         setl isk-=_ isk-=- isk-=#
-        "
-        " But sometimes, the mapping behaves strangely.
-        " So, I prefer to give an explicit value to `isk`.
-        setl isk=@,48-57,192-255
+        call s:set_isk()
 
-        let [ line, old_pos ] = a:mode ==# 'i'
-                              \?     [ getline('.'), col('.') ]
-                              \: a:mode ==# 'c'
-                              \?     [ getcmdline(), getcmdpos() ]
-                              \:     [ term_getline('', '.'), term_getcursor('')[1] ]
-                              "                     │    │                   │   │
-                              "                     │    │                   │   └─ cursor column
-                              "                     │    │                   └─ current buffer
-                              "                     │    └─ current line
-                              "                     └─ current buffer
-
-        let atom = a:mode ==# 't' ? 'v' : 'c'
+        let [ line, pos, atom ] = s:get_line_pos_atom(a:mode)
 
         " old_char_idx = nr of characters before cursor in its current position
         " new_char_idx = "                                         new     "
 
-        "                                     ignore composing characters ┐
-        " necessary to move correctly on a line such as:                  │
-        "          ́ foo  ́ bar  ́                                           │
-        let old_char_idx = strchars(matchstr(line, '.*\%'.old_pos.atom), 1)
+        "                                ignore composing characters ┐
+        " necessary to move correctly on a line such as:             │
+        "          ́ foo  ́ bar  ́                                      │
+        let old_char_idx = strchars(matchstr(line, '.*\%'.pos.atom), 1)
 
         if a:fwd
             " all characters from the beginning of the line until the last
             " character of the nearest NEXT word (current one if we're in a word,
             " or somewhere AFTER otherwise)
-            let pat = '\v.*%'.old_pos.atom.'%(.{-1,}>\ze|.*)'
-            "                                            │
-            "           if there's no word where we are, ┘
+            let pat = '\v.*%'.pos.atom.'%(.{-1,}>\ze|.*)'
+            "                                        │
+            "       if there's no word where we are, ┘
             " nor after us, then go on until the end of the line
             let new_char_idx = strchars(matchstr(line, pat), 1)
         else
             " all characters from the beginning of the line until the first
             " character of the nearest PREVIOUS word (current one if we're in a
             " word, or somewhere BEFORE otherwise)
-            let pat          = '\v.*\ze<.{-1,}%'.old_pos.atom
+            let pat          = '\v.*\ze<.{-1,}%'.pos.atom
             let new_char_idx = strchars(matchstr(line, pat), 1)
         endif
 
@@ -145,9 +135,27 @@ fu! readline#move_by_words(fwd, mode) abort "{{{1
     return ''
 endfu
 
-fu! readline#transpose_chars(insert_mode) abort "{{{1
+fu! s:set_isk() abort "{{{1
+    " readline doesn't consider `-`, `#`, `_` as part of a word,
+    " contrary to Vim which may disagree for some of them.
+    "
+    " Removing them from 'isk' allows us to operate on the following “words“:
+    "
+    "         foo-bar
+    "         foo#bar
+    "         foo_bar
 
-    let [ pos, line ] = a:insert_mode
+    " Previously, we used this code:
+    "         setl isk-=_ isk-=- isk-=#
+    "
+    " But sometimes, the mapping behaved strangely.
+    " So now, I prefer to give an explicit value to `isk`.
+
+    setl isk=@,48-57,192-255
+endfu
+
+fu! readline#transpose_chars(mode) abort "{{{1
+    let [ pos, line ] = a:mode ==# 'i'
                      \?     [ col('.'), getline('.') ]
                      \:     [ getcmdpos(), getcmdline() ]
 
@@ -156,12 +164,12 @@ fu! readline#transpose_chars(insert_mode) abort "{{{1
         " Test on this:
         "
         "     âêîôû
-        return a:insert_mode
+        return a:mode ==# 'i'
         \?         "\<c-g>U\<left>\<bs>\<c-g>U\<right>".matchstr(line, '.\ze.\%'.pos.'c')
         \:         "\<left>\<bs>\<right>".matchstr(line, '.\ze.\%'.pos.'c')
 
     elseif pos > 1
-        return a:insert_mode
+        return a:mode ==# 'i'
         \?         "\<bs>\<c-g>U\<right>".matchstr(line, '.\%'.pos.'c')
         \:         "\<bs>\<right>".matchstr(line, '.\%'.pos.'c')
 
@@ -171,25 +179,11 @@ fu! readline#transpose_chars(insert_mode) abort "{{{1
 endfu
 
 fu! readline#transpose_words(mode) abort "{{{1
-    " readline doesn't consider `-`, `#`, `_` as part of a word,
-    " contrary to Vim which may disagree for some of them
-    "
-    " removing them from 'isk' allows us to operate on the following “words“:
-    "         foo-bar
-    "         foo#bar
-    "         foo_bar
-
     let isk_save = &l:isk
-    setl isk=@,48-57,192-255
-
     try
-        let [ line, pos ] = a:mode ==# 'i' || a:mode ==# 'n'
-                         \?     [ getline('.'), col('.') ]
-                         \: a:mode ==# 'c'
-                         \?     [ getcmdline(), getcmdpos() ]
-                         \:     [ term_getline('', '.'), term_getcursor('')[1] ]
+        call s:set_isk()
 
-        let atom = a:mode ==# 't' ? 'v' : 'c'
+        let [ line, pos, atom ] = s:get_line_pos_atom(a:mode)
 
         " We're looking for 2 words which are separated by non-word characters.
         "
@@ -268,25 +262,21 @@ fu! readline#transpose_words(mode) abort "{{{1
 
     return ''
 endfu
+
 fu! readline#upcase_word(mode) abort "{{{1
     let isk_save = &l:isk
     try
-        setl isk=@,48-57,192-255
-        let [ line, pos ] = a:mode ==# 'i' || a:mode ==# 'n'
-                         \?     [ getline('.'), col('.') ]
-                         \: a:mode ==# 'c'
-                         \?     [ getcmdline(), getcmdpos() ]
-                         \:     [ term_getline('', '.'), term_getcursor('')[1] ]
+        call s:set_isk()
 
-        let atom = a:mode ==# 't' ? 'v' : 'c'
+        let [ line, pos, atom ] = s:get_line_pos_atom(a:mode)
 
         let pat      = '\v\k*%'.pos.atom.'\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
         let new_line = substitute(line, pat, '\U\0', '')
         " FIXME:
         " weird behavior when we're at the end of the command line in a terminal buffer
-        let new_pos  = a:mode ==# 't'
-    \?     strchars(matchstr(line, '\v.{-}%(\%|#)\s\zs.{-}\k*%'.pos.'v%(\k+|.{-}<\k+>|%(\k@!.)+)'), 1) + 1
-                    \:     match(line, pat.'\zs') + 1
+        let new_pos = a:mode ==# 't'
+                   \?     strchars(matchstr(line, '\v.{-}%(\%|#)\s\zs.{-}'.substitute(pat, '\\zs', '', ''))) + 1
+                   \:     match(line, pat.'\zs') + 1
 
         if a:mode ==# 'i' || a:mode ==# 'n'
             call setline(line('.'), new_line)
@@ -318,4 +308,3 @@ fu! readline#upcase_word(mode) abort "{{{1
 
     return ''
 endfu
-
