@@ -3,61 +3,34 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
-fu! readline#fix_macro(keys) abort "{{{1
-    let is_unset = execute('sil! set <M-p>') =~# 'E846'
-
-    for key in split(a:keys, '\zs')
-
-        let set_key  = "set <M-".key.">"
-        let value    = (is_unset ? "\e".key : '')
-        exe set_key.'='.value
-
-    endfor
-
-    " '' → execute NON-silently
-    call timer_start(0, { -> execute(
-                        \            "echom '[Fix Macro] Meta keys '."
-                        \            .(is_unset ? string('Enabled') : string('Disabled')),
-                        \            ''
-                        \           )
-                        \ })
-
-    " Why do we use a timer to display our message?
-    " Why not simply echo it now?
-    "
-    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
-    "         echo ''
-    "
-    " Because, it seems that `set <M-key>` redraws the command-line after
-    " we echo the next message. Therefore, it's erased, and we can't read it.
-    " We could echo a 2nd empty message to prevent Vim from redrawing the
-    " command-line:
-    "
-    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
-    "         echo ''
-    "
-    " But then, we would have to hit Enter to exit the prompt.
-    "
-    " MWE (Minimal Working Example) to reproduce the pb:
-    "
-    "     :set fdm=manual | echo 'hello'           ✔
-    "     :set <M-a>=     | echo 'hello'           ✘
-    "     :set <M-a>=     | echo "hello\nworld"    ✔
-endfu
-
-
 fu! readline#disable_keysyms_in_terminal() abort "{{{1
     nno <buffer> <expr> <nowait> : <sid>enable_keysyms_on_command_line()
 
     augroup disable_keysyms_in_terminal
         au! * <buffer>
-        au CursorMoved <buffer> call readline#toggle_keysyms(0)
-        au BufLeave    <buffer> call readline#toggle_keysyms(1)
+        au CursorMoved <buffer> call readline#set_keysyms(0)
+        au BufLeave    <buffer> call readline#set_keysyms(1)
     augroup END
 endfu
 
+fu! readline#do_not_break_macro_replay() abort "{{{1
+    call readline#set_keysyms(0)
+    let s:ut_save = &updatetime
+    set updatetime=5
+    augroup do_not_break_macro_replay
+        au!
+        au CursorHold,CursorHoldI * call readline#set_keysyms(1)
+                                    \| let &ut = s:ut_save
+                                    \| unlet! s:ut_save
+                                    \| exe 'au! do_not_break_macro_replay'
+                                    \| exe 'aug! do_not_break_macro_replay'
+    augroup END
+
+    return '@'.nr2char(getchar())
+endfu
+
 fu! s:enable_keysyms_on_command_line() abort "{{{1
-    call readline#toggle_keysyms(1)
+    call readline#set_keysyms(1)
     return ':'
 endfu
 
@@ -67,6 +40,20 @@ fu! s:get_line_pos(mode) abort "{{{1
                      \:     [ getline('.'), col('.') ]
 
     return [ line, pos ]
+endfu
+
+fu! readline#insert_c_d() abort "{{{1
+    if pumvisible()
+        let l:key = repeat("\<c-n>", 5)
+
+    elseif col('.') <= strlen(getline('.'))
+        let l:key = "\<del>"
+
+    elseif col('.') > strlen(getline('.'))
+        let l:key = "\<c-g>j\<home>\<bs>"
+    endif
+
+    return l:key
 endfu
 
 fu! readline#kill_word(mode) abort "{{{1
@@ -190,7 +177,7 @@ fu! s:set_isk() abort "{{{1
     setl isk=@,48-57,192-255
 endfu
 
-fu! readline#toggle_keysyms(enable) abort "{{{1
+fu! readline#set_keysyms(enable) abort "{{{1
     if a:enable
         exe "set <m-a>=\ea"
         exe "set <m-b>=\eb"
@@ -212,6 +199,43 @@ fu! readline#toggle_keysyms(enable) abort "{{{1
         exe "set <m-t>="
         exe "set <m-u>="
     endif
+endfu
+
+fu! readline#toggle_meta_keys() abort "{{{1
+    let is_unset = execute('sil! set <M-p>') =~# 'E846'
+
+    call readline#set_keysyms(is_unset)
+
+    " '' → execute NON-silently
+    call timer_start(0, { -> execute(
+                        \            "echom '[Fix Macro] Meta keys '."
+                        \            .(is_unset ? string('Enabled') : string('Disabled')),
+                        \            ''
+                        \           )
+                        \ })
+
+    " Why do we use a timer to display our message?{{{
+    " Why not simply echo it now?
+    "
+    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
+    "         echo ''
+    "
+    " Because, it seems that `set <M-key>` redraws the command-line after
+    " we echo the next message. Therefore, it's erased, and we can't read it.
+    " We could echo a 2nd empty message to prevent Vim from redrawing the
+    " command-line:
+    "
+    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
+    "         echo ''
+    "
+    " But then, we would have to hit Enter to exit the prompt.
+    "
+    " MWE (Minimal Working Example) to reproduce the pb:
+    "
+    "     :set fdm=manual | echo 'hello'           ✔
+    "     :set <M-a>=     | echo 'hello'           ✘
+    "     :set <M-a>=     | echo "hello\nworld"    ✔
+    "     }}}
 endfu
 
 fu! readline#transpose_chars(mode) abort "{{{1
