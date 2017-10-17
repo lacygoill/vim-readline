@@ -3,21 +3,6 @@ if exists('g:loaded_readline')
 endif
 let g:loaded_readline = 1
 
-if !has('nvim')
-    " FIXME:
-    " This mapping allows us  to use keys whose 1st keycode  is escape (left, right,
-    " M-…) as the lhs of other mappings. How does it work? Why is it necessary?
-    "
-    " However, it creates a timeout (3s) when we try to escape to normal mode.
-    " How to reduce the timeout to a few ms?
-    tno <esc><c-a> <esc><c-a>
-
-    " don't use `c-w` as a prefix to execute special commands in a terminal window
-    " `c-w` should delete the previous word
-    " use `c-o` instead
-    set termkey=<c-o>
-endif
-
 " KEYSYMS {{{1
 
 " On my machine, Vim doesn't know what are the right keycodes produced by
@@ -42,16 +27,14 @@ endif
 " Besides, when we hit M-{char}, we don't know whether gVim receives the same
 " keycodes as Vim in a terminal.
 
-if !has('gui_running') && !has('nvim')
-    exe "set <m-a>=\ea"
-    exe "set <m-b>=\eb"
-    exe "set <m-d>=\ed"
-    exe "set <m-e>=\ee"
-    exe "set <m-f>=\ef"
-    exe "set <m-n>=\en"
-    exe "set <m-p>=\ep"
-    exe "set <m-t>=\et"
-    exe "set <m-u>=\eu"
+if !has('nvim') && !has('gui_running')
+    call readline#toggle_keysyms(1)
+    augroup handle_keysyms
+        au!
+        au BufWinEnter * if &buftype ==# 'terminal'
+                      \|     call readline#disable_keysyms_in_terminal()
+                      \| endif
+    augroup END
 endif
 
 " Problem1:
@@ -191,11 +174,6 @@ ino <expr> <m-f> readline#move_by_words(1, 'i')
 cno <expr> <m-b> (wildmenumode() ? '<down>' : '').readline#move_by_words(0, 'c')
 cno <expr> <m-f> (wildmenumode() ? '<down>' : '').readline#move_by_words(1, 'c')
 
-if !has('nvim')
-    tno <expr> <m-b> readline#move_by_words(0, 't')
-    tno <expr> <m-f> readline#move_by_words(1, 't')
-endif
-
 " M-d        kill-word {{{3
 
 " Delete until the beginning of the next word.
@@ -203,10 +181,6 @@ endif
 
 ino <expr> <m-d>  readline#kill_word('i')
 cno <expr> <m-d>  readline#kill_word('c')
-
-if !has('nvim')
-    tno <expr> <m-d>  readline#kill_word('t')
-endif
 
 " M-n/p      down up {{{3
 
@@ -227,21 +201,10 @@ cno <m-n> <Down>
 " history-search-forward
 cno <m-p> <up>
 
-if !has('nvim')
-    " FIXME:
-    " doesn't behave exactly like it should
-    tno <m-n> <down>
-    tno <m-p> <up>
-endif
-
 " M-t        transpose-words {{{3
 
-ino <silent>   <m-t>                       <c-r>=readline#transpose_words('i')<cr>
-cno            <m-t>                       <c-\>ereadline#transpose_words('c')<cr>
-
-if !has('nvim')
-    tno <expr> <m-t>  readline#transpose_words('t')
-endif
+ino <silent>   <m-t>                    <c-r>=readline#transpose_words('i')<cr>
+cno            <m-t>                    <c-\>ereadline#transpose_words('c')<cr>
 
 nmap           <m-t>                    <plug>(transpose_words)
 nno  <silent>  <plug>(transpose_words)  :<c-u>exe readline#transpose_words('n')<cr>
@@ -254,6 +217,11 @@ nno  <silent> <plug>(upcase_word)  :<c-u>exe readline#upcase_word('n')<cr>
 
 cno           <m-u>                <c-\>ereadline#upcase_word('c')<cr>
 
+" OPTIONS {{{1
+
 if !has('nvim')
-    tno <expr> <m-u>  readline#upcase_word('t')
+    " don't use `c-w` as a prefix to execute special commands in a terminal window
+    " `c-w` should delete the previous word
+    " use `c-o` instead
+    set termkey=<c-o>
 endif

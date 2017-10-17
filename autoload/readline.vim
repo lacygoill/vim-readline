@@ -3,21 +3,27 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
-fu! s:get_line_pos_atom(mode) abort "{{{1
-    let [ line, pos ] = a:mode ==# 'i' || a:mode ==# 'n'
-                     \?     [ getline('.'), col('.') ]
-                     \: a:mode ==# 'c'
+fu! readline#disable_keysyms_in_terminal() abort "{{{1
+    nno <buffer> <expr> <nowait> : <sid>enable_keysyms_on_command_line()
+
+    augroup disable_keysyms_in_terminal
+        au! * <buffer>
+        au CursorMoved <buffer> call readline#toggle_keysyms(0)
+        au BufLeave    <buffer> call readline#toggle_keysyms(1)
+    augroup END
+endfu
+
+fu! s:enable_keysyms_on_command_line() abort "{{{1
+    call readline#toggle_keysyms(1)
+    return ':'
+endfu
+
+fu! s:get_line_pos(mode) abort "{{{1
+    let [ line, pos ] = a:mode ==# 'c'
                      \?     [ getcmdline(), getcmdpos() ]
-                     \:     [ term_getline('', '.'), term_getcursor('')[1] ]
-                     "                     │    │                   │   │
-                     "                     │    │                   │   └─ cursor column
-                     "                     │    │                   └─ current buffer
-                     "                     │    └─ current line
-                     "                     └─ current buffer
+                     \:     [ getline('.'), col('.') ]
 
-    let atom = a:mode ==# 't' ? 'v' : 'c'
-
-    return [ line, pos, atom ]
+    return [ line, pos ]
 endfu
 
 fu! readline#kill_word(mode) abort "{{{1
@@ -25,18 +31,18 @@ fu! readline#kill_word(mode) abort "{{{1
     try
         call s:set_isk()
 
-        let [ line, pos, atom ] = s:get_line_pos_atom(a:mode)
+        let [ line, pos ] = s:get_line_pos(a:mode)
 
-        "                         ┌ from the beginning of the word containing the cursor
-        "                         │ until the cursor
-        "                         │ if the cursor is outside of a word, the pattern
-        "                         │ still matches, because we use `*`, not `+`
-        "            ┌────────────┤
-        let pat = '\v\k*%'.pos.atom.'\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
-        "                                 └─┤ └───────┤ └───────┤
-        "                                   │         │         └ or all the non-word text we're in
-        "                                   │         └───────── or the next word if we're outside of a word
-        "                                   └─────────────────── the rest of the word after the cursor
+        "                       ┌ from the beginning of the word containing the cursor
+        "                       │ until the cursor
+        "                       │ if the cursor is outside of a word, the pattern
+        "                       │ still matches, because we use `*`, not `+`
+        "            ┌──────────┤
+        let pat = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
+        "                             └─┤ └───────┤ └───────┤
+        "                               │         │         └ or all the non-word text we're in
+        "                               │         └───────── or the next word if we're outside of a word
+        "                               └─────────────────── the rest of the word after the cursor
 
         " TODO:
         " understand the behavior of these regexes
@@ -56,14 +62,7 @@ fu! readline#kill_word(mode) abort "{{{1
 " eee aaa
 " \v.{-}\k+>| eee
 
-        if a:mode ==# 't'
-            if pos <= strlen(line)
-                call term_sendkeys('', repeat("\<c-d>", strchars(matchstr(line, pat), 1)))
-            endif
-            return ''
-        else
-            return repeat("\<del>", strchars(matchstr(line, pat), 1))
-        endif
+    return repeat("\<del>", strchars(matchstr(line, pat), 1))
 
     catch
     finally
@@ -83,30 +82,30 @@ fu! readline#move_by_words(fwd, mode) abort "{{{1
     try
         call s:set_isk()
 
-        let [ line, pos, atom ] = s:get_line_pos_atom(a:mode)
+        let [ line, pos ] = s:get_line_pos(a:mode)
 
         " old_char_idx = nr of characters before cursor in its current position
         " new_char_idx = "                                         new     "
 
-        "                                ignore composing characters ┐
-        " necessary to move correctly on a line such as:             │
-        "          ́ foo  ́ bar  ́                                      │
-        let old_char_idx = strchars(matchstr(line, '.*\%'.pos.atom), 1)
+        "                               ignore composing characters ┐
+        " necessary to move correctly on a line such as:            │
+        "          ́ foo  ́ bar  ́                                     │
+        let old_char_idx = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
 
         if a:fwd
             " all characters from the beginning of the line until the last
             " character of the nearest NEXT word (current one if we're in a word,
             " or somewhere AFTER otherwise)
-            let pat = '\v.*%'.pos.atom.'%(.{-1,}>\ze|.*)'
-            "                                        │
-            "       if there's no word where we are, ┘
+            let pat = '\v.*%'.pos.'c%(.{-1,}>\ze|.*)'
+            "                                    │
+            "   if there's no word where we are, ┘
             " nor after us, then go on until the end of the line
             let new_char_idx = strchars(matchstr(line, pat), 1)
         else
             " all characters from the beginning of the line until the first
             " character of the nearest PREVIOUS word (current one if we're in a
             " word, or somewhere BEFORE otherwise)
-            let pat          = '\v.*\ze<.{-1,}%'.pos.atom
+            let pat          = '\v.*\ze<.{-1,}%'.pos.'c'
             let new_char_idx = strchars(matchstr(line, pat), 1)
         endif
 
@@ -117,13 +116,7 @@ fu! readline#move_by_words(fwd, mode) abort "{{{1
                            \?    diff > 0 ? "\<left>" : "\<right>"
                            \:    diff > 0 ? "\<c-b>"  : "\<c-f>"
 
-        let motion = repeat(building_motion, abs(diff))
-        if a:mode ==# 't'
-            call term_sendkeys('', motion)
-            return ''
-        else
-            return motion
-        endif
+        return repeat(building_motion, abs(diff))
 
     " the `catch` clause prevents errors from being echoed
     " if you try to throw the exception manually (echo v:exception, echo
@@ -152,6 +145,30 @@ fu! s:set_isk() abort "{{{1
     " So now, I prefer to give an explicit value to `isk`.
 
     setl isk=@,48-57,192-255
+endfu
+
+fu! readline#toggle_keysyms(enable) abort "{{{1
+    if a:enable
+        exe "set <m-a>=\ea"
+        exe "set <m-b>=\eb"
+        exe "set <m-d>=\ed"
+        exe "set <m-e>=\ee"
+        exe "set <m-f>=\ef"
+        exe "set <m-n>=\en"
+        exe "set <m-p>=\ep"
+        exe "set <m-t>=\et"
+        exe "set <m-u>=\eu"
+    else
+        exe "set <m-a>="
+        exe "set <m-b>="
+        exe "set <m-d>="
+        exe "set <m-e>="
+        exe "set <m-f>="
+        exe "set <m-n>="
+        exe "set <m-p>="
+        exe "set <m-t>="
+        exe "set <m-u>="
+    endif
 endfu
 
 fu! readline#transpose_chars(mode) abort "{{{1
@@ -183,7 +200,7 @@ fu! readline#transpose_words(mode) abort "{{{1
     try
         call s:set_isk()
 
-        let [ line, pos, atom ] = s:get_line_pos_atom(a:mode)
+        let [ line, pos ] = s:get_line_pos(a:mode)
 
         " We're looking for 2 words which are separated by non-word characters.
         "
@@ -204,14 +221,14 @@ fu! readline#transpose_words(mode) abort "{{{1
         "                 e|cho foo
         "
         " … there should be no transposition (to mimic readline)
-        let not_on_first = '\v%(<\k*%'.pos.atom.'\k+>)@!&'
+        let not_on_first = '\v%(<\k*%'.pos.'c\k+>)@!&'
 
         " The cursor mustn't be before the 2 words:
         "
         "         foo | bar baz
         "               └─────┤
         "                     └ don't transpose those 2
-        let not_before = '%(%'.pos.atom.'.*)@<!'
+        let not_before = '%(%'.pos.'c.*)@<!'
 
         " The cursor mustn't be after the 2 words, unless it is inside
         " a sequence of non-words characters at the end of the line:
@@ -219,7 +236,7 @@ fu! readline#transpose_words(mode) abort "{{{1
         "         foo bar | baz
         "         └─────┤
         "               └ don't transpose those 2
-        let not_after = '%(%(.*%'.pos.atom.')@!|%(%(\k@!.)*$)@=)'
+        let not_after = '%(%(.*%'.pos.'c)@!|%(%(\k@!.)*$)@=)'
         " OR it is after them, BUT there are only non-word characters between
         " them and the end of the line
         "
@@ -234,22 +251,15 @@ fu! readline#transpose_words(mode) abort "{{{1
         let rep      = '\3\2\1'
         let new_line = substitute(line, pat, rep, '')
 
-        if a:mode ==# 'i' || a:mode ==# 'n'
+        if a:mode ==# 'c'
+            call setcmdpos(new_pos)
+            return new_line
+        else
             call setline(line('.'), new_line)
             call cursor(line('.'), new_pos)
             if a:mode ==# 'n'
                 call repeat#set("\<plug>(transpose_words)")
             endif
-            return ''
-        elseif a:mode ==# 'c'
-            call setcmdpos(new_pos)
-            return new_line
-        else
-            " FIXME:
-            " doesn't work as expected when the cursor is at the beginning of the line
-            let new_pos -= strchars(matchstr(new_line, '\v.{-}%(\%|#)\s'), 1)
-            let new_line = matchstr(new_line, '\v.{-}%(\%|#)\s\zs.*')
-            call term_sendkeys('', "\<c-k>\<c-u>".new_line."\<c-a>".repeat("\<c-f>", new_pos))
             return ''
         endif
 
@@ -268,24 +278,13 @@ fu! readline#upcase_word(mode) abort "{{{1
     try
         call s:set_isk()
 
-        let [ line, pos, atom ] = s:get_line_pos_atom(a:mode)
+        let [ line, pos ] = s:get_line_pos(a:mode)
 
-        let pat      = '\v\k*%'.pos.atom.'\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
+        let pat      = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
         let new_line = substitute(line, pat, '\U\0', '')
-        " FIXME:
-        " weird behavior when we're at the end of the command line in a terminal buffer
-        let new_pos = a:mode ==# 't'
-                   \?     strchars(matchstr(line, '\v.{-}%(\%|#)\s\zs.{-}'.substitute(pat, '\\zs', '', ''))) + 1
-                   \:     match(line, pat.'\zs') + 1
+        let new_pos  = match(line, pat.'\zs') + 1
 
-        if a:mode ==# 'i' || a:mode ==# 'n'
-            call setline(line('.'), new_line)
-            call cursor(line('.'), new_pos)
-            if a:mode ==# 'n'
-                call repeat#set("\<plug>(upcase_word)")
-            endif
-            return ''
-        elseif a:mode ==# 'c'
+        if a:mode ==# 'c'
             call setcmdpos(new_pos)
             if pos > strlen(line)
                 return line
@@ -293,8 +292,11 @@ fu! readline#upcase_word(mode) abort "{{{1
                 return new_line
             endif
         else
-            let new_line = matchstr(new_line, '\v.{-}%(\%|#)\s\zs.*')
-            call term_sendkeys('', "\<c-k>\<c-u>".new_line."\<c-a>".repeat("\<c-f>", new_pos))
+            call setline(line('.'), new_line)
+            call cursor(line('.'), new_pos)
+            if a:mode ==# 'n'
+                call repeat#set("\<plug>(upcase_word)")
+            endif
             return ''
         endif
 
