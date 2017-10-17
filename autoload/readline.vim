@@ -74,24 +74,6 @@ fu! readline#kill_word(mode) abort "{{{1
         "                               │         └───────── or the next word if we're outside of a word
         "                               └─────────────────── the rest of the word after the cursor
 
-        " TODO:
-        " understand the behavior of these regexes
-
-        " \v%2c(.{-}<\k+>|\W+)
-        " \v%2c(\W+|.{-}<\k+>)
-        " \v%2c\W+
-        " \v%2c(\k@!.)+
-        "
-        " \v%2c(.{-}\k+>| ééé)
-
-" ééé ààà
-" eee ààà
-" foo_bar_baz
-" ééé_ààà_îîî
-
-" eee aaa
-" \v.{-}\k+>| eee
-
     return repeat("\<del>", strchars(matchstr(line, pat), 1))
 
     catch
