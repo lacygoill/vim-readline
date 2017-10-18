@@ -175,7 +175,7 @@ ino <expr> <c-a>  col('.') >= match(getline('.'), '\S') + 1
 
 "                                     ┌─ close wildmenu
 "                                     │
-cno <expr> <c-b>  (wildmenumode() ? '<down>' : '').'<left>'
+cno <expr> <c-b>  (wildmenumode() ? '<space><c-h>' : '').'<left>'
 
 ino <c-b> <c-g>U<left>
 
@@ -246,8 +246,8 @@ ino <expr> <c-t> readline#transpose_chars('i')
 
 "                                    ┌─  close wildmenu
 "                                    │
-cno <expr> <m-b> (wildmenumode() ? '<down>' : '').readline#move_by_words(0, 'c')
-cno <expr> <m-f> (wildmenumode() ? '<down>' : '').readline#move_by_words(1, 'c')
+cno <expr> <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words(0, 'c')
+cno <expr> <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words(1, 'c')
 
 ino <expr> <m-b> readline#move_by_words(0, 'i')
 ino <expr> <m-f> readline#move_by_words(1, 'i')
