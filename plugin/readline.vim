@@ -147,7 +147,7 @@ if !has('nvim') && !has('gui_running')
     " … then reenable them once the macro has been used (`:ToggleMetaKeys` again).
     " This is the purpose of the next mapping.
 "}}}
-    nmap <expr> @ readline#do_not_break_macro_replay()
+            nmap <expr> @ readline#do_not_break_macro_replay()
     " Do NOT use `<nowait>`.
     " If we hit `@?`, the previous mapping must not be used. It wouldn't work.
     " Why?
