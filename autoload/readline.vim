@@ -335,7 +335,7 @@ fu! readline#transpose_words(mode) abort "{{{1
             call setline(line('.'), new_line)
             call cursor(line('.'), new_pos)
             if a:mode ==# 'n'
-                call repeat#set("\<plug>(transpose_words)")
+                sil! call repeat#set("\<plug>(transpose_words)")
             endif
             return ''
         endif
@@ -372,7 +372,7 @@ fu! readline#upcase_word(mode) abort "{{{1
             call setline(line('.'), new_line)
             call cursor(line('.'), new_pos)
             if a:mode ==# 'n'
-                call repeat#set("\<plug>(upcase_word)")
+                sil! call repeat#set("\<plug>(upcase_word)")
             endif
             return ''
         endif
