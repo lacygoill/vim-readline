@@ -3,6 +3,15 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
+" NOTE:
+" `do_not_break_macro_replay()` will NOT work when you do this:
+"
+"         norm! @q
+"
+" … instead, you must do this:
+"
+"         norm @q
+
 fu! readline#disable_keysyms_in_terminal() abort "{{{1
     nno <buffer> <expr> <nowait> : <sid>enable_keysyms_on_command_line()
 
