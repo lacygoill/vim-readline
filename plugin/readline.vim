@@ -62,15 +62,9 @@ let g:loaded_readline = 1
 " Use equivalence class in a search command
 "}}}
 
-" COMMANDS {{{1
-
-" This command can be useful to temporarily disable meta keys before replaying
-" a macro.
-
-com! -bar ToggleMetaKeys call readline#toggle_meta_keys()
-
 " KEYSYMS {{{1
-
+" Why do we need to set `<M-b>` &friends?{{{
+"
 " On my machine, Vim doesn't know what are the right keycodes produced by
 " certains keysyms such as `M-b`.
 " It probably knows something, but it's wrong.
@@ -87,11 +81,17 @@ com! -bar ToggleMetaKeys call readline#toggle_meta_keys()
 " To find the keycodes, insert the keysym literally (ex: C-v M-b).
 "
 " We do the same thing for other keysyms following the pattern `M-{char}`.
-
+"}}}
 "  ┌─ no need to teach anything for nvim or gVim (they already know)
 "  │
 if !has('nvim') && !has('gui_running')
+
     call readline#set_keysyms(1)
+
+    " This  command  can be  useful  to  temporarily  disable meta  keys  before
+    " replaying a macro.
+    com! -bar ToggleMetaKeys call readline#toggle_meta_keys()
+
     augroup handle_keysyms
         au!
         au BufWinEnter * if &buftype ==# 'terminal'

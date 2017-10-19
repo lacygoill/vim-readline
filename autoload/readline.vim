@@ -194,20 +194,26 @@ fu! readline#set_keysyms(enable) abort "{{{1
         exe "set <m-d>=\ed"
         exe "set <m-e>=\ee"
         exe "set <m-f>=\ef"
+        exe "set <m-m>=\em"
         exe "set <m-n>=\en"
         exe "set <m-p>=\ep"
+        exe "set <m-s>=\es"
         exe "set <m-t>=\et"
         exe "set <m-u>=\eu"
+        exe "set <m-v>=\ev"
     else
         exe "set <m-a>="
         exe "set <m-b>="
         exe "set <m-d>="
         exe "set <m-e>="
         exe "set <m-f>="
+        exe "set <m-m>="
         exe "set <m-n>="
         exe "set <m-p>="
+        exe "set <m-s>="
         exe "set <m-t>="
         exe "set <m-u>="
+        exe "set <m-v>="
     endif
 endfu
 
