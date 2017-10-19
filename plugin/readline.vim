@@ -62,99 +62,6 @@ let g:loaded_readline = 1
 " Use equivalence class in a search command
 "}}}
 
-" KEYSYMS {{{1
-" Why do we need to set `<M-b>` &friends?{{{
-"
-" On my machine, Vim doesn't know what are the right keycodes produced by
-" certains keysyms such as `M-b`.
-" It probably knows something, but it's wrong.
-" For example, it thinks that the keysym `M-b` is produced by `â`.
-" Which is confirmed if we just write this mapping:
-"
-"     ino <M-b> hello
-"
-" … then try to insert `â`. It will insert `hello`.
-" But Vim doesn't really know what's `M-b`,  because if we press `M-b` in insert
-" mode, it doesn't insert `hello`, it just escapes to normal mode then go back a
-" word.
-" We need to teach it the correct keycodes which are produced by `M-b`.
-" To find the keycodes, insert the keysym literally (ex: C-v M-b).
-"
-" We do the same thing for other keysyms following the pattern `M-{char}`.
-"}}}
-"  ┌─ no need to teach anything for nvim or gVim (they already know)
-"  │
-if !has('nvim') && !has('gui_running')
-
-    call readline#set_keysyms(1)
-
-    " This  command  can be  useful  to  temporarily  disable meta  keys  before
-    " replaying a macro.
-    com! -bar ToggleMetaKeys call readline#toggle_meta_keys()
-
-    augroup handle_keysyms
-        au!
-        au BufWinEnter * if &buftype ==# 'terminal'
-                      \|     call readline#disable_keysyms_in_terminal()
-                      \| endif
-    augroup END
-
-    " Issue: Why the next mapping?{{{
-    "
-    " Every time we set and use a meta key as the {lhs} of an insert-mode mapping,
-    " a macro containing a sequence of key presses such as:
-    "
-    "         Esc + {char used in a meta mapping}
-    "
-    " … produces unexpected results when it's replayed.
-    " See here for more info:
-    "
-    "     https://github.com/tpope/vim-rsi/issues/13
-    "
-    " Reproduction:
-    "
-    "     'foobar'
-    "     'foobar'
-    "
-    " Position the cursor right on the first quote of the first line and type:
-    "
-    "     qq cl `` Esc f' . q
-    "
-    " Now move the cursor on the first quote of the second line and type:
-    "
-    "     @q
-    "
-    " Expected result:
-    "
-    "     ``foobar``
-    "
-    "     … and we should end up in normal mode
-    "
-    " Real result (if we have an insert mode mapping using `M-f` to move forward
-    " by a word):
-    "
-    "     ``foobar''.
-    "
-    "     … and we end up in insert mode
-    "
-    " Solution:
-    "
-    " Neovim isn't affected. Switch to Neovim.
-    " OR, temporarily disable meta keys before replaying a macro (`@q`):
-    "
-    "     :ToggleMetaKeys
-    "
-    " … then reenable them once the macro has been used (`:ToggleMetaKeys` again).
-    " This is the purpose of the next mapping.
-"}}}
-            nmap <expr> @ readline#do_not_break_macro_replay()
-    " Do NOT use `<nowait>`.
-    " If we hit `@?`, the previous mapping must not be used. It wouldn't work.
-    " Why?
-    " Because the `rhs` that it would return begins like the `lhs` (@).
-    " This prevents the necessary recursiveness (:h recursive_mapping; exception).
-endif
-
 " MAPPINGS {{{1
 
 " NOTE:
@@ -299,3 +206,228 @@ if !has('nvim')
     " word; use `c-g` instead
     set termkey=<c-g>
 endif
+
+" KEYSYMS {{{1
+" Why do we need to set `<M-b>` &friends?{{{
+"
+" On my machine, Vim doesn't know what are the right keycodes produced by
+" certains keysyms such as `M-b`.
+" It probably knows something, but it's wrong.
+" For example, it thinks that the keysym `M-b` is produced by `â`.
+" Which is confirmed if we just write this mapping:
+"
+"     ino <M-b> hello
+"
+" … then try to insert `â`. It will insert `hello`.
+" But Vim doesn't really know what's `M-b`,  because if we press `M-b` in insert
+" mode, it doesn't insert `hello`, it just escapes to normal mode then go back a
+" word.
+" We need to teach it the correct keycodes which are produced by `M-b`.
+" To find the keycodes, insert the keysym literally (ex: C-v M-b).
+"
+" We do the same thing for other keysyms following the pattern `M-{char}`.
+"}}}
+"  ┌─ no need to teach anything for nvim or gVim (they already know)
+"  │
+if has('nvim') || has('gui_running')
+    finish
+endif
+
+" functions {{{2
+fu! s:disable_keysyms_in_terminal() abort "{{{3
+    nno <buffer> <expr> <nowait> : <sid>enable_keysyms_on_command_line()
+
+    augroup disable_keysyms_in_terminal
+        au! * <buffer>
+        au CursorMoved <buffer> call s:set_keysyms(0)
+        au BufLeave    <buffer> call s:set_keysyms(1)
+    augroup END
+endfu
+
+fu! s:do_not_break_macro_replay() abort "{{{3
+    " Warning:{{{
+    " `do_not_break_macro_replay()` will NOT work when you do this:
+    "
+    "         norm! @q
+    "
+    " … instead, you must do this:
+    "
+    "         norm @q
+"}}}
+    call readline#set_keysyms(0)
+
+    " We need to save the current value of 'updatetime', to restore it later.
+    " However, suppose we do this:
+    "
+    "         g/pat/norm @q
+    "           │
+    "           └─ `pat` matching at least 2 texts in the buffer
+    "
+    " On the second invocation of `@q`, 'ut' will probably be 5ms, not 2000ms.
+    " This is because, Vim has executed the 2 macros very fast. In less than 5 ms.
+    " CursorHold(I) hasn't been  fired once between the 2  invocations, and 'ut'
+    " hasn't been restored properly.
+    " So, we must NOT save `&ut` if  its value is abnormally low (less than 1s),
+    " instead we'll use 2s as a default value.
+
+    let s:ut_save = &ut >= 1000 ? &ut : 2000
+    set updatetime=5
+    augroup do_not_break_macro_replay
+        au!
+        au CursorHold,CursorHoldI * call readline#set_keysyms(1)
+                                    \| let &ut = s:ut_save
+                                    \| unlet! s:ut_save
+                                    \| exe 'au! do_not_break_macro_replay'
+                                    \| exe 'aug! do_not_break_macro_replay'
+    augroup END
+
+    return '@'.nr2char(getchar())
+endfu
+
+fu! s:enable_keysyms_on_command_line() abort "{{{3
+    call s:set_keysyms(1)
+    " Do NOT return `:` immediately.
+    " The previous function call sets some special options, and for some reason,
+    " setting these prevents us from displaying a message with `:echo`.
+    call timer_start(0, {-> execute('call feedkeys(":", "int")')})
+    return ''
+endfu
+
+fu! s:set_keysyms(enable) abort "{{{3
+    if a:enable
+        exe "set <m-a>=\ea"
+        exe "set <m-b>=\eb"
+        exe "set <m-d>=\ed"
+        exe "set <m-e>=\ee"
+        exe "set <m-f>=\ef"
+        exe "set <m-m>=\em"
+        exe "set <m-n>=\en"
+        exe "set <m-p>=\ep"
+        exe "set <m-s>=\es"
+        exe "set <m-t>=\et"
+        exe "set <m-u>=\eu"
+        exe "set <m-v>=\ev"
+    else
+        exe "set <m-a>="
+        exe "set <m-b>="
+        exe "set <m-d>="
+        exe "set <m-e>="
+        exe "set <m-f>="
+        exe "set <m-m>="
+        exe "set <m-n>="
+        exe "set <m-p>="
+        exe "set <m-s>="
+        exe "set <m-t>="
+        exe "set <m-u>="
+        exe "set <m-v>="
+    endif
+endfu
+call s:set_keysyms(1)
+
+fu! s:toggle_meta_keys() abort "{{{3
+    let is_unset = execute('sil! set <M-p>') =~# 'E846'
+
+    call s:set_keysyms(is_unset)
+
+    " '' → execute NON-silently
+    call timer_start(0, { -> execute(
+                        \            "echom '[Fix Macro] Meta keys '."
+                        \            .(is_unset ? string('Enabled') : string('Disabled')),
+                        \            ''
+                        \           )
+                        \ })
+
+    " Why do we use a timer to display our message?{{{
+    " Why not simply echo it now?
+    "
+    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
+    "         echo ''
+    "
+    " Because, it seems that `set <M-key>` redraws the command-line after
+    " we echo the next message. Therefore, it's erased, and we can't read it.
+    " We could echo a 2nd empty message to prevent Vim from redrawing the
+    " command-line:
+    "
+    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
+    "         echo ''
+    "
+    " But then, we would have to hit Enter to exit the prompt.
+    "
+    " MWE (Minimal Working Example) to reproduce the pb:
+    "
+    "     :set fdm=manual | echo 'hello'           ✔
+    "     :set <M-a>=     | echo 'hello'           ✘
+    "     :set <M-a>=     | echo "hello\nworld"    ✔
+    "     }}}
+endfu
+
+" commands {{{2
+" This command can be useful to temporarily disable meta keys before replaying a
+" macro.
+com! -bar ToggleMetaKeys call s:toggle_meta_keys()
+
+" autocommands {{{2
+augroup handle_keysyms
+    au!
+    au BufWinEnter * if &buftype ==# 'terminal'
+                    \|     call s:disable_keysyms_in_terminal()
+                    \| endif
+augroup END
+
+" mappings {{{2
+
+" Issue: Why the next mapping?{{{
+"
+" Every time we set and use a meta key as the {lhs} of an insert-mode mapping,
+" a macro containing a sequence of key presses such as:
+"
+"         Esc + {char used in a meta mapping}
+"
+" … produces unexpected results when it's replayed.
+" See here for more info:
+"
+"     https://github.com/tpope/vim-rsi/issues/13
+"
+" Reproduction:
+"
+"     'foobar'
+"     'foobar'
+"
+" Position the cursor right on the first quote of the first line and type:
+"
+"     qq cl `` Esc f' . q
+"
+" Now move the cursor on the first quote of the second line and type:
+"
+"     @q
+"
+" Expected result:
+"
+"     ``foobar``
+"
+"     … and we should end up in normal mode
+"
+" Real result (if we have an insert mode mapping using `M-f` to move forward
+" by a word):
+"
+"     ``foobar''.
+"
+"     … and we end up in insert mode
+"
+" Solution:
+"
+" Neovim isn't affected. Switch to Neovim.
+" OR, temporarily disable meta keys before replaying a macro (`@q`):
+"
+"     :ToggleMetaKeys
+"
+" … then reenable them once the macro has been used (`:ToggleMetaKeys` again).
+" This is the purpose of the next mapping.
+"}}}
+nmap <expr> @ <sid>do_not_break_macro_replay()
+
+" Do NOT use `<nowait>`.
+" If we hit `@?`, the previous mapping must not be used. It wouldn't work.
+" Why?
+" Because the `rhs` that it would return begins like the `lhs` (@).
+" This prevents the necessary recursiveness (:h recursive_mapping; exception).
