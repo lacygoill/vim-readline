@@ -234,16 +234,6 @@ if has('nvim') || has('gui_running')
 endif
 
 " functions {{{2
-fu! s:disable_keysyms_in_terminal() abort "{{{3
-    nno <buffer> <expr> <nowait> : <sid>enable_keysyms_on_command_line()
-
-    augroup disable_keysyms_in_terminal
-        au! * <buffer>
-        au CursorMoved <buffer> call s:set_keysyms(0)
-        au BufLeave    <buffer> call s:set_keysyms(1)
-    augroup END
-endfu
-
 fu! s:do_not_break_macro_replay() abort "{{{3
     " Warning:{{{
     " `do_not_break_macro_replay()` will NOT work when you do this:
@@ -324,6 +314,16 @@ fu! s:set_keysyms(enable) abort "{{{3
 endfu
 call s:set_keysyms(1)
 
+fu! s:toggle_keysyms_in_terminal() abort "{{{3
+    nno <buffer> <expr> <nowait> : <sid>enable_keysyms_on_command_line()
+
+    augroup toggle_keysyms_in_terminal
+        au! * <buffer>
+        au CursorMoved <buffer> call s:set_keysyms(0)
+        au BufLeave    <buffer> call s:set_keysyms(1)
+    augroup END
+endfu
+
 fu! s:toggle_meta_keys() abort "{{{3
     let is_unset = execute('sil! set <M-p>') =~# 'E846'
 
@@ -361,20 +361,21 @@ fu! s:toggle_meta_keys() abort "{{{3
     "     }}}
 endfu
 
-" commands {{{2
+" command {{{2
 " This command can be useful to temporarily disable meta keys before replaying a
 " macro.
 com! -bar ToggleMetaKeys call s:toggle_meta_keys()
 
-" autocommands {{{2
+" autocommand {{{2
 augroup handle_keysyms
     au!
     au BufWinEnter * if &buftype ==# 'terminal'
-                    \|     call s:disable_keysyms_in_terminal()
+                    \|     call s:set_keysyms(0)
+                    \|     call s:toggle_keysyms_in_terminal()
                     \| endif
 augroup END
 
-" mappings {{{2
+" mapping {{{2
 
 " Issue: Why the next mapping?{{{
 "
