@@ -75,8 +75,8 @@ let g:loaded_readline = 1
 cno <c-a>  <home>
 
 ino <expr> <c-a>  col('.') >= match(getline('.'), '\S') + 1
-              \?      repeat('<c-g>U<left>', col('.') - match(getline('.'), '\S') - 1)
-              \:      repeat('<c-g>U<right>', match(getline('.'), '\S') - col('.') + 1)
+\?                    repeat('<c-g>U<left>', col('.') - match(getline('.'), '\S') - 1)
+\:                    repeat('<c-g>U<right>', match(getline('.'), '\S') - col('.') + 1)
 
 " C-b        backward-char {{{3
 
@@ -115,8 +115,8 @@ cno <c-f>  <right>
 " indentation if we're at the end (default)
 
 ino <expr> <c-f>  col('.') > strlen(getline('.'))
-              \?      '<c-f>'
-              \:      '<c-g>U<right>'
+\?                    '<c-f>'
+\:                    '<c-g>U<right>'
 
 " C-g        abort {{{3
 

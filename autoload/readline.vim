@@ -5,8 +5,8 @@ let g:autoloaded_readline = 1
 
 fu! s:get_line_pos(mode) abort "{{{1
     let [ line, pos ] = a:mode ==# 'c'
-                     \?     [ getcmdline(), getcmdpos() ]
-                     \:     [ getline('.'), col('.') ]
+    \?                      [ getcmdline(), getcmdpos() ]
+    \:                      [ getline('.'), col('.') ]
 
     return [ line, pos ]
 endfu
@@ -92,10 +92,10 @@ fu! readline#move_by_words(fwd, mode) abort "{{{1
 
         let diff = old_char_idx - new_char_idx
         let building_motion = a:mode ==# 'i'
-                           \?    diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
-                           \: a:mode ==# 'c'
-                           \?    diff > 0 ? "\<left>" : "\<right>"
-                           \:    diff > 0 ? "\<c-b>"  : "\<c-f>"
+        \?                        diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
+        \:                    a:mode ==# 'c'
+        \?                        diff > 0 ? "\<left>" : "\<right>"
+        \:                        diff > 0 ? "\<c-b>"  : "\<c-f>"
 
         return repeat(building_motion, abs(diff))
 
@@ -130,8 +130,8 @@ endfu
 
 fu! readline#transpose_chars(mode) abort "{{{1
     let [ pos, line ] = a:mode ==# 'i'
-                     \?     [ col('.'), getline('.') ]
-                     \:     [ getcmdpos(), getcmdline() ]
+    \?                      [ col('.'), getline('.') ]
+    \:                      [ getcmdpos(), getcmdline() ]
 
     if pos > strlen(line)
         " We use `matchstr()` because of potential multibyte characters.
