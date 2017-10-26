@@ -244,7 +244,7 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     "
     "         norm @q
 "}}}
-    call readline#set_keysyms(0)
+    call s:set_keysyms(0)
 
     " We need to save the current value of 'updatetime', to restore it later.
     " However, suppose we do this:
@@ -264,7 +264,7 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     set updatetime=5
     augroup do_not_break_macro_replay
         au!
-        au CursorHold,CursorHoldI * call readline#set_keysyms(1)
+        au CursorHold,CursorHoldI * call s:set_keysyms(1)
                                     \| let &ut = s:ut_save
                                     \| unlet! s:ut_save
                                     \| exe 'au! do_not_break_macro_replay'
