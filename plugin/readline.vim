@@ -140,6 +140,11 @@ ino <silent> <c-k><c-k>  <c-r>=setline(line('.'), matchstr(getline('.'), '.*\%'.
 cno <expr> <c-t> readline#transpose_chars('c')
 ino <expr> <c-t> readline#transpose_chars('i')
 
+" C-w        backward-kill-word {{{3
+
+cno <expr> <c-w> readline#backward_kill_word('c')
+ino <expr> <c-w> readline#backward_kill_word('i')
+
 " META {{{2
 " M-b/f      forward-word backward-word {{{3
 

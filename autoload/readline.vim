@@ -3,6 +3,28 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
+fu! readline#backward_kill_word(mode) abort "{{{1
+    let isk_save = &l:isk
+    try
+        call s:set_isk()
+
+        let [ line, pos ] = s:get_line_pos(a:mode)
+
+        "              ┌ word before cursor
+        "              │            ┌ there may be some non-word text between the word and the cursor
+        "              │            │         ┌ the cursor
+        "            ┌─┤┌───────────┤┌────────┤
+        let pat = '\v\k*%(%(\k@!.)+)?%'.pos.'c'
+        " Do NOT feed "BS" directly, because sometimes it would delete too much text.
+        " It may happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
+        " Instead, feed "Left Del".
+        return repeat("\<c-g>U\<left>\<del>", strchars(matchstr(line, pat), 1))
+    catch
+    finally
+        let &l:isk = isk_save
+    endtry
+endfu
+
 fu! s:get_line_pos(mode) abort "{{{1
     let [ line, pos ] = a:mode ==# 'c'
     \?                      [ getcmdline(), getcmdpos() ]
