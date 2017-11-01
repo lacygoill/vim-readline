@@ -18,7 +18,7 @@ fu! readline#backward_kill_word(mode) abort "{{{1
         " Do NOT feed "BS" directly, because sometimes it would delete too much text.
         " It may happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
         " Instead, feed "Left Del".
-        return repeat("\<c-g>U\<left>\<del>", strchars(matchstr(line, pat), 1))
+        return repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>", strchars(matchstr(line, pat), 1))
     catch
     finally
         let &l:isk = isk_save
