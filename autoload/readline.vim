@@ -358,9 +358,9 @@ fu! readline#move_by_words(fwd, mode) abort "{{{2
     return ''
 endfu
 
-fu! s:set_concat_next_kill(mode, last_kill_was_big) abort "{{{2
-    let s:concat_next_kill  = s:last_kill_was_big ? 0 : 1
-    let s:last_kill_was_big = a:last_kill_was_big
+fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
+    let s:concat_next_kill  = a:this_kill_is_big && s:last_kill_was_big ? 0 : 1
+    let s:last_kill_was_big = a:this_kill_is_big
     if a:mode ==# 'c'
         return
     endif
