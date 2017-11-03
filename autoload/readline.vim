@@ -578,14 +578,14 @@ endfu
 
 " When we kill with:
 "
-"         • M-d: the text is appended
-"         • C-w: the text is prepended
-"         • C-u: the text is prepended
-"         • C-k: the text is appended
+"         • M-d: the text is appended  to the top of the kill ring
+"         • C-w: the text is prepended "
+"         • C-u: the text is prepended "
+"         • C-k: the text is appended  "
 "
 " Exceptions:
-" C-k + C-u = C-u
-" C-u + C-k = C-k
+" C-k + C-u  →  C-u (only the text killed by C-u goes into the top of the kill ring)
+" C-u + C-k  →  C-k ("                       C-k                                   )
 "
 " Basically, we should NOT concat 2 consecutive big kills.
 let s:last_kill_was_big  = 0
