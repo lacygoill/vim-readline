@@ -3,7 +3,25 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
-fu! readline#backward_kill_word(mode) abort "{{{1
+" Autocmds {{{1
+
+augroup my_granular_undo
+    au!
+    au InsertEnter   * let s:deleting = 0
+    au InsertCharPre * call s:break_undo_after_deletions(v:char)
+augroup END
+
+" Functions {{{1
+fu! readline#backward_char(mode) abort "{{{2
+    let s:concat_next_kill = 0
+
+    " SPC + C-h = close wildmenu
+    return a:mode ==# 'i'
+    \?         "\<c-g>U\<left>"
+    \:         (wildmenumode() ? "\<space>\<c-h>" : '')."\<left>"
+endfu
+
+fu! readline#backward_kill_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
         call s:set_isk()
@@ -15,27 +33,196 @@ fu! readline#backward_kill_word(mode) abort "{{{1
         "              │            │         ┌ the cursor
         "            ┌─┤┌───────────┤┌────────┤
         let pat = '\v\k*%(%(\k@!.)+)?%'.pos.'c'
+
+        let killed_text     = matchstr(line, pat)
+        let s:kill_ring_top = killed_text.(s:concat_next_kill ? s:kill_ring_top : '')
+        call s:set_concat_next_kill(a:mode, 0)
+
         " Do NOT feed "BS" directly, because sometimes it would delete too much text.
         " It may happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
         " Instead, feed "Left Del".
-        return repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>", strchars(matchstr(line, pat), 1))
+        return s:break_undo_before_deletions(a:mode)
+        \     .repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>",
+        \             strchars(killed_text, 1)
+        \            )
     catch
     finally
         let &l:isk = isk_save
     endtry
 endfu
 
-fu! s:get_line_pos(mode) abort "{{{1
-    let [ line, pos ] = a:mode ==# 'c'
-    \?                      [ getcmdline(), getcmdpos() ]
-    \:                      [ getline('.'), col('.') ]
-
-    return [ line, pos ]
+fu! readline#beginning_of_line(mode) abort "{{{2
+    let s:concat_next_kill = 0
+    return a:mode ==# 'c'
+    \?         "\<home>"
+    \:     col('.') >= match(getline('.'), '\S') + 1
+    \?         repeat("\<c-g>U\<left>", col('.') - match(getline('.'), '\S') - 1)
+    \:         repeat("\<c-g>U\<right>", match(getline('.'), '\S') - col('.') + 1)
 endfu
 
-fu! readline#insert_c_d() abort "{{{1
+fu! s:break_undo_after_deletions(char) abort "{{{2
+    if s:deleting
+        " To exclude  the first  inserted character from  the undo  sequence, we
+        " should call `feedkeys()` like this:
+        "
+        "         call feedkeys("\<bs>\<c-g>u".v:char, 'in')
+        " Why "\<bs>" ?{{{
+        "
+        " It  seems that  when InsertCharPre  occurs, v:char  is already  in the
+        " typeahead buffer. We  can change its  value but not insert  sth before
+        " it.   We need  to break  undo sequence  BEFORE `v:char`,  so that  the
+        " latter is part of the next edition.
+        " Thus, we delete it (BS), break undo (C-g u), then reinsert it (v:char).
+        "}}}
+        " Why pass the 'i' flag to feedkeys(…)?{{{
+        "
+        " Suppose we don't give 'i', and we have this mapping:
+        "                               ino abc def
+        "
+        " Then we write:                hello foo
+        " We delete foo with C-w:       hello
+        " If we type abc, we'll get:    hello ded
+        "
+        " Why ded and not def?
+        "
+        "   1. a b c                 keys which are typed initially
+        "
+        "   2. d e f                 expansion due to mapping
+        "
+        "                                    • the expansion occurs as soon as we type `c`
+        "
+        "                                    • InsertCharPre occurs right after `d` is written
+        "                                      into the typeahead buffer
+        "
+        "                                    • v:char is `d`, the 1st character to be inserted
+        "
+        "   3. d e f BS C-g u d      the 4 last keys are written by `feedkeys()`
+        "                            AT THE END of the typeahead buffer
+        "
+        "   4. d e d                 ✘
+        "
+        " The 4 last keys were added too late.
+        " The solution is to insert them at the beginning of the typeahead buffer,
+        " by giving the 'i' flag to feedkeys(…). The 3rd step then becomes:
+        "
+        "                     ┌ expansion of `abc`
+        "      ┌──────────────┤
+        "   3. d BS C-g u d e f
+        "        └────────┤
+        "                 └ inserted by our custom function when `InsertCharPre` occurs
+"}}}
+
+        " FIXME:
+        " But we won't try to exclude it:
+        call feedkeys("\<c-g>u", 'int')
+        " Why?{{{
+        "
+        " To be  sure that the  contents of a register  we put from  insert mode
+        " will never be altered.
+        "}}}
+        " When could it be altered?{{{
+        "
+        " If you delete  some text, with `C-w` for example,  then put a register
+        " whose contents is 'hello', you will insert 'hellh':
+        "
+        "         C-w C-r "
+        "                     → hellh
+        "                           ^✘
+        "}}}
+        " Why does it happen?{{{
+        "
+        " If you copy the text 'abc' in the unnamed register, then put it:
+        "
+        "         C-r "
+        "
+        " … it triggers 3 InsertCharPre:
+        "
+        "         • v:char = 'a'
+        "         • v:char = 'b'
+        "         • v:char = 'c'
+        "
+        " When the 1st one is triggered, and `feedkeys()` is invoked to add some
+        " keys in the typeahead buffer, they are inserted AFTER `bc`.
+        " This seems to indicate that when  you put a register, all its contents
+        " is  immediately written  in  the  typeahead buffer. The  InsertCharPre
+        " events are fired AFTERWARDS for each inserted character.
+        "
+        " We  can  still   reliably  change  any  inserted   key,  by  resetting
+        " `v:char`. The issue is specific to feedkeys().
+        " Unfortunately,  we have  to  use feedkeys(),  because  we can't  write
+        " special characters  in `v:char`,  like `BS` and  `C-g`; they  would be
+        " inserted literally.
+        "
+        " Watch:
+        " the goal being to replace any `a` with `x`:
+        "
+        "         augroup replace_a_with_x
+        "             au!
+        "             au InsertCharPre * call Func()
+        "         augroup END
+        "
+        "         fu! Func() abort
+        "             if v:char ==# 'a'
+        "                 " ✔
+        "                 " let v:char = 'x'
+        "                 " ✘ fails when putting a register containing `abc`
+        "                 " call feedkeys("\<bs>x", 'int')
+        "             endif
+        "         endfu
+        "}}}
+        let s:deleting = 0
+    endif
+endfu
+
+fu! s:break_undo_before_deletions(mode) abort "{{{2
+    if a:mode ==# 'c' || s:deleting
+        return ''
+    else
+        let s:deleting = 1
+        return "\<c-g>u"
+    endif
+endfu
+
+" Purpose:{{{
+"
+" By default, when we delete some words with C-w in insert mode, if we
+" escape to go in normal mode, realise it was a mistake, and hit u to undo,
+" we can't get back our deleted words because they are part of a single
+" edition. Thus, u and C-r can get us back before or after that single
+" edition, but not somewhere in the middle where our deleted words are.
+" To fix this, we define the following mappings which breaks the undo sequence:
+"
+"         • before we delete a word (C-w)
+"           to be able to recover the word
+"
+"         • before we delete the line (C-u)
+"           to be able to recover the line
+"
+"         • after a sequence of deletions (with C-w/C-u),
+"           followed by the insertion of a character,
+"           to be able to re-perform these deletions,
+"           useful if we want to get rid of the text we've inserted afterwards.
+"
+" Whenever we go into insert mode, we reset `s:deleting` to 0.
+" When it's 1, it means the last key pressed was C-w/C-u.
+" When it's 0, it means the last key pressed was something else.
+"}}}
+
+fu! readline#delete_char(mode) abort "{{{2
+    let s:concat_next_kill = 0
+    if a:mode ==# 'c'
+        " If the cursor is  at the end of the command line, we  want C-d to keep
+        " its normal behavior  which is to list names that  match the pattern in
+        " front of the cursor.  However, if it's  before the end, we want C-d to
+        " delete the character after it.
+        return getcmdpos() > strlen(getcmdline()) ? "\<c-d>" : "\<del>"
+    endif
+
+    " If the popup menu is visible, scroll a page down.
+    " If no menu, and we're BEFORE the end of the line,   delete next character.
+    " "                     AT the end of the line,       delete the newline.
     if pumvisible()
-        let l:key = repeat("\<c-n>", 5)
+        let l:key = repeat("\<c-n>", s:fast_scroll_in_pum)
 
     elseif col('.') <= strlen(getline('.'))
         let l:key = "\<del>"
@@ -47,7 +234,42 @@ fu! readline#insert_c_d() abort "{{{1
     return l:key
 endfu
 
-fu! readline#kill_word(mode) abort "{{{1
+fu! readline#end_of_line() abort "{{{2
+    let s:concat_next_kill = 0
+    return repeat("\<c-g>U\<right>", col('$') - col('.'))
+endfu
+
+fu! readline#forward_char(mode) abort "{{{2
+    let s:concat_next_kill = 0
+    return a:mode ==# 'c'
+    \?         "\<right>"
+    \:     col('.') > strlen(getline('.'))
+    \?         "\<c-f>"
+    \:         "\<c-g>U\<right>"
+    " Go the right if we're in the middle of the line (custom), or fix the
+    " indentation if we're at the end (default)
+endfu
+
+fu! s:get_line_pos(mode) abort "{{{2
+    let [ line, pos ] = a:mode ==# 'c'
+    \?                      [ getcmdline(), getcmdpos() ]
+    \:                      [ getline('.'), col('.') ]
+
+    return [ line, pos ]
+endfu
+
+fu! readline#kill_line(mode) abort "{{{2
+    let [ line, pos ] = s:get_line_pos(a:mode)
+
+    let killed_text     = matchstr(line, '.*\%'.pos.'c\zs.*')
+    let s:kill_ring_top = killed_text.(s:concat_next_kill ? s:kill_ring_top : '')
+    call s:set_concat_next_kill(a:mode, 1)
+
+    return s:break_undo_before_deletions(a:mode)
+    \     .repeat("\<del>", strchars(killed_text, 1))
+endfu
+
+fu! readline#kill_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
         call s:set_isk()
@@ -65,7 +287,11 @@ fu! readline#kill_word(mode) abort "{{{1
         "                               │         └───────── or the next word if we're outside of a word
         "                               └─────────────────── the rest of the word after the cursor
 
-    return repeat("\<del>", strchars(matchstr(line, pat), 1))
+        let killed_text     = matchstr(line, pat)
+        let s:kill_ring_top = (s:concat_next_kill ? s:kill_ring_top : '').killed_text
+        call s:set_concat_next_kill(a:mode, 0)
+
+        return s:break_undo_before_deletions(a:mode).repeat("\<del>", strchars(killed_text, 1))
 
     catch
     finally
@@ -73,7 +299,7 @@ fu! readline#kill_word(mode) abort "{{{1
     endtry
 endfu
 
-fu! readline#move_by_words(fwd, mode) abort "{{{1
+fu! readline#move_by_words(fwd, mode) abort "{{{2
 " NOTE:
 " Implementing this function was tricky, it has to handle:
 "
@@ -83,6 +309,7 @@ fu! readline#move_by_words(fwd, mode) abort "{{{1
 
     let isk_save = &l:isk
     try
+        let s:concat_next_kill = 0
         call s:set_isk()
 
         let [ line, pos ] = s:get_line_pos(a:mode)
@@ -131,7 +358,31 @@ fu! readline#move_by_words(fwd, mode) abort "{{{1
     return ''
 endfu
 
-fu! s:set_isk() abort "{{{1
+fu! s:set_concat_next_kill(mode, last_kill_was_big) abort "{{{2
+    let s:concat_next_kill  = s:last_kill_was_big ? 0 : 1
+    let s:last_kill_was_big = a:last_kill_was_big
+    if a:mode ==# 'c'
+        return
+    endif
+
+    " If we delete a multi-char text, then  move the cursor OR insert some text,
+    " then re-delete  a multi-char  text the  2 multi-char  texts should  NOT be
+    " concatenated.
+    "
+    " FIXME:
+    " We should make the autocmd listen  to CursorMovedI, but it would, wrongly,
+    " reset `s:concat_next_kill`  when we  delete a  2nd multi-char  text right
+    " after a 1st one.
+    augroup reset_concatenate_kills
+        au!
+        au InsertCharPre,InsertEnter,InsertLeave *
+        \      let s:concat_next_kill = 0
+        \|     exe 'au! reset_concatenate_kills'
+        \|     aug! reset_concatenate_kills
+    augroup END
+endfu
+
+fu! s:set_isk() abort "{{{2
     " readline doesn't consider `-`, `#`, `_` as part of a word,
     " contrary to Vim which may disagree for some of them.
     "
@@ -150,11 +401,12 @@ fu! s:set_isk() abort "{{{1
     setl isk=@,48-57,192-255
 endfu
 
-fu! readline#transpose_chars(mode) abort "{{{1
+fu! readline#transpose_chars(mode) abort "{{{2
     let [ pos, line ] = a:mode ==# 'i'
     \?                      [ col('.'), getline('.') ]
     \:                      [ getcmdpos(), getcmdline() ]
 
+    let s:concat_next_kill = 0
     if pos > strlen(line)
         " We use `matchstr()` because of potential multibyte characters.
         " Test on this:
@@ -174,9 +426,10 @@ fu! readline#transpose_chars(mode) abort "{{{1
     endif
 endfu
 
-fu! readline#transpose_words(mode) abort "{{{1
+fu! readline#transpose_words(mode) abort "{{{2
     let isk_save = &l:isk
     try
+        let s:concat_next_kill = 0
         call s:set_isk()
 
         let [ line, pos ] = s:get_line_pos(a:mode)
@@ -252,9 +505,35 @@ fu! readline#transpose_words(mode) abort "{{{1
     return ''
 endfu
 
-fu! readline#upcase_word(mode) abort "{{{1
+fu! readline#unix_line_discard(mode) abort "{{{2
+    if pumvisible()
+        return repeat("\<c-p>", s:fast_scroll_in_pum)
+    endif
+
+    let [ line, pos ] = s:get_line_pos(a:mode)
+
+    if a:mode ==# 'c'
+        call s:set_concat_next_kill(a:mode, 1)
+        let s:kill_ring_top = matchstr(line, '.*\%'.pos.'c').(s:concat_next_kill ? s:kill_ring_top : '')
+    else
+        let s:mode = a:mode
+        let s:before_cursor = matchstr(line, '.*\%'.pos.'c')
+        call timer_start(0, {-> execute('  let s:kill_ring_top = substitute(s:before_cursor,
+        \                                                                   matchstr(getline("."),
+        \                                                                            ".*\\%".col(".")."c"),
+        \                                                                   "", "")
+        \                                          .(s:concat_next_kill ? s:kill_ring_top : "")
+        \                                | call s:set_concat_next_kill(s:mode, 1)
+        \                               ')
+        \                   })
+    endif
+    return s:break_undo_before_deletions(a:mode)."\<c-u>"
+endfu
+
+fu! readline#upcase_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
+        let s:concat_next_kill = 0
         call s:set_isk()
 
         let [ line, pos ] = s:get_line_pos(a:mode)
@@ -289,3 +568,34 @@ fu! readline#upcase_word(mode) abort "{{{1
 
     return ''
 endfu
+fu! readline#yank() abort "{{{2
+    let s:concat_next_kill = 0
+    let @- = s:kill_ring_top
+    return "\<c-r>-"
+endfu
+
+" Variables {{{1
+
+" When we kill with:
+"
+"         • M-d: the text is appended
+"         • C-w: the text is prepended
+"         • C-u: the text is prepended
+"         • C-k: the text is appended
+"
+" Exceptions:
+" C-k + C-u = C-u
+" C-u + C-k = C-k
+"
+" Basically, we should NOT concat 2 consecutive big kills.
+let s:last_kill_was_big  = 0
+
+let s:concat_next_kill   = 0
+let s:fast_scroll_in_pum = 5
+let s:kill_ring_top      = ''
+
+" The autocmd will be installed the 1st time we use one of our mapping.
+" So, the first time we enter insert  mode, and press a custom mapping, it won't
+" have been installed, and `s:deleting` won't have been set yet.
+" But for our functions to work, it must exist no matter what.
+let s:deleting = 0

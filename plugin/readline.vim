@@ -62,61 +62,36 @@ let g:loaded_readline = 1
 " Use equivalence class in a search command
 "}}}
 
-" MAPPINGS {{{1
-
 " NOTE:
 " Most of these mappings take care of not breaking undo sequence (C-g U).
 " It means we can repeat an edition with the dot command, even if we use them.
 " If you add another mapping, try to not break undo sequence. Thanks.
 
+" MAPPINGS {{{1
 " CTRL {{{2
 " C-a        beginning-of-line {{{3
 
-cno <c-a>  <home>
-
-ino <expr> <c-a>  col('.') >= match(getline('.'), '\S') + 1
-\?                    repeat('<c-g>U<left>', col('.') - match(getline('.'), '\S') - 1)
-\:                    repeat('<c-g>U<right>', match(getline('.'), '\S') - col('.') + 1)
+cno <expr> <c-a> readline#beginning_of_line('c')
+ino <expr> <c-a> readline#beginning_of_line('i')
 
 " C-b        backward-char {{{3
 
-"                                     ┌─ close wildmenu
-"                                     │
-cno <expr> <c-b>  (wildmenumode() ? '<space><c-h>' : '').'<left>'
-
-ino <c-b> <c-g>U<left>
+cno <expr> <c-b>  readline#backward_char('c')
+ino <expr> <c-b>  readline#backward_char('i')
 
 " C-d        delete-char {{{3
 
-" If the cursor is at the end of the command line, we want C-d to keep its
-" normal behavior which is to list names that match the pattern in front of
-" the cursor.
-" However, if it's before the end, we want C-d to delete the character after
-" it.
-
-cno <expr> <c-d>  getcmdpos() > strlen(getcmdline()) ? '<c-d>' : '<Del>'
-
-" If the popup menu is visible, scroll a page down.
-" If no menu, and we're BEFORE the end of the line,   delete next character.
-" "                     AT the end of the line,       delete the newline.
-
-ino <expr> <c-d> readline#insert_c_d()
+cno <expr> <c-d> readline#delete_char('c')
+ino <expr> <c-d> readline#delete_char('i')
 
 " C-e        end-of-line {{{3
 
-" C-e should bring us to the end of the line, like in readline.
-ino <expr> <c-e>    repeat('<c-g>U<right>', col('$') - col('.'))
+ino <expr> <c-e>    readline#end_of_line()
 
 " C-f        forward-char {{{3
 
-cno <c-f>  <right>
-
-" Go the right if we're in the middle of the line (custom), or fix the
-" indentation if we're at the end (default)
-
-ino <expr> <c-f>  col('.') > strlen(getline('.'))
-\?                    '<c-f>'
-\:                    '<c-g>U<right>'
+cno <expr> <c-f> readline#forward_char('c')
+ino <expr> <c-f> readline#forward_char('i')
 
 " C-g        abort {{{3
 
@@ -124,8 +99,8 @@ cno <expr> <c-g>  '<c-c>'
 
 " C-k        kill-line {{{3
 
-cno <c-k>  <c-\>ematchstr(getcmdline(), '.*\%'.getcmdpos().'c')<cr>
-
+cno <expr> <c-k>      readline#kill_line('c')
+ino <expr> <c-k><c-k> readline#kill_line('i')
 " In insert mode, we want C-k to keep its original behavior (insert digraph).
 " It makes more sense than bind it to a `kill-line` function, because inserting
 " digraph is more frequent than killing a line.
@@ -133,7 +108,10 @@ cno <c-k>  <c-\>ematchstr(getcmdline(), '.*\%'.getcmdpos().'c')<cr>
 " But doing so, we lose the possibility to delete everything after the cursor.
 " To restore this functionality, we map it to C-k C-k.
 
-ino <silent> <c-k><c-k>  <c-r>=setline(line('.'), matchstr(getline('.'), '.*\%'.col('.').'c'))<cr><bs>
+" C-u        unix-line-discard {{{3
+
+cno <expr> <c-u>      readline#unix_line_discard('c')
+ino <expr> <c-u>      readline#unix_line_discard('i')
 
 " C-t        transpose-chars {{{3
 
@@ -144,6 +122,20 @@ ino <expr> <c-t> readline#transpose_chars('i')
 
 cno <expr> <c-w> readline#backward_kill_word('c')
 ino <expr> <c-w> readline#backward_kill_word('i')
+
+" C-y        yank {{{3
+
+" Whenever we delete some multi-character text, with:
+"
+"         • M-d
+"         • C-w
+"         • C-k
+"         • C-u
+"
+" … we should be able to paste it with C-y, like in readline.
+
+ino <expr> <c-y> readline#yank()
+cno <expr> <c-y> readline#yank()
 
 " META {{{2
 " M-b/f      forward-word backward-word {{{3
