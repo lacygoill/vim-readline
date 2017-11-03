@@ -513,8 +513,8 @@ fu! readline#unix_line_discard(mode) abort "{{{2
     let [ line, pos ] = s:get_line_pos(a:mode)
 
     if a:mode ==# 'c'
-        call s:set_concat_next_kill(a:mode, 1)
         let s:kill_ring_top = matchstr(line, '.*\%'.pos.'c').(s:concat_next_kill ? s:kill_ring_top : '')
+        call s:set_concat_next_kill(a:mode, 1)
     else
         let s:mode = a:mode
         let s:before_cursor = matchstr(line, '.*\%'.pos.'c')
