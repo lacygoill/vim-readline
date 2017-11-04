@@ -242,7 +242,7 @@ endfu
 fu! readline#forward_char(mode) abort "{{{2
     let s:concat_next_kill = 0
     return a:mode ==# 'c'
-    \?         "\<right>"
+    \?        (wildmenumode() ? "\<space>\<c-h>" : '')."\<right>"
     \:     col('.') > strlen(getline('.'))
     \?         "\<c-f>"
     \:         "\<c-g>U\<right>"
