@@ -27,6 +27,9 @@ fu! s:add_to_kill_ring(text, after, mode) abort "{{{2
             if len(s:kill_ring_{a:mode}) > 10
                 call remove(s:kill_ring_{a:mode}, 0, len(s:kill_ring_{a:mode}) - 9)
             endif
+            " before adding  sth in  the kill-ring,  check whether  it's already
+            " there, and if it is, remove it
+            call filter(s:kill_ring_{a:mode}, 'v:val !=# a:text')
             call add(s:kill_ring_{a:mode}, a:text)
         endif
     endif
