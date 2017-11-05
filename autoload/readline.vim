@@ -544,8 +544,8 @@ fu! readline#unix_line_discard(mode) abort "{{{2
         call timer_start(0, {-> execute('  call s:add_to_kill_ring(substitute(s:before_cursor,
         \                                                                     matchstr(getline("."),
         \                                                                              ".*\\%".col(".")."c"),
-        \                                                                     "", ""), 1, '.a:mode.')
-        \                                | call s:set_concat_next_kill('.a:mode.', 1)
+        \                                                                     "", ""), 1, '.string(a:mode).')
+        \                                | call s:set_concat_next_kill('.string(a:mode).', 1)
         \                               ')
         \                   })
     endif
