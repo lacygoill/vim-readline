@@ -537,13 +537,12 @@ fu! readline#unix_line_discard(mode) abort "{{{2
         call s:add_to_kill_ring(matchstr(line, '.*\%'.pos.'c'), 0, a:mode)
         call s:set_concat_next_kill(a:mode, 1)
     else
-        let s:mode = a:mode
         let s:before_cursor = matchstr(line, '.*\%'.pos.'c')
         call timer_start(0, {-> execute('  call s:add_to_kill_ring(substitute(s:before_cursor,
         \                                                                     matchstr(getline("."),
         \                                                                              ".*\\%".col(".")."c"),
-        \                                                                     "", ""), 1, s:mode)
-        \                                | call s:set_concat_next_kill(s:mode, 1)
+        \                                                                     "", ""), 1, '.a:mode.')
+        \                                | call s:set_concat_next_kill('.a:mode.', 1)
         \                               ')
         \                   })
     endif
