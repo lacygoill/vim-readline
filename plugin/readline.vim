@@ -68,9 +68,6 @@ let g:loaded_readline = 1
 " It means we can repeat an edition with the dot command, even if we use them.
 " If you add another mapping, try to not break undo sequence. Thanks.
 "}}}
-" Avoid `C-\ e` and `C-r =`{{{
-" They make us enter on the command line which may wrongly reset the kill-ring.
-"}}}
 " CTRL {{{2
 " C-a        beginning-of-line {{{3
 

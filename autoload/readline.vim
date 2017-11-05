@@ -11,22 +11,23 @@ augroup my_granular_undo
     au InsertCharPre            * call s:break_undo_after_deletions(v:char)
 augroup END
 
-augroup my_reset_kill_ring
-    au!
-    au CmdlineLeave,InsertLeave * let s:kill_ring = ['']
-augroup END
-
 " Functions {{{1
-fu! s:add_to_kill_ring(text, after) abort "{{{2
+fu! s:add_to_kill_ring(text, after, mode) abort "{{{2
     if s:concat_next_kill
-        let s:kill_ring[-1] = a:after
-        \?                        s:kill_ring[-1].a:text
-        \:                        a:text.s:kill_ring[-1]
+        let s:kill_ring_{a:mode}[-1] = a:after
+        \?                        s:kill_ring_{a:mode}[-1].a:text
+        \:                        a:text.s:kill_ring_{a:mode}[-1]
     else
-        if s:kill_ring == [ '' ]
-            let s:kill_ring = [ a:text ]
+        if s:kill_ring_{a:mode} == [ '' ]
+            let s:kill_ring_{a:mode} = [ a:text ]
         else
-            call add(s:kill_ring, a:text)
+            " the kill ring  is never reset in readline; we  should not reset it
+            " either but I don't like letting it  grow too much, so we keep only
+            " the last 10 killed text
+            if len(s:kill_ring_{a:mode}) > 10
+                call remove(s:kill_ring_{a:mode}, 0, len(s:kill_ring_{a:mode}) - 9)
+            endif
+            call add(s:kill_ring_{a:mode}, a:text)
         endif
     endif
 endfu
@@ -55,7 +56,7 @@ fu! readline#backward_kill_word(mode) abort "{{{2
 
         let killed_text = matchstr(line, pat)
 
-        call s:add_to_kill_ring(killed_text, 0)
+        call s:add_to_kill_ring(killed_text, 0, a:mode)
         call s:set_concat_next_kill(a:mode, 0)
 
         " Do NOT feed "BS" directly, because sometimes it would delete too much text.
@@ -283,7 +284,7 @@ fu! readline#kill_line(mode) abort "{{{2
     let [ line, pos ] = s:get_line_pos(a:mode)
 
     let killed_text     = matchstr(line, '.*\%'.pos.'c\zs.*')
-    call s:add_to_kill_ring(killed_text, 0)
+    call s:add_to_kill_ring(killed_text, 0, a:mode)
     call s:set_concat_next_kill(a:mode, 1)
 
     return s:break_undo_before_deletions(a:mode)
@@ -309,7 +310,7 @@ fu! readline#kill_word(mode) abort "{{{2
         "                               └─────────────────── the rest of the word after the cursor
 
         let killed_text     = matchstr(line, pat)
-        call s:add_to_kill_ring(killed_text, 1)
+        call s:add_to_kill_ring(killed_text, 1, a:mode)
         call s:set_concat_next_kill(a:mode, 0)
 
         return s:break_undo_before_deletions(a:mode).repeat("\<del>", strchars(killed_text, 1))
@@ -533,7 +534,7 @@ fu! readline#unix_line_discard(mode) abort "{{{2
     let [ line, pos ] = s:get_line_pos(a:mode)
 
     if a:mode ==# 'c'
-        call s:add_to_kill_ring(matchstr(line, '.*\%'.pos.'c'), 0)
+        call s:add_to_kill_ring(matchstr(line, '.*\%'.pos.'c'), 0, a:mode)
         call s:set_concat_next_kill(a:mode, 1)
     else
         let s:mode = a:mode
@@ -541,7 +542,7 @@ fu! readline#unix_line_discard(mode) abort "{{{2
         call timer_start(0, {-> execute('  call s:add_to_kill_ring(substitute(s:before_cursor,
         \                                                                     matchstr(getline("."),
         \                                                                              ".*\\%".col(".")."c"),
-        \                                                                     "", ""), 1)
+        \                                                                     "", ""), 1, s:mode)
         \                                | call s:set_concat_next_kill(s:mode, 1)
         \                               ')
         \                   })
@@ -591,11 +592,11 @@ endfu
 
 fu! readline#yank(pop, mode) abort "{{{2
     if a:pop
-        let length = strchars(s:kill_ring[-1], 1)
-        call insert(s:kill_ring, remove(s:kill_ring, -1), 0)
+        let length = strchars(s:kill_ring_{a:mode}[-1], 1)
+        call insert(s:kill_ring_{a:mode}, remove(s:kill_ring_{a:mode}, -1), 0)
     endif
     let s:concat_next_kill = 0
-    let @- = s:kill_ring[-1]
+    let @- = s:kill_ring_{a:mode}[-1]
     return (a:pop
     \       ?    repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>", length)
     \       :    '')
@@ -620,7 +621,8 @@ let s:last_kill_was_big  = 0
 
 let s:concat_next_kill   = 0
 let s:fast_scroll_in_pum = 5
-let s:kill_ring          = ['']
+let s:kill_ring_i        = ['']
+let s:kill_ring_c        = ['']
 
 " The autocmd will be installed the 1st time we use one of our mapping.
 " So, the first time we enter insert  mode, and press a custom mapping, it won't
