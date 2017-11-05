@@ -3,6 +3,18 @@ if exists('g:loaded_readline')
 endif
 let g:loaded_readline = 1
 
+" TODO: Try to implement these:{{{
+"
+"     • yank-nth-arg                     M-C-y
+"     • set-mark                         C-@
+"     • exchange-point-and-mark          C-x C-x
+"     • downcase-word                    M-l
+"     • capitalize-word                  M-c
+"
+" Source:
+"     https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
+"     https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
+"}}}
 " FIXME: 3 issues with terminal Vim atm:{{{
 "
 "         • M-a inserts â in terminal gVim (same thing for other M-…)
