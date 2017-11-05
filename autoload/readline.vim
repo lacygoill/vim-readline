@@ -15,8 +15,8 @@ augroup END
 fu! s:add_to_kill_ring(text, after, mode) abort "{{{2
     if s:concat_next_kill
         let s:kill_ring_{a:mode}[-1] = a:after
-        \?                        s:kill_ring_{a:mode}[-1].a:text
-        \:                        a:text.s:kill_ring_{a:mode}[-1]
+        \?                                 s:kill_ring_{a:mode}[-1].a:text
+        \:                                 a:text.s:kill_ring_{a:mode}[-1]
     else
         if s:kill_ring_{a:mode} == [ '' ]
             let s:kill_ring_{a:mode} = [ a:text ]
