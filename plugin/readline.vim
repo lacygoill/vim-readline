@@ -61,13 +61,16 @@ let g:loaded_readline = 1
 "
 " Use equivalence class in a search command
 "}}}
-
-" NOTE:
+" MAPPINGS {{{1
+" Try to always preserve breaking undo sequence.{{{
+"
 " Most of these mappings take care of not breaking undo sequence (C-g U).
 " It means we can repeat an edition with the dot command, even if we use them.
 " If you add another mapping, try to not break undo sequence. Thanks.
-
-" MAPPINGS {{{1
+"}}}
+" Avoid `C-\ e` and `C-r =`{{{
+" They make us enter on the command line which may wrongly reset the kill-ring.
+"}}}
 " CTRL {{{2
 " C-a        beginning-of-line {{{3
 
@@ -134,8 +137,8 @@ ino <expr> <c-w> readline#backward_kill_word('i')
 "
 " … we should be able to paste it with C-y, like in readline.
 
-ino <expr> <c-y> readline#yank()
-cno <expr> <c-y> readline#yank()
+ino <expr> <c-y> readline#yank(0, 'i')
+cno <expr> <c-y> readline#yank(0, 'c')
 
 " META {{{2
 " M-b/f      forward-word backward-word {{{3
@@ -181,19 +184,24 @@ cno <m-p> <up>
 
 " M-t        transpose-words {{{3
 
-cno            <m-t>                    <c-\>ereadline#transpose_words('c')<cr>
-ino <silent>   <m-t>                    <c-r>=readline#transpose_words('i')<cr>
+cno <expr>     <m-t>                    readline#transpose_words('c')
+ino <expr>     <m-t>                    readline#transpose_words('i')
 
 nmap           <m-t>                    <plug>(transpose_words)
 nno  <silent>  <plug>(transpose_words)  :<c-u>exe readline#transpose_words('n')<cr>
 
 " M-u        upcase-word {{{3
 
-cno           <m-u>                <c-\>ereadline#upcase_word('c')<cr>
-ino  <silent> <m-u>                <c-r>=readline#upcase_word('i')<cr>
+cno  <expr>   <m-u>                readline#upcase_word('c')
+ino  <expr>   <m-u>                readline#upcase_word('i')
 
 nmap <silent> <m-u>                <plug>(upcase_word)
 nno  <silent> <plug>(upcase_word)  :<c-u>exe readline#upcase_word('n')<cr>
+
+" M-y        yank-pop {{{3
+
+cno  <expr>   <m-y>    readline#yank(1, 'c')
+ino  <expr>   <m-y>    readline#yank(1, 'i')
 
 " OPTIONS {{{1
 
@@ -294,6 +302,7 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-t>=\et"
         exe "set <m-u>=\eu"
         exe "set <m-v>=\ev"
+        exe "set <m-y>=\ey"
     else
         exe "set <m-a>="
         exe "set <m-b>="
@@ -307,6 +316,7 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-t>="
         exe "set <m-u>="
         exe "set <m-v>="
+        exe "set <m-y>="
     endif
 endfu
 call s:set_keysyms(1)

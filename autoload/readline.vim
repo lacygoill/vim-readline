@@ -7,11 +7,30 @@ let g:autoloaded_readline = 1
 
 augroup my_granular_undo
     au!
-    au InsertEnter   * let s:deleting = 0
-    au InsertCharPre * call s:break_undo_after_deletions(v:char)
+    au InsertEnter              * let s:deleting = 0
+    au InsertCharPre            * call s:break_undo_after_deletions(v:char)
+augroup END
+
+augroup my_reset_kill_ring
+    au!
+    au CmdlineLeave,InsertLeave * let s:kill_ring = ['']
 augroup END
 
 " Functions {{{1
+fu! s:add_to_kill_ring(text, after) abort "{{{2
+    if s:concat_next_kill
+        let s:kill_ring[-1] = a:after
+        \?                        s:kill_ring[-1].a:text
+        \:                        a:text.s:kill_ring[-1]
+    else
+        if s:kill_ring == [ '' ]
+            let s:kill_ring = [ a:text ]
+        else
+            call add(s:kill_ring, a:text)
+        endif
+    endif
+endfu
+
 fu! readline#backward_char(mode) abort "{{{2
     let s:concat_next_kill = 0
 
@@ -34,8 +53,9 @@ fu! readline#backward_kill_word(mode) abort "{{{2
         "            ┌─┤┌───────────┤┌────────┤
         let pat = '\v\k*%(%(\k@!.)+)?%'.pos.'c'
 
-        let killed_text     = matchstr(line, pat)
-        let s:kill_ring_top = killed_text.(s:concat_next_kill ? s:kill_ring_top : '')
+        let killed_text = matchstr(line, pat)
+
+        call s:add_to_kill_ring(killed_text, 0)
         call s:set_concat_next_kill(a:mode, 0)
 
         " Do NOT feed "BS" directly, because sometimes it would delete too much text.
@@ -49,6 +69,7 @@ fu! readline#backward_kill_word(mode) abort "{{{2
     finally
         let &l:isk = isk_save
     endtry
+    return ''
 endfu
 
 fu! readline#beginning_of_line(mode) abort "{{{2
@@ -262,7 +283,7 @@ fu! readline#kill_line(mode) abort "{{{2
     let [ line, pos ] = s:get_line_pos(a:mode)
 
     let killed_text     = matchstr(line, '.*\%'.pos.'c\zs.*')
-    let s:kill_ring_top = killed_text.(s:concat_next_kill ? s:kill_ring_top : '')
+    call s:add_to_kill_ring(killed_text, 0)
     call s:set_concat_next_kill(a:mode, 1)
 
     return s:break_undo_before_deletions(a:mode)
@@ -288,7 +309,7 @@ fu! readline#kill_word(mode) abort "{{{2
         "                               └─────────────────── the rest of the word after the cursor
 
         let killed_text     = matchstr(line, pat)
-        let s:kill_ring_top = (s:concat_next_kill ? s:kill_ring_top : '').killed_text
+        call s:add_to_kill_ring(killed_text, 1)
         call s:set_concat_next_kill(a:mode, 0)
 
         return s:break_undo_before_deletions(a:mode).repeat("\<del>", strchars(killed_text, 1))
@@ -297,6 +318,7 @@ fu! readline#kill_word(mode) abort "{{{2
     finally
         let &l:isk = isk_save
     endtry
+    return ''
 endfu
 
 fu! readline#move_by_words(fwd, mode) abort "{{{2
@@ -479,25 +501,23 @@ fu! readline#transpose_words(mode) abort "{{{2
         " final pattern
         let pat = not_on_first.not_before.pat.not_after
 
-        let new_pos  = match(line, pat.'\zs')+1
+        let new_pos  = match(line, pat.'\zs')
         let rep      = '\3\2\1'
         let new_line = substitute(line, pat, rep, '')
 
         if a:mode ==# 'c'
-            call setcmdpos(new_pos)
-            return new_line
+            call timer_start(0, {-> feedkeys("\<c-e>\<c-u>"
+            \                                .new_line
+            \                                ."\<c-b>".repeat("\<right>", new_pos), 'int')})
         else
-            call setline(line('.'), new_line)
-            call cursor(line('.'), new_pos)
+            call timer_start(0, {-> setline(line('.'), new_line) || cursor(line('.'), new_pos+1)})
             if a:mode ==# 'n'
                 sil! call repeat#set("\<plug>(transpose_words)")
             endif
-            return ''
         endif
 
     catch
         return 'echoerr '.string(v:exception)
-
     finally
         let &l:isk = isk_save
     endtry
@@ -513,16 +533,15 @@ fu! readline#unix_line_discard(mode) abort "{{{2
     let [ line, pos ] = s:get_line_pos(a:mode)
 
     if a:mode ==# 'c'
-        let s:kill_ring_top = matchstr(line, '.*\%'.pos.'c').(s:concat_next_kill ? s:kill_ring_top : '')
+        call s:add_to_kill_ring(matchstr(line, '.*\%'.pos.'c'), 0)
         call s:set_concat_next_kill(a:mode, 1)
     else
         let s:mode = a:mode
         let s:before_cursor = matchstr(line, '.*\%'.pos.'c')
-        call timer_start(0, {-> execute('  let s:kill_ring_top = substitute(s:before_cursor,
-        \                                                                   matchstr(getline("."),
-        \                                                                            ".*\\%".col(".")."c"),
-        \                                                                   "", "")
-        \                                          .(s:concat_next_kill ? s:kill_ring_top : "")
+        call timer_start(0, {-> execute('  call s:add_to_kill_ring(substitute(s:before_cursor,
+        \                                                                     matchstr(getline("."),
+        \                                                                              ".*\\%".col(".")."c"),
+        \                                                                     "", ""), 1)
         \                                | call s:set_concat_next_kill(s:mode, 1)
         \                               ')
         \                   })
@@ -538,23 +557,24 @@ fu! readline#upcase_word(mode) abort "{{{2
 
         let [ line, pos ] = s:get_line_pos(a:mode)
 
-        let pat      = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
-        let new_line = substitute(line, pat, '\U\0', '')
-        let new_pos  = match(line, pat.'\zs') + 1
+        let pat    = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
+        let word   = matchstr(line, pat)
+        let length = strchars(word, 1)
 
         if a:mode ==# 'c'
-            call setcmdpos(new_pos)
             if pos > strlen(line)
-                return line
+                return ''
             else
-                return new_line
+                return repeat("\<del>", length).toupper(word)
             endif
-        else
+        elseif a:mode ==# 'i'
+            return repeat("\<del>", length).toupper(word)
+        elseif a:mode ==# 'n'
+            let new_line = substitute(line, pat, '\U\0', '')
+            let new_pos  = match(line, pat.'\zs') + 1
             call setline(line('.'), new_line)
             call cursor(line('.'), new_pos)
-            if a:mode ==# 'n'
-                sil! call repeat#set("\<plug>(upcase_word)")
-            endif
+            sil! call repeat#set("\<plug>(upcase_word)")
             return ''
         endif
 
@@ -568,10 +588,18 @@ fu! readline#upcase_word(mode) abort "{{{2
 
     return ''
 endfu
-fu! readline#yank() abort "{{{2
+
+fu! readline#yank(pop, mode) abort "{{{2
+    if a:pop
+        let length = strchars(s:kill_ring[-1], 1)
+        call insert(s:kill_ring, remove(s:kill_ring, -1), 0)
+    endif
     let s:concat_next_kill = 0
-    let @- = s:kill_ring_top
-    return "\<c-r>-"
+    let @- = s:kill_ring[-1]
+    return (a:pop
+    \       ?    repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>", length)
+    \       :    '')
+    \       ."\<c-r>-"
 endfu
 
 " Variables {{{1
@@ -592,7 +620,7 @@ let s:last_kill_was_big  = 0
 
 let s:concat_next_kill   = 0
 let s:fast_scroll_in_pum = 5
-let s:kill_ring_top      = ''
+let s:kill_ring          = ['']
 
 " The autocmd will be installed the 1st time we use one of our mapping.
 " So, the first time we enter insert  mode, and press a custom mapping, it won't
