@@ -38,7 +38,7 @@ let g:loaded_readline = 1
 "                    zmodload zsh/complist
 "                    bindkey -M menuselect '^J' down-line-or-history
 "}}}
-" FIXME: Can't insert â î ô  {{{
+" FIXME: Can't insert ù â î ô  {{{
 "
 " A mapping using a meta key prevents the insertion of some special characters
 " for example:
@@ -73,6 +73,17 @@ let g:loaded_readline = 1
 "
 " Use equivalence class in a search command
 "}}}
+" WARNING: {{{1
+" Vim doesn't seem able to distinguish `M-y` from ù.
+" So, when  you type `ù`  in insert mode, instead  of inserting `ù`,  you will
+" invoke `yank()`. If this becomes an issue:
+"
+"         • install abbreviation for every word containing `ù`
+"         • insert `ù` literally
+"         • remove this mapping
+"         • install a digraph
+"         • switch to neovim
+
 " MAPPINGS {{{1
 " Try to always preserve breaking undo sequence.{{{
 "
