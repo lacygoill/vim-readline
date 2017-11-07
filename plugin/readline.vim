@@ -131,15 +131,15 @@ ino <expr> <c-k><c-k> readline#kill_line('i')
 " But doing so, we lose the possibility to delete everything after the cursor.
 " To restore this functionality, we map it to C-k C-k.
 
-" C-u        unix-line-discard {{{3
-
-cno <expr> <c-u>      readline#unix_line_discard('c')
-ino <expr> <c-u>      readline#unix_line_discard('i')
-
 " C-t        transpose-chars {{{3
 
 cno <expr> <c-t> readline#transpose_chars('c')
 ino <expr> <c-t> readline#transpose_chars('i')
+
+" C-u        unix-line-discard {{{3
+
+cno <expr> <c-u>      readline#unix_line_discard('c')
+ino <expr> <c-u>      readline#unix_line_discard('i')
 
 " C-w        backward-kill-word {{{3
 
