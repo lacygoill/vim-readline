@@ -510,9 +510,9 @@ fu! readline#transpose_words(mode) abort "{{{2
         let new_line = substitute(line, pat, rep, '')
 
         if a:mode ==# 'c'
-            call timer_start(0, {-> feedkeys("\<c-e>\<c-u>"
-            \                                .new_line
-            \                                ."\<c-b>".repeat("\<right>", new_pos), 'int')})
+            return "\<c-e>\<c-u>"
+            \     .new_line
+            \     ."\<c-b>".repeat("\<right>", new_pos)
         else
             call timer_start(0, {-> setline(line('.'), new_line) || cursor(line('.'), new_pos+1)})
             if a:mode ==# 'n'
