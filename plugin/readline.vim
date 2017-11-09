@@ -5,7 +5,9 @@ let g:loaded_readline = 1
 
 " TODO: Try to implement these:{{{
 "
-"     • undo                             C-x C-u
+"                                                    ┌ easier to type
+"                                                  ┌─┤
+"     • undo                             C-x C-u / C-_
 "     • yank-nth-arg                     M-C-y
 "     • set-mark                         C-@
 "     • exchange-point-and-mark          C-x C-x
