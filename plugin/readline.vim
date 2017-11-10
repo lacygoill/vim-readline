@@ -167,8 +167,8 @@ ino <expr> <c-w> readline#backward_kill_word('i')
 "
 " … we should be able to paste it with C-y, like in readline.
 
-ino <expr> <c-y> readline#yank(0, 'i')
-cno <expr> <c-y> readline#yank(0, 'c')
+ino <expr> <c-y> readline#yank('i', 0)
+cno <expr> <c-y> readline#yank('c', 0)
 
 " META {{{2
 " M-b/f      forward-word backward-word {{{3
@@ -183,11 +183,11 @@ cno <expr> <c-y> readline#yank(0, 'c')
 
 "                                    ┌─  close wildmenu
 "                                    │
-cno <expr> <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words(0, 'c')
-cno <expr> <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words(1, 'c')
+cno <expr> <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0)
+cno <expr> <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1)
 
-ino <expr> <m-b> readline#move_by_words(0, 'i')
-ino <expr> <m-f> readline#move_by_words(1, 'i')
+ino <expr> <m-b> readline#move_by_words('i', 0)
+ino <expr> <m-f> readline#move_by_words('i', 1)
 
 " M-d        kill-word {{{3
 
@@ -230,8 +230,8 @@ nno  <silent> <plug>(upcase_word)  :<c-u>exe readline#upcase_word('n')<cr>
 
 " M-y        yank-pop {{{3
 
-cno  <expr>   <m-y>    readline#yank(1, 'c')
-ino  <expr>   <m-y>    readline#yank(1, 'i')
+cno  <expr>   <m-y>    readline#yank('c', 1)
+ino  <expr>   <m-y>    readline#yank('i', 1)
 
 " OPTIONS {{{1
 

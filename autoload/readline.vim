@@ -12,7 +12,7 @@ augroup my_granular_undo
 augroup END
 
 " Functions {{{1
-fu! s:add_to_kill_ring(text, after, mode, this_kill_is_big) abort "{{{2
+fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
     if s:concat_next_kill
         let s:kill_ring_{a:mode}[-1] = a:after
         \?                                 s:kill_ring_{a:mode}[-1].a:text
@@ -36,7 +36,7 @@ fu! s:add_to_kill_ring(text, after, mode, this_kill_is_big) abort "{{{2
     call s:set_concat_next_kill(a:mode, a:this_kill_is_big)
 endfu
 
-fu! s:add_to_undolist(line, pos, mode) abort "{{{2
+fu! s:add_to_undolist(mode, line, pos) abort "{{{2
     let s:undolist_{a:mode} += [[ a:line,
     \                             len(split(matchstr(a:line, '.*\%'.a:pos.'c'), '\zs')) ]]
 endfu
@@ -68,7 +68,7 @@ fu! readline#backward_kill_word(mode) abort "{{{2
         let pat = '\v\k*%(%(\k@!.)+)?%'.pos.'c'
 
         let killed_text = matchstr(line, pat)
-        call s:add_to_kill_ring(killed_text, 0, a:mode, 0)
+        call s:add_to_kill_ring(a:mode, killed_text, 0, 0)
 
         " Do NOT feed "BS" directly, because sometimes it would delete too much text.
         " It may happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
@@ -291,7 +291,7 @@ fu! s:get_line_pos(mode, add_to_undolist) abort "{{{2
     \:                      [ getline('.'), col('.') ]
 
     if a:add_to_undolist
-        call s:add_to_undolist(line, pos, a:mode)
+        call s:add_to_undolist(a:mode, line, pos)
     endif
 
     return [ line, pos ]
@@ -301,7 +301,7 @@ fu! readline#kill_line(mode) abort "{{{2
     let [ line, pos ] = s:get_line_pos(a:mode, 1)
 
     let killed_text = matchstr(line, '.*\%'.pos.'c\zs.*')
-    call s:add_to_kill_ring(killed_text, 0, a:mode, 1)
+    call s:add_to_kill_ring(a:mode, killed_text, 0, 1)
 
     return s:break_undo_before_deletions(a:mode)
     \     .repeat("\<del>", strchars(killed_text, 1))
@@ -325,7 +325,7 @@ fu! readline#kill_word(mode) abort "{{{2
         "                               └─────────────────── the rest of the word after the cursor
 
         let killed_text = matchstr(line, pat)
-        call s:add_to_kill_ring(killed_text, 1, a:mode, 0)
+        call s:add_to_kill_ring(a:mode, killed_text, 1, 0)
 
         return s:break_undo_before_deletions(a:mode).repeat("\<del>", strchars(killed_text, 1))
 
@@ -336,7 +336,7 @@ fu! readline#kill_word(mode) abort "{{{2
     return ''
 endfu
 
-fu! readline#move_by_words(fwd, mode) abort "{{{2
+fu! readline#move_by_words(mode, fwd) abort "{{{2
 " NOTE:
 " Implementing this function was tricky, it has to handle:
 "
@@ -442,7 +442,7 @@ fu! readline#transpose_chars(mode) abort "{{{2
     \?                      [ col('.'), getline('.') ]
     \:                      [ getcmdpos(), getcmdline() ]
 
-    call s:add_to_undolist(line, pos, a:mode)
+    call s:add_to_undolist(a:mode, line, pos)
 
     let s:concat_next_kill = 0
     if pos > strlen(line)
@@ -565,14 +565,15 @@ fu! readline#unix_line_discard(mode) abort "{{{2
     let [ line, pos ] = s:get_line_pos(a:mode, 1)
 
     if a:mode ==# 'c'
-        call s:add_to_kill_ring(matchstr(line, '.*\%'.pos.'c'), 0, a:mode, 1)
+        call s:add_to_kill_ring(a:mode, matchstr(line, '.*\%'.pos.'c'), 0, 1)
     else
         let s:before_cursor = matchstr(line, '.*\%'.pos.'c')
-        call timer_start(0, {-> execute('  call s:add_to_kill_ring(substitute(s:before_cursor,
-        \                                                                     matchstr(getline("."),
-        \                                                                              ".*\\%".col(".")."c"),
-        \                                                                     "", ""), 1, '.string(a:mode).', 1)
-        \                               ')
+        call timer_start(0, {-> s:add_to_kill_ring(a:mode,
+        \                                          substitute(s:before_cursor,
+        \                                                     matchstr(getline("."),
+        \                                                              ".*\\%".col(".")."c"),
+        \                                                     "", ""),
+        \                                          1, 1)
         \                   })
     endif
     return s:break_undo_before_deletions(a:mode)."\<c-u>"
@@ -617,7 +618,7 @@ fu! readline#upcase_word(mode) abort "{{{2
     return ''
 endfu
 
-fu! readline#yank(pop, mode) abort "{{{2
+fu! readline#yank(mode, pop) abort "{{{2
     let [ line, pos ] = s:get_line_pos(a:mode, 1)
     if a:pop
         let length = strchars(s:kill_ring_{a:mode}[-1], 1)
