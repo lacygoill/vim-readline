@@ -438,11 +438,7 @@ fu! s:set_isk() abort "{{{2
 endfu
 
 fu! readline#transpose_chars(mode) abort "{{{2
-    let [ pos, line ] = a:mode ==# 'i'
-    \?                      [ col('.'), getline('.') ]
-    \:                      [ getcmdpos(), getcmdline() ]
-
-    call s:add_to_undolist(a:mode, line, pos)
+    let [ line, pos ] = s:get_line_pos(a:mode, 1)
 
     let s:concat_next_kill = 0
     if pos > strlen(line)
