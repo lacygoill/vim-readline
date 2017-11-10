@@ -556,9 +556,15 @@ fu! readline#undo(mode) abort "{{{2
     endif
     let [ old_line, old_pos ] = remove(s:undolist_{a:mode}, -1)
 
-    return "\<c-e>\<c-u>"
+    return a:mode ==# 'c'
+    \?     "\<c-e>\<c-u>"
     \     .old_line."\<c-b>"
     \     .repeat("\<right>", old_pos)
+    \
+    \:    "\<c-o>\<end>\<c-u>".(empty(matchstr(getline('.'), '^\s\+')) ? '' : "\<c-u>")
+    \    .old_line."\<c-o>\<home>"
+    \    .repeat("\<right>", old_pos)
+    endif
 endfu
 
 fu! readline#unix_line_discard(mode) abort "{{{2
