@@ -50,18 +50,16 @@ fu! readline#backward_char(mode) abort "{{{2
 endfu
 
 fu! readline#backward_delete_char(mode) abort "{{{2
-    let [line, pos] = s:get_line_pos(a:mode)
-    call s:add_to_undolist(line, pos, a:mode)
+    let [line, pos] = s:get_line_pos(a:mode, 1)
     return "\<c-h>"
 endfu
 
 fu! readline#backward_kill_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
+        let [ line, pos ] = s:get_line_pos(a:mode, 1)
+
         call s:set_isk()
-
-        let [ line, pos ] = s:get_line_pos(a:mode)
-
         "              ┌ word before cursor
         "              │            ┌ there may be some non-word text between the word and the cursor
         "              │            │         ┌ the cursor
@@ -69,10 +67,8 @@ fu! readline#backward_kill_word(mode) abort "{{{2
         let pat = '\v\k*%(%(\k@!.)+)?%'.pos.'c'
 
         let killed_text = matchstr(line, pat)
-
         call s:add_to_kill_ring(killed_text, 0, a:mode)
         call s:set_concat_next_kill(a:mode, 0)
-        call s:add_to_undolist(line, pos, a:mode)
 
         " Do NOT feed "BS" directly, because sometimes it would delete too much text.
         " It may happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
@@ -247,8 +243,7 @@ endfu
 
 fu! readline#delete_char(mode) abort "{{{2
     let s:concat_next_kill = 0
-    let [line, pos] = s:get_line_pos(a:mode)
-    call s:add_to_undolist(line, pos, a:mode)
+    let [line, pos] = s:get_line_pos(a:mode, 1)
 
     if a:mode ==# 'c'
         " If the cursor is  at the end of the command line, we  want C-d to keep
@@ -290,21 +285,24 @@ fu! readline#forward_char(mode) abort "{{{2
     " indentation if we're at the end (default)
 endfu
 
-fu! s:get_line_pos(mode) abort "{{{2
+fu! s:get_line_pos(mode, add_to_undolist) abort "{{{2
     let [ line, pos ] = a:mode ==# 'c'
     \?                      [ getcmdline(), getcmdpos() ]
     \:                      [ getline('.'), col('.') ]
+
+    if a:add_to_undolist
+        call s:add_to_undolist(line, pos, a:mode)
+    endif
 
     return [ line, pos ]
 endfu
 
 fu! readline#kill_line(mode) abort "{{{2
-    let [ line, pos ] = s:get_line_pos(a:mode)
+    let [ line, pos ] = s:get_line_pos(a:mode, 1)
 
     let killed_text = matchstr(line, '.*\%'.pos.'c\zs.*')
     call s:add_to_kill_ring(killed_text, 0, a:mode)
     call s:set_concat_next_kill(a:mode, 1)
-    call s:add_to_undolist(line, pos, a:mode)
 
     return s:break_undo_before_deletions(a:mode)
     \     .repeat("\<del>", strchars(killed_text, 1))
@@ -313,10 +311,9 @@ endfu
 fu! readline#kill_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
+        let [ line, pos ] = s:get_line_pos(a:mode, 1)
+
         call s:set_isk()
-
-        let [ line, pos ] = s:get_line_pos(a:mode)
-
         "                       ┌ from the beginning of the word containing the cursor
         "                       │ until the cursor
         "                       │ if the cursor is outside of a word, the pattern
@@ -331,7 +328,6 @@ fu! readline#kill_word(mode) abort "{{{2
         let killed_text = matchstr(line, pat)
         call s:add_to_kill_ring(killed_text, 1, a:mode)
         call s:set_concat_next_kill(a:mode, 0)
-        call s:add_to_undolist(line, pos, a:mode)
 
         return s:break_undo_before_deletions(a:mode).repeat("\<del>", strchars(killed_text, 1))
 
@@ -352,11 +348,10 @@ fu! readline#move_by_words(fwd, mode) abort "{{{2
 
     let isk_save = &l:isk
     try
+        let [ line, pos ] = s:get_line_pos(a:mode, 0)
+
         let s:concat_next_kill = 0
         call s:set_isk()
-
-        let [ line, pos ] = s:get_line_pos(a:mode)
-
         " old_char_idx = nr of characters before cursor in its current position
         " new_char_idx = "                                         new     "
 
@@ -474,13 +469,10 @@ endfu
 fu! readline#transpose_words(mode) abort "{{{2
     let isk_save = &l:isk
     try
+        let [ line, pos ] = s:get_line_pos(a:mode, 1)
+
         let s:concat_next_kill = 0
         call s:set_isk()
-
-        let [ line, pos ] = s:get_line_pos(a:mode)
-
-        call s:add_to_undolist(line, pos, a:mode)
-
         " We're looking for 2 words which are separated by non-word characters.
         "
         " Why non-word characters, and not whitespace?
@@ -572,8 +564,7 @@ fu! readline#unix_line_discard(mode) abort "{{{2
         return repeat("\<c-p>", s:fast_scroll_in_pum)
     endif
 
-    let [ line, pos ] = s:get_line_pos(a:mode)
-    call s:add_to_undolist(line, pos, a:mode)
+    let [ line, pos ] = s:get_line_pos(a:mode, 1)
 
     if a:mode ==# 'c'
         call s:add_to_kill_ring(matchstr(line, '.*\%'.pos.'c'), 0, a:mode)
@@ -594,12 +585,10 @@ endfu
 fu! readline#upcase_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
+        let [ line, pos ] = s:get_line_pos(a:mode, 1)
+
         let s:concat_next_kill = 0
         call s:set_isk()
-
-        let [ line, pos ] = s:get_line_pos(a:mode)
-        call s:add_to_undolist(line, pos, a:mode)
-
         let pat    = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
         let word   = matchstr(line, pat)
         let length = strchars(word, 1)
@@ -633,8 +622,7 @@ fu! readline#upcase_word(mode) abort "{{{2
 endfu
 
 fu! readline#yank(pop, mode) abort "{{{2
-    let [ line, pos ] = s:get_line_pos(a:mode)
-    call s:add_to_undolist(line, pos, a:mode)
+    let [ line, pos ] = s:get_line_pos(a:mode, 1)
     if a:pop
         let length = strchars(s:kill_ring_{a:mode}[-1], 1)
         call insert(s:kill_ring_{a:mode}, remove(s:kill_ring_{a:mode}, -1), 0)
