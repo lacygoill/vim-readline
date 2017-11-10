@@ -5,9 +5,6 @@ let g:loaded_readline = 1
 
 " TODO: Try to implement these:{{{
 "
-"                                                    ┌ easier to type
-"                                                  ┌─┤
-"     • undo                             C-x C-u / C-_
 "     • yank-nth-arg                     M-C-y
 "     • set-mark                         C-@
 "     • exchange-point-and-mark          C-x C-x
@@ -95,6 +92,11 @@ let g:loaded_readline = 1
 " If you add another mapping, try to not break undo sequence. Thanks.
 "}}}
 " CTRL {{{2
+" C-_        undo {{{3
+
+cno <expr> <c-_> readline#undo('c')
+ino <expr> <c-_> readline#undo('i')
+
 " C-a        beginning-of-line {{{3
 
 cno <expr> <c-a> readline#beginning_of_line('c')
@@ -122,6 +124,11 @@ ino <expr> <c-f> readline#forward_char('i')
 " C-g        abort {{{3
 
 cno <expr> <c-g>  '<c-c>'
+
+" C-h backward-delete-char {{{3
+
+cno <expr> <c-h> readline#backward_delete_char('c')
+ino <expr> <c-h> readline#backward_delete_char('i')
 
 " C-k        kill-line {{{3
 
