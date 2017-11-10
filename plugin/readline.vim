@@ -3,8 +3,9 @@ if exists('g:loaded_readline')
 endif
 let g:loaded_readline = 1
 
-" TODO: Try to implement these:{{{
+" TODO:     Try to implement these:{{{
 "
+"     • operate-and-get-next             C-o
 "     • yank-nth-arg                     M-C-y
 "     • set-mark                         C-@
 "     • exchange-point-and-mark          C-x C-x
@@ -15,30 +16,12 @@ let g:loaded_readline = 1
 "     https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 "     https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
-" FIXME: 3 issues with terminal Vim atm:{{{
+" FIXME:    M-a inserts â in terminal gVim {{{
 "
-"         • M-a inserts â in terminal gVim (same thing for other M-…)
-"           It should work, like it does in Vim's terminal.
-"
-"         •         tno <esc> <c-\><c-n>
-"
-"           Breaks   M-….   Example:   pressing   `M-b`  results   in  go   to
-"           Terminal-Normal mode (Escape), then one word backward (b).
-"           We DO  want to go  one word  backward, but we  also want to  stay in
-"           Terminal-Job mode. Because of this, we use this mapping:
-"
-"                   tno <esc><esc> <c-\><c-n>
-"
-"         • C-j and C-m are indistinguishable in a zsh completion menu.
-"           Minimal `zshrc` to reproduce:
-"
-"                    autoload -Uz compinit
-"                    compinit
-"                    zstyle ':completion:*' menu select
-"                    zmodload zsh/complist
-"                    bindkey -M menuselect '^J' down-line-or-history
+" Same thing for other M-…
+" It should work, like it does in Vim's terminal.
 "}}}
-" FIXME: Can't insert ù â î ô  {{{
+" FIXME:    Can't insert ù â î ô  {{{
 "
 " A mapping using a meta key prevents the insertion of some special characters
 " for example:
@@ -73,8 +56,8 @@ let g:loaded_readline = 1
 "
 " Use equivalence class in a search command
 "}}}
-" WARNING: {{{1
-" Vim doesn't seem able to distinguish `M-y` from ù.
+" FIXME:    ù triggers M-y mapping {{{1
+"
 " So, when  you type `ù`  in insert mode, instead  of inserting `ù`,  you will
 " invoke `yank()`. If this becomes an issue:
 "
@@ -125,7 +108,7 @@ ino <expr> <c-f> readline#forward_char('i')
 
 cno <expr> <c-g>  '<c-c>'
 
-" C-h backward-delete-char {{{3
+" C-h        backward-delete-char {{{3
 
 cno <expr> <c-h> readline#backward_delete_char('c')
 ino <expr> <c-h> readline#backward_delete_char('i')
