@@ -205,10 +205,11 @@ nno  <silent>  <plug>(transpose_words)  :<c-u>exe readline#transpose_words('n')<
 
 " M-u        upcase-word {{{3
 
+xno           <m-u>                U
 cno  <expr>   <m-u>                readline#upcase_word('c')
 ino  <expr>   <m-u>                readline#upcase_word('i')
 
-nmap <silent> <m-u>                <plug>(upcase_word)
+nmap          <m-u>                <plug>(upcase_word)
 nno  <silent> <plug>(upcase_word)  :<c-u>exe readline#upcase_word('n')<cr>
 
 " M-y        yank-pop {{{3
