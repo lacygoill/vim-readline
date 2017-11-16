@@ -627,9 +627,7 @@ fu! readline#upcase_word(mode) abort "{{{2
         endif
 
     catch
-        echohl ErrorMsg
-        echo v:exception.' | '.v:throwpoint
-        echohl NONE
+        return 'echoerr '.string(v:exception)
     finally
         let &l:isk = isk_save
     endtry
