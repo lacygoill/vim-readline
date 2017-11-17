@@ -315,8 +315,8 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-s>=\es"
         exe "set <m-t>=\et"
         exe "set <m-u>=\eu"
-        exe "set <m-v>=\ev"
         exe "set <m-y>=\ey"
+        exe "set <m-z>=\ez"
     else
         exe "set <m-a>="
         exe "set <m-b>="
@@ -329,8 +329,8 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-s>="
         exe "set <m-t>="
         exe "set <m-u>="
-        exe "set <m-v>="
         exe "set <m-y>="
+        exe "set <m-z>="
     endif
 endfu
 call s:set_keysyms(1)
