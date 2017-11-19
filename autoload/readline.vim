@@ -3,6 +3,211 @@ if exists('g:autoloaded_readline')
 endif
 let g:autoloaded_readline = 1
 
+" OLD code {{{1
+" What was its purpose? {{{2
+"
+" It was a complicated mechanism to break  the undo sequence after a sequence of
+" deletions, so  that we could  recover the state  of the buffer  after deleting
+" some  text. It was  useful,  for example,  to  recover the  state  (2) in  the
+" following edition:
+"
+"                        cursor
+"                        v
+"         (1) hello world|
+"
+"                 C-w
+"
+"         (2) hello |
+"
+"                 i people
+"
+"         (3) hello people|
+
+" Why don't you use it anymore? {{{2
+"
+" Because:
+"
+"         • either you break  the undo sequence just BEFORE the next
+"           insertion of a character, after a sequence of deletion
+"
+"         • or you break it just AFTER
+"
+" If you break it just before, then  when you insert a register after a sequence
+" of deletions,  the last  character of  the register  is altered  (deleted then
+" replaced with the 1st).
+"
+" If you break it just after, then  a custom abbreviation may be expanded in the
+" middle of a word you type.
+" Watch:
+"
+"         :inorea al la
+"
+"           ┌ text in buffer
+"         ┌─┤
+"         val|
+"            ^
+"            cursor
+"
+"         C-w val SPC
+"             → vla ✘
+"
+" MWE:
+"@        :inorea al la
+"@        :ino <c-x>d  <bs><bs><bs>v<c-g>ual
+"                                   └────┤
+"                                        └ this is where our custom function
+"                                          was breaking the undo sequence
+"
+"         val C-x d SPC
+"             → vla ✘
+
+" What dit the code look like? {{{2
+" Autocmd {{{3
+"
+"@     augroup my_granular_undo
+"@         …
+"
+"          We could probably  have replaced these 2  permanent autocommands with
+"          fire-once equivalent.
+"
+"@         au InsertLeave      * let s:deleting = 0
+"@         au InsertCharPre    * call s:break_undo_after_deletions(v:char)
+"                                                                  ├────┘
+"                                                                  │
+"          not  needed if  you  break  the undo  sequence  just  AFTER the  next
+"          insertion of a character, after  a sequence of deletions (only needed
+"          if you do it just BEFORE)
+"@     augroup END
+
+" Function {{{3
+"@     fu! s:break_undo_after_deletions(char) abort {{{4
+"@         if s:deleting
+"             To exclude  the first  inserted character from  the undo  sequence, we
+"             should call `feedkeys()` like this:
+"
+"                     call feedkeys("\<bs>\<c-g>u".v:char, 'in')
+"             Why "\<bs>" ?{{{
+"
+"             It  seems that  when InsertCharPre  occurs, v:char  is already  in the
+"             typeahead buffer. We  can change its  value but not insert  sth before
+"             it.   We need  to break  undo sequence  BEFORE `v:char`,  so that  the
+"             latter is part of the next edition.
+"             Thus, we delete it (BS), break undo (C-g u), then reinsert it (v:char).
+            "}}}
+"             Why pass the 'i' flag to feedkeys(…)?{{{
+"
+"             Suppose we don't give 'i', and we have this mapping:
+"                                           ino abc def
+"
+"             Then we write:                hello foo
+"             We delete foo with C-w:       hello
+"             If we type abc, we'll get:    hello ded
+"
+"             Why ded and not def?
+"
+"               1. a b c                 keys which are typed initially
+"
+"               2. d e f                 expansion due to mapping
+"
+"                                                • the expansion occurs as soon as we type `c`
+"
+"                                                • 3 InsertCharPre events occurs right after `d`
+"                                                  is written inside the typeahead buffer
+"
+"                                                • this function will be called only for the 1st one,
+"                                                  because after its 1st invocation, `s:deleting` will
+"                                                  be reset to 0
+"
+"                                                • when it's called, v:char will be `d`,
+"                                                  the 1st character to be inserted
+"
+"               3. d e f BS C-g u d      the 4 last keys are written by `feedkeys()`
+"                                        AT THE END of the typeahead buffer
+"
+"               4. d e d                 ✘
+"
+"             The 4 last keys were added too late.
+"             The solution is to insert them at the beginning of the typeahead buffer,
+"             by giving the 'i' flag to feedkeys(…). The 3rd step then becomes:
+"
+"                                 ┌ expansion of `abc`
+"                  ┌──────────────┤
+"               3. d BS C-g u d e f
+"                    └────────┤
+"                             └ inserted by our custom function when `InsertCharPre` occurs
+            "}}}
+
+"             But we won't try to exclude it:
+"
+"@             call feedkeys("\<c-g>u", 'int')
+"             Why?{{{
+"
+"             To be  sure that the  contents of a register  we put from  insert mode
+"             will never be altered.
+            "}}}
+"             When could it be altered?{{{
+"
+"             If you delete  some text, with `C-w` for example,  then put a register
+"             whose contents is 'hello', you will insert 'hellh':
+"
+"                     C-w C-r "
+"                                 → hellh
+"                                       ^✘
+            "}}}
+"             Why does it happen?{{{
+"
+"             If you copy the text 'abc' in the unnamed register, then put it:
+"
+"                     C-r "
+"
+"             … it triggers 3 InsertCharPre:
+"
+"                     • v:char = 'a'
+"                     • v:char = 'b'
+"                     • v:char = 'c'
+"
+"             When the 1st one is triggered, and `feedkeys()` is invoked to add some
+"             keys in the typeahead buffer, they are inserted AFTER `bc`.
+"             This seems to indicate that when  you put a register, all its contents
+"             is  immediately written  in  the  typeahead buffer. The  InsertCharPre
+"             events are fired AFTERWARDS for each inserted character.
+"
+"             We  can  still   reliably  change  any  inserted   key,  by  resetting
+"             `v:char`. The issue is specific to feedkeys().
+"             Unfortunately,  we have  to  use feedkeys(),  because  we can't  write
+"             special characters  in `v:char`,  like `BS` and  `C-g`; they  would be
+"             inserted literally.
+"
+"             Watch:
+"             the goal being to replace any `a` with `x`:
+"
+"                     augroup replace_a_with_x
+"                         au!
+"                         au InsertCharPre * call Func()
+"                     augroup END
+"
+"                     fu! Func() abort
+"                         if v:char ==# 'a'
+"                             " ✔
+"                             " let v:char = 'x'
+"                             " ✘ fails when putting a register containing `abc`
+"                             " call feedkeys("\<bs>x", 'int')
+"                         endif
+"                     endfu
+            "}}}
+"@             let s:deleting = 0
+"@         endif
+"@     endfu
+
+" Initialization {{{3
+"
+" The autocmd will  be installed after the  1st time we use one  of our mapping.
+" So, the 1st  time we enter insert  mode, and press a custom  mapping, it won't
+" have been  installed, and `s:deleting` won't  have been set yet.   But for our
+" functions to work, it must exist no matter what.
+"
+"@     let s:deleting = 0
+
 " Autocmds {{{1
 
 augroup my_granular_undo
@@ -17,11 +222,9 @@ augroup my_granular_undo
     "         C-y → threetwo    ✘
     "         C-y → three       ✔
     "
-    au CmdlineLeave             * let s:concat_next_kill = 0
-    au CmdlineLeave             * let s:undolist_c = []
-    au InsertLeave              * let s:undolist_i = []
-    au InsertLeave              * let s:deleting = 0
-    au InsertCharPre            * call s:break_undo_after_deletions(v:char)
+    au CmdlineLeave  *  let s:concat_next_kill = 0
+    au CmdlineLeave  *  let s:undolist_c = []
+    au InsertLeave   *  let s:undolist_i = []
 augroup END
 
 " Functions {{{1
@@ -109,153 +312,44 @@ fu! readline#beginning_of_line(mode) abort "{{{2
     \:         repeat("\<c-g>U\<right>", match(getline('.'), '\S') - col('.') + 1)
 endfu
 
-fu! s:break_undo_after_deletions(char) abort "{{{2
-    if s:deleting
-        " To exclude  the first  inserted character from  the undo  sequence, we
-        " should call `feedkeys()` like this:
-        "
-        "         call feedkeys("\<bs>\<c-g>u".v:char, 'in')
-        " Why "\<bs>" ?{{{
-        "
-        " It  seems that  when InsertCharPre  occurs, v:char  is already  in the
-        " typeahead buffer. We  can change its  value but not insert  sth before
-        " it.   We need  to break  undo sequence  BEFORE `v:char`,  so that  the
-        " latter is part of the next edition.
-        " Thus, we delete it (BS), break undo (C-g u), then reinsert it (v:char).
-        "}}}
-        " Why pass the 'i' flag to feedkeys(…)?{{{
-        "
-        " Suppose we don't give 'i', and we have this mapping:
-        "                               ino abc def
-        "
-        " Then we write:                hello foo
-        " We delete foo with C-w:       hello
-        " If we type abc, we'll get:    hello ded
-        "
-        " Why ded and not def?
-        "
-        "   1. a b c                 keys which are typed initially
-        "
-        "   2. d e f                 expansion due to mapping
-        "
-        "                                    • the expansion occurs as soon as we type `c`
-        "
-        "                                    • InsertCharPre occurs right after `d` is written
-        "                                      into the typeahead buffer
-        "
-        "                                    • v:char is `d`, the 1st character to be inserted
-        "
-        "   3. d e f BS C-g u d      the 4 last keys are written by `feedkeys()`
-        "                            AT THE END of the typeahead buffer
-        "
-        "   4. d e d                 ✘
-        "
-        " The 4 last keys were added too late.
-        " The solution is to insert them at the beginning of the typeahead buffer,
-        " by giving the 'i' flag to feedkeys(…). The 3rd step then becomes:
-        "
-        "                     ┌ expansion of `abc`
-        "      ┌──────────────┤
-        "   3. d BS C-g u d e f
-        "        └────────┤
-        "                 └ inserted by our custom function when `InsertCharPre` occurs
-"}}}
-
-        " FIXME:
-        " But we won't try to exclude it:
-        call feedkeys("\<c-g>u", 'int')
-        " Why?{{{
-        "
-        " To be  sure that the  contents of a register  we put from  insert mode
-        " will never be altered.
-        "}}}
-        " When could it be altered?{{{
-        "
-        " If you delete  some text, with `C-w` for example,  then put a register
-        " whose contents is 'hello', you will insert 'hellh':
-        "
-        "         C-w C-r "
-        "                     → hellh
-        "                           ^✘
-        "}}}
-        " Why does it happen?{{{
-        "
-        " If you copy the text 'abc' in the unnamed register, then put it:
-        "
-        "         C-r "
-        "
-        " … it triggers 3 InsertCharPre:
-        "
-        "         • v:char = 'a'
-        "         • v:char = 'b'
-        "         • v:char = 'c'
-        "
-        " When the 1st one is triggered, and `feedkeys()` is invoked to add some
-        " keys in the typeahead buffer, they are inserted AFTER `bc`.
-        " This seems to indicate that when  you put a register, all its contents
-        " is  immediately written  in  the  typeahead buffer. The  InsertCharPre
-        " events are fired AFTERWARDS for each inserted character.
-        "
-        " We  can  still   reliably  change  any  inserted   key,  by  resetting
-        " `v:char`. The issue is specific to feedkeys().
-        " Unfortunately,  we have  to  use feedkeys(),  because  we can't  write
-        " special characters  in `v:char`,  like `BS` and  `C-g`; they  would be
-        " inserted literally.
-        "
-        " Watch:
-        " the goal being to replace any `a` with `x`:
-        "
-        "         augroup replace_a_with_x
-        "             au!
-        "             au InsertCharPre * call Func()
-        "         augroup END
-        "
-        "         fu! Func() abort
-        "             if v:char ==# 'a'
-        "                 " ✔
-        "                 " let v:char = 'x'
-        "                 " ✘ fails when putting a register containing `abc`
-        "                 " call feedkeys("\<bs>x", 'int')
-        "             endif
-        "         endfu
-        "}}}
-        let s:deleting = 0
-    endif
-endfu
-
 fu! s:break_undo_before_deletions(mode) abort "{{{2
     if a:mode ==# 'c' || s:deleting
         return ''
     else
+        " If  the execution  has reached  this point,  it means  we're going  to
+        " delete some multi-char text. But, if we delete another multi-char text
+        " right after, we don't want to, again, break the undo sequence.
         let s:deleting = 1
+        " We'll reenable the breaking of the undo sequence before a deletion, the
+        " next time we insert a character, or leave insert mode.
+        augroup enable_break_undo_before_deletions
+            au!
+            au InsertLeave,InsertCharPre * let s:deleting = 0
+            \|                             exe 'au! enable_break_undo_before_deletions'
+            \|                             aug! enable_break_undo_before_deletions
+        augroup END
         return "\<c-g>u"
     endif
 endfu
-
 " Purpose:{{{
 "
-" By default, when we delete some words with C-w in insert mode, if we
-" escape to go in normal mode, realise it was a mistake, and hit u to undo,
-" we can't get back our deleted words because they are part of a single
-" edition. Thus, u and C-r can get us back before or after that single
-" edition, but not somewhere in the middle where our deleted words are.
-" To fix this, we define the following mappings which breaks the undo sequence:
+"         • A is a text we insert
+"         • B is a text we insert after A
+"         • C is a text we insert to replace B after deleting the latter
 "
-"         • before we delete a word (C-w)
-"           to be able to recover the word
+" Without any custom “granular undo“, we can only visit:
 "
-"         • before we delete the line (C-u)
-"           to be able to recover the line
+"         • ∅
+"         • AC
 "
-"         • after a sequence of deletions (with C-w/C-u),
-"           followed by the insertion of a character,
-"           to be able to re-perform these deletions,
-"           useful if we want to get rid of the text we've inserted afterwards.
-"
-" Whenever we go into insert mode, we reset `s:deleting` to 0.
-" When it's 1, it means the last key pressed was C-w/C-u.
-" When it's 0, it means the last key pressed was something else.
+" This function presses `C-g  u` the first time we delete  a multi-char text, in
+" any given sequence of multi-char deletions.
+" This allows us to visit AB.
+" In the past, we used some code, which broke the undo sequence after a sequence
+" of  deletions. It allowed  us to  visit A  (alone). We don't  use it  anymore,
+" because it leads to too many issues.
 "}}}
+
 fu! readline#delete_char(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
 
@@ -650,6 +744,8 @@ endfu
 
 " Variables {{{1
 
+let s:deleting = 0
+
 let s:undolist_i = []
 let s:undolist_c = []
 
@@ -671,9 +767,3 @@ let s:concat_next_kill   = 0
 let s:fast_scroll_in_pum = 5
 let s:kill_ring_i        = ['']
 let s:kill_ring_c        = ['']
-
-" The autocmd will be installed the 1st time we use one of our mapping.
-" So, the first time we enter insert  mode, and press a custom mapping, it won't
-" have been installed, and `s:deleting` won't have been set yet.
-" But for our functions to work, it must exist no matter what.
-let s:deleting = 0
