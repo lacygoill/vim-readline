@@ -544,15 +544,11 @@ fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{
     \:                      [ getline('.'), col('.') ]
 
     " `transpose_words()` may call this function from normal mode
-    if a:mode ==# 'n'
-        return [ line, pos ]
-    endif
-
-    if a:add_to_undolist
+    if a:add_to_undolist && a:mode !=# 'n'
         call s:add_to_undolist(a:mode, line, pos)
     endif
 
-    if a:reset_concat
+    if a:reset_concat && a:mode !=# 'n'
         let s:concat_next_kill = 0
     endif
 
