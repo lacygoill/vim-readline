@@ -290,7 +290,7 @@ fu! s:do_not_break_macro_replay() abort "{{{3
                                     \| exe 'aug! do_not_break_macro_replay'
     augroup END
 
-    return '@'.nr2char(getchar())
+    return '@'.nr2char(getchar(),1)
 endfu
 
 fu! s:enable_keysyms_on_command_line() abort "{{{3
