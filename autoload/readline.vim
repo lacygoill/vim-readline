@@ -259,7 +259,7 @@ fu! s:add_to_undolist(mode, line, pos) abort "{{{2
         call remove(s:undolist_{a:mode}, 0, undo_len - 101)
     endif
     let s:undolist_{a:mode} += [[ a:line,
-    \                             len(split(matchstr(a:line, '.*\%'.a:pos.'c'), '\zs')) ]   ]
+    \                             strchars(matchstr(a:line, '.*\%'.a:pos.'c'), 1) ]   ]
 endfu
 
 fu! readline#backward_char(mode) abort "{{{2
