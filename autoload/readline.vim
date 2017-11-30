@@ -245,7 +245,7 @@ fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
             endif
             " before adding  sth in  the kill-ring,  check whether  it's already
             " there, and if it is, remove it
-            call filter(s:kill_ring_{a:mode}, 'v:val !=# a:text')
+            call filter(s:kill_ring_{a:mode}, { k,v -> v !=# a:text })
             call add(s:kill_ring_{a:mode}, a:text)
         endif
     endif
