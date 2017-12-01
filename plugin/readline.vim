@@ -19,6 +19,7 @@ let g:loaded_readline = 1
 " FIXME:    M-a inserts â in terminal gVim {{{
 "
 " Same thing for other M-…
+" If you start Vim without any initialization, it doesn't work at all.
 " It should work, like it does in Vim's terminal.
 "}}}
 " FIXME:    Can't insert ù â î ô  {{{
@@ -27,17 +28,17 @@ let g:loaded_readline = 1
 " for example:
 "
 "         ino <m-b> …
-"         → i_â    ✘
+"             → i_â    ✘
 "
 " Why?
-" Because, for some reason, Vim thinks, wrongly, that `â` produces `M-b`.
-" The fact, that we told Vim that `Esc b` produces `M-b` doesn't fix this
-" issue. The only thing it changed, is that now, Vim thinks that `Esc b` AND `â`
-" both produce `M-b`.
+" Because, for  some reason,  Vim thinks,  wrongly, that  `M-b` means  `â`. The
+" fact, that we  told Vim that `M-b`  means `ESC b` doesn't  fix this issue. The
+" only thing it  changed, is that now,  Vim thinks that `M-b` means  `ESC b` AND
+" `â`.
 "
-" Disabling the meta keys with `:ToggleMetaKeys` doesn't fix this issue, because the pb
-" doesn't come from the meta key being set, but simply from the mapping.
-"
+" Disabling the meta keys with `:ToggleMetaKeys` doesn't fix this issue, because
+" the pb doesn't come from the meta key being set, but simply from the mapping.
+
 " Solutions:
 "
 " Literal insertion:
@@ -163,7 +164,7 @@ ino <expr> <c-y> readline#yank('i', 0)
 cno <expr> <c-y> readline#yank('c', 0)
 
 " META {{{2
-" M-b/f      forward-word backward-word {{{3
+" M-b/f      forward-word    backward-word {{{3
 
 " We can't use this:
 "
