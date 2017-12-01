@@ -5,10 +5,10 @@ let g:loaded_readline = 1
 
 " TODO:     Try to implement these:{{{
 "
-"     • operate-and-get-next             C-o
-"     • yank-nth-arg                     M-C-y
 "     • set-mark                         C-@
 "     • exchange-point-and-mark          C-x C-x
+"     • operate-and-get-next             C-o
+"     • yank-nth-arg                     M-C-y
 "     • downcase-word                    M-l
 "     • capitalize-word                  M-c
 "
@@ -66,6 +66,15 @@ let g:loaded_readline = 1
 "         • remove this mapping
 "         • install a digraph
 "         • switch to neovim
+
+" AUTOCMD {{{1
+
+augroup my_lazy_loaded_readline
+    au!
+    au CmdlineEnter * call readline#install_cmdline_transformation_pre()
+    \|                exe 'au! my_lazy_loaded_readline'
+    \|                aug! my_lazy_loaded_readline
+augroup END
 
 " MAPPINGS {{{1
 " Try to always preserve breaking undo sequence.{{{

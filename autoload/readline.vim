@@ -212,6 +212,7 @@ let g:autoloaded_readline = 1
 
 augroup my_granular_undo
     au!
+
     " `s:concat_next_kill` should  always be  reset when we  leave command-line,
     " even if it's not empty:
     "
@@ -391,6 +392,13 @@ fu! readline#forward_char(mode) abort "{{{2
     \:         "\<c-g>U\<right>"
     " Go the right if we're in the middle of the line (custom), or fix the
     " indentation if we're at the end (default)
+endfu
+
+fu! readline#install_cmdline_transformation_pre() abort "{{{2
+    augroup add_to_undolist_before_transforming
+        au!
+        au User CmdlineTransformationPre call s:add_to_undolist('c', getcmdline(), getcmdpos())
+    augroup END
 endfu
 
 fu! readline#kill_line(mode) abort "{{{2
