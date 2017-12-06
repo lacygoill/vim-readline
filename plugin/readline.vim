@@ -5,68 +5,70 @@ let g:loaded_readline = 1
 
 " TODO:     Try to implement these:{{{
 "
-"     • set-mark                         C-@
-"     • exchange-point-and-mark          C-x C-x
+"     • kill-region (zle)                ???
+"     • quote-region (zle)               M-"
 "     • operate-and-get-next             C-o
 "     • yank-nth-arg                     M-C-y
-"     • downcase-word                    M-l
-"     • capitalize-word                  M-c
 "
 " Source:
+"     man zshzle
 "     https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 "     https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
+"}}}
+" TODO:     Use `vim-submode` to make `M-u` enter a submode {{{
+" in which `c`, `l`, `u` change the  case of words. It would make them easier to
+" repeat. Do the same for the shell.
 "}}}
 " FIXME:    M-a inserts â in terminal gVim {{{
 "
 " Same thing for other M-…
 " If you start Vim without any initialization, it doesn't work at all.
 " It should work, like it does in Vim's terminal.
+"
+" Why does gVim insert  `â`, when we start it with our  vimrc, instead of doing
+" nothing like it does by default?
+" Because we give the value 'M' to 'guioptions', which removes the 'm' flag.
+"
+" https://github.com/vim/vim/issues/2397
 "}}}
 " FIXME:    Can't insert ù â î ô  {{{
-"
+
 " A mapping using a meta key prevents the insertion of some special characters
 " for example:
 "
-"         ino <m-b> …
-"             → i_â    ✘
+"         1. ino <m-b> …
+"         2. i_â
+"                → moves cursor one word backward
 "
 " Why?
-" Because, for  some reason,  Vim thinks,  wrongly, that  `M-b` means  `â`. The
-" fact, that we  told Vim that `M-b`  means `ESC b` doesn't  fix this issue. The
-" only thing it  changed, is that now,  Vim thinks that `M-b` means  `ESC b` AND
-" `â`.
+" Because, for  some reason,  Vim doesn't make the difference between `Esc b` and `â`.
+" So, when we press `i_â`, Vim thinks we've pressed `M-b`.
 "
 " Disabling the meta keys with `:ToggleMetaKeys` doesn't fix this issue, because
 " the pb doesn't come from the meta key being set, but simply from the mapping.
 
+" For the same reason, `ù` triggers the `M-y` mapping.  So, when you press `ù`
+" in insert mode, instead of inserting `ù`, you will invoke `yank()`.
+
+
+
 " Solutions:
 "
-" Literal insertion:
+" Use literal insertion:
 "
 "     C-v ^ a    →    â
 "
-" Use digraphs:
+" Use digraph:
 "
-"     C-k a ^    →    â
+"     C-k a a    →    â
 "
 " Use replace mode:
 "
-"     r â    →    â
+"     r ^ a     →    â
 "
-" Use abbreviations
+" Use abbreviation
 "
 " Use equivalence class in a search command
-"}}}
-" FIXME:    ù triggers M-y mapping {{{1
-"
-" So, when  you type `ù`  in insert mode, instead  of inserting `ù`,  you will
-" invoke `yank()`. If this becomes an issue:
-"
-"         • install abbreviation for every word containing `ù`
-"         • insert `ù` literally
-"         • remove this mapping
-"         • install a digraph
-"         • switch to neovim
 
 " AUTOCMD {{{1
 
@@ -85,48 +87,73 @@ augroup END
 " If you add another mapping, try to not break undo sequence. Thanks.
 "}}}
 " CTRL {{{2
+" C-@        set-mark {{{3
+
+" Disable `C-@` if you don't use it anymore in these mappings.{{{
+"
+" By default,  in insert mode,  C-@ (:h ^@) inserts  the last inserted  text and
+" leaves insert mode.
+" Usually, in a  terminal C-SPC produces C-@. So, when we  hit C-SPC by accident
+" (which occurs frequently), we insert the last inserted text.
+" We don't want that, so we previously, in `vimrc`, we disabled the mapping:
+"
+"     ino <c-@>     <nop>
+
+" We did  the same for C-SPC,  even though it wasn't  necessary, because hitting
+" C-SPC doesn't produce the keycode C-SPC (it produces C-@).
+"
+"     ino <c-space> <nop>
+
+" There's no need for that anymore, since we use `C-@` for setting a mark, which
+" is harmless: it doesn't insert / remove any text in the buffer.
+" But if for some reason, you choose another key, or remove the mapping entirely,
+" make sure to disable these keys again.
+"}}}
+cno <expr><unique>  <c-@>  readline#set_mark('c')
+ino <expr><unique>  <c-@>  readline#set_mark('i')
+
 " C-_        undo {{{3
 
-cno <expr> <c-_> readline#undo('c')
-ino <expr> <c-_> readline#undo('i')
+cno <expr><unique>  <c-_>  readline#undo('c')
+ino <expr><unique>  <c-_>  readline#undo('i')
 
 " C-a        beginning-of-line {{{3
 
-cno <expr> <c-a> readline#beginning_of_line('c')
-ino <expr> <c-a> readline#beginning_of_line('i')
+cno <expr><unique>  <c-a>  readline#beginning_of_line('c')
+ino <expr><unique>  <c-a>  readline#beginning_of_line('i')
 
 " C-b        backward-char {{{3
 
-cno <expr> <c-b>  readline#backward_char('c')
-ino <expr> <c-b>  readline#backward_char('i')
+cno <expr><unique>  <c-b>  readline#backward_char('c')
+ino <expr><unique>  <c-b>  readline#backward_char('i')
 
 " C-d        delete-char {{{3
 
-cno <expr> <c-d> readline#delete_char('c')
-ino <expr> <c-d> readline#delete_char('i')
+cno <expr><unique>  <c-d>  readline#delete_char('c')
+ino <expr><unique>  <c-d>  readline#delete_char('i')
 
 " C-e        end-of-line {{{3
 
-ino <expr> <c-e>    readline#end_of_line()
+ino <expr><unique>  <c-e>  readline#end_of_line()
 
 " C-f        forward-char {{{3
 
-cno <expr> <c-f> readline#forward_char('c')
-ino <expr> <c-f> readline#forward_char('i')
+cno <expr><unique>  <c-f>  readline#forward_char('c')
+ino <expr><unique>  <c-f>  readline#forward_char('i')
 
 " C-g        abort {{{3
 
-cno <expr> <c-g>  '<c-c>'
+cno <expr><unique>  <c-g>  '<c-c>'
 
 " C-h        backward-delete-char {{{3
 
-cno <expr> <c-h> readline#backward_delete_char('c')
-ino <expr> <c-h> readline#backward_delete_char('i')
+cno <expr><unique>  <c-h>  readline#backward_delete_char('c')
+ino <expr><unique>  <c-h>  readline#backward_delete_char('i')
 
 " C-k        kill-line {{{3
 
-cno <expr> <c-k>      readline#kill_line('c')
-ino <expr> <c-k><c-k> readline#kill_line('i')
+cno <expr><unique>  <c-k>       readline#kill_line('c')
+ino <expr><unique>  <c-k><c-k>  readline#kill_line('i')
 " In insert mode, we want C-k to keep its original behavior (insert digraph).
 " It makes more sense than bind it to a `kill-line` function, because inserting
 " digraph is more frequent than killing a line.
@@ -136,18 +163,23 @@ ino <expr> <c-k><c-k> readline#kill_line('i')
 
 " C-t        transpose-chars {{{3
 
-cno <expr> <c-t> readline#transpose_chars('c')
-ino <expr> <c-t> readline#transpose_chars('i')
+cno <expr><unique>  <c-t>  readline#transpose_chars('c')
+ino <expr><unique>  <c-t>  readline#transpose_chars('i')
 
 " C-u        unix-line-discard {{{3
 
-cno <expr> <c-u>      readline#unix_line_discard('c')
-ino <expr> <c-u>      readline#unix_line_discard('i')
+cno <expr><unique>  <c-u>  readline#unix_line_discard('c')
+ino <expr><unique>  <c-u>  readline#unix_line_discard('i')
 
 " C-w        backward-kill-word {{{3
 
-cno <expr> <c-w> readline#backward_kill_word('c')
-ino <expr> <c-w> readline#backward_kill_word('i')
+cno <expr><unique>  <c-w>  readline#backward_kill_word('c')
+ino <expr><unique>  <c-w>  readline#backward_kill_word('i')
+
+" C-x C-x    exchange-point-and-mark {{{3
+
+cno <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('c')
+ino <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 
 " C-y        yank {{{3
 
@@ -160,8 +192,8 @@ ino <expr> <c-w> readline#backward_kill_word('i')
 "
 " … we should be able to paste it with C-y, like in readline.
 
-ino <expr> <c-y> readline#yank('i', 0)
-cno <expr> <c-y> readline#yank('c', 0)
+ino <expr><unique>  <c-y>  readline#yank('i', 0)
+cno <expr><unique>  <c-y>  readline#yank('c', 0)
 
 " META {{{2
 " M-b/f      forward-word    backward-word {{{3
@@ -174,27 +206,41 @@ cno <expr> <c-y> readline#yank('c', 0)
 " Because it seems to consider `-` as part of a word.
 " `M-b`, `M-f` would move too far compared to readline.
 
-"                                    ┌─  close wildmenu
-"                                    │
-cno <expr> <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0)
-cno <expr> <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1)
+"                                             ┌─  close wildmenu
+"                                             │
+cno <expr><unique>  <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0)
+cno <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1)
 
-ino <expr> <m-b> readline#move_by_words('i', 0)
-ino <expr> <m-f> readline#move_by_words('i', 1)
+ino <expr><unique>  <m-b>  readline#move_by_words('i', 0)
+ino <expr><unique>  <m-f>  readline#move_by_words('i', 1)
+
+" M-u c      capitalize-word {{{3
+
+cno <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
+ino <expr><unique>  <m-u>c  readline#move_by_words('i', 1, 1)
+
+" M-u l      downcase-word {{{3
+
+cno <expr><unique>  <m-u>l  readline#upcase_word('c', 1)
+ino <expr><unique>  <m-u>l  readline#upcase_word('i', 1)
+
+nmap         <unique>  <m-u>l                 <plug>(downcase-word)
+nno  <silent>          <plug>(downcase-word)  :<c-u>exe readline#upcase_word('n', 1)<cr>
+xno  <silent><unique>  <m-u>l                 :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
 
 " M-d        kill-word {{{3
 
 " Delete until the beginning of the next word.
 " In bash, M-d does the same, and is bound to the function kill-word.
 
-cno <expr> <m-d>  readline#kill_word('c')
-ino <expr> <m-d>  readline#kill_word('i')
+cno <expr><unique>  <m-d>  readline#kill_word('c')
+ino <expr><unique>  <m-d>  readline#kill_word('i')
 
 " M-n/p      down up {{{3
 
 " For the `M-n` mapping to work, we need to give the same value for 'wildchar'
 " and 'wildcharm'. We gave them both the value `<Tab>`.
-cno <m-n> <down>
+cno <unique>  <m-n>  <down>
 
 " For more info:
 "
@@ -203,29 +249,29 @@ cno <m-n> <down>
 
 " history-search-backward
 " history-search-forward
-cno <m-p> <up>
+cno <unique>  <m-p>  <up>
 
 " M-t        transpose-words {{{3
 
-cno <expr>     <m-t>                    readline#transpose_words('c')
-ino <expr>     <m-t>                    readline#transpose_words('i')
+cno <expr><unique>  <m-t>  readline#transpose_words('c')
+ino <expr><unique>  <m-t>  readline#transpose_words('i')
 
-nmap           <m-t>                    <plug>(transpose_words)
-nno  <silent>  <plug>(transpose_words)  :<c-u>exe readline#transpose_words('n')<cr>
+nmap         <unique>  <m-t>                    <plug>(transpose_words)
+nno  <silent>          <plug>(transpose_words)  :<c-u>exe readline#transpose_words('n')<cr>
 
-" M-u        upcase-word {{{3
+" M-u u    upcase-word {{{3
 
-xno           <m-u>                U
-cno  <expr>   <m-u>                readline#upcase_word('c')
-ino  <expr>   <m-u>                readline#upcase_word('i')
+xno        <unique>  <m-u>u  U
+cno  <expr><unique>  <m-u>u  readline#upcase_word('c')
+ino  <expr><unique>  <m-u>u  readline#upcase_word('i')
 
-nmap          <m-u>                <plug>(upcase_word)
-nno  <silent> <plug>(upcase_word)  :<c-u>exe readline#upcase_word('n')<cr>
+nmap         <unique>  <m-u>u               <plug>(upcase_word)
+nno  <silent>          <plug>(upcase_word)  :<c-u>exe readline#upcase_word('n')<cr>
 
 " M-y        yank-pop {{{3
 
-cno  <expr>   <m-y>    readline#yank('c', 1)
-ino  <expr>   <m-y>    readline#yank('i', 1)
+cno  <expr><unique>  <m-y>  readline#yank('c', 1)
+ino  <expr><unique>  <m-y>  readline#yank('i', 1)
 
 " OPTIONS {{{1
 

@@ -23,7 +23,7 @@ let g:autoloaded_readline = 1
 "
 "         (3) hello people|
 
-" Why don't you use it anymore? {{{2
+" Why don't we use it anymore? {{{2
 "
 " Because:
 "
@@ -224,8 +224,9 @@ augroup my_granular_undo
     "         C-y → three       ✔
     "
     au CmdlineLeave  *  let s:concat_next_kill = 0
-    au CmdlineLeave  *  let s:undolist_c = []
-    au InsertLeave   *  let s:undolist_i = []
+    " reset undolist and marks when we leave insert/command line mode
+    au CmdlineLeave  *  let s:undolist_c = [] | let s:mark_c = 0
+    au InsertLeave   *  let s:undolist_i = [] | let s:mark_i = 0
 augroup END
 
 " Functions {{{1
@@ -246,7 +247,7 @@ fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
             endif
             " before adding  sth in  the kill-ring,  check whether  it's already
             " there, and if it is, remove it
-            call filter(s:kill_ring_{a:mode}, { k,v -> v !=# a:text })
+            call filter(s:kill_ring_{a:mode}, { i,v -> v !=# a:text })
             call add(s:kill_ring_{a:mode}, a:text)
         endif
     endif
@@ -295,8 +296,7 @@ fu! readline#backward_kill_word(mode) abort "{{{2
         " Instead, feed "Left Del".
         return s:break_undo_before_deletions(a:mode)
         \     .repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>",
-        \             strchars(killed_text, 1)
-        \            )
+        \             strchars(killed_text, 1))
     catch
     finally
         let &l:isk = isk_save
@@ -383,6 +383,23 @@ fu! readline#end_of_line() abort "{{{2
     return repeat("\<c-g>U\<right>", col('$') - col('.'))
 endfu
 
+fu! readline#exchange_point_and_mark(mode) abort "{{{2
+    let [ line, pos ] = s:setup_and_get_info(a:mode, 0, 0, 0)
+    let new_pos = s:mark_{a:mode}
+
+    if a:mode ==# 'i'
+        let old_pos = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
+        let motion = new_pos > old_pos
+        \?               "\<c-g>U\<right>"
+        \:               "\<c-g>U\<left>"
+    endif
+
+    let s:mark_{a:mode} = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
+    return a:mode ==# 'c'
+    \?         "\<c-b>".repeat("\<right>", new_pos)
+    \:         repeat(motion, abs(new_pos - old_pos))
+endfu
+
 fu! readline#forward_char(mode) abort "{{{2
     let s:concat_next_kill = 0
     return a:mode ==# 'c'
@@ -438,7 +455,7 @@ fu! readline#kill_word(mode) abort "{{{2
     return ''
 endfu
 
-fu! readline#move_by_words(mode, fwd) abort "{{{2
+fu! readline#move_by_words(mode, fwd, ...) abort "{{{2
 " NOTE:
 " Implementing this function was tricky, it has to handle:
 "
@@ -448,7 +465,12 @@ fu! readline#move_by_words(mode, fwd) abort "{{{2
 
     let isk_save = &l:isk
     try
-        let [ line, pos ] = s:setup_and_get_info(a:mode, 0, 1, 1)
+        "                                                          ┌ if, in addition to moving the cursor forward,
+        "                                                          │ we're going to capitalize,
+        "                                                          │ we want to add the current line to the undolist
+        "                                                          │ to be able to undo
+        "                                                ┌─────────┤
+        let [ line, pos ] = s:setup_and_get_info(a:mode, a:0 ? 1 : 0, 1, 1)
         " old_char_idx = nr of characters before cursor in its current position
         " new_char_idx = "                                         new     "
 
@@ -481,6 +503,31 @@ fu! readline#move_by_words(mode, fwd) abort "{{{2
         \?                        diff > 0 ? "\<left>" : "\<right>"
         \:                        diff > 0 ? "\<c-b>"  : "\<c-f>"
 
+        " capitalize
+        " Here's how it works in readline:{{{
+        "
+        "     1. it looks for the keyword character after the cursor
+        "
+        "        The latter could be right after, or further away.
+        "        Which means the capitalization doesn't necessarily uppercase
+        "        the first character of a word.
+        "
+        "     2. it replaces it with its uppercase counterpart
+        "
+        "     3. it replaces all subsequent characters until a non-keyword character
+        "        with their lowercase counterparts
+        "}}}
+        if a:0
+            let new_line = substitute(line,
+            \                         '\v%'.(old_char_idx+1).'v.{-}\zs(\k)(.{-})%'.(new_char_idx+1).'v',
+            \                         '\u\1\L\2', '')
+            if a:mode ==# 'i'
+                call timer_start(0, {-> setline(line('.'), new_line )})
+            else
+                return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_char_idx)
+            endif
+        endif
+
         return repeat(building_motion, abs(diff))
 
     " the `catch` clause prevents errors from being echoed
@@ -496,17 +543,17 @@ endfu
 fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     let s:concat_next_kill  = a:this_kill_is_big && s:last_kill_was_big ? 0 : 1
     let s:last_kill_was_big = a:this_kill_is_big
-    " After  the next  deletion, it  the command-line  gets empty,  the deletion
-    " after that shouldn't be concatenated:
-    "
-    "         :one C-u
-    "         :two C-w
-    "         C-y
-    "         → twoone    ✘
-    "         → two       ✔
-    call timer_start(0, {-> getcmdline() =~# '^\s*$' ? execute('let s:concat_next_kill = 0') : '' })
 
     if a:mode ==# 'c'
+        " After  the next  deletion, it  the command-line  gets empty,  the deletion
+        " after that shouldn't be concatenated:
+        "
+        "         :one C-u
+        "         :two C-w
+        "         C-y
+        "         → twoone    ✘
+        "         → two       ✔
+        call timer_start(0, {-> getcmdline() =~# '^\s*$' ? execute('let s:concat_next_kill = 0') : '' })
         return
     endif
 
@@ -544,6 +591,13 @@ fu! s:set_isk() abort "{{{2
     " So now, I prefer to give an explicit value to `isk`.
 
     setl isk=@,48-57,192-255
+endfu
+
+fu! readline#set_mark(mode) abort "{{{2
+    let s:mark_{a:mode} = a:mode ==# 'i'
+    \?                        virtcol('.') -1
+    \:                        strchars(matchstr(getcmdline(), '.*\%'.getcmdpos().'c'), 1)
+    return ''
 endfu
 
 fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
@@ -690,16 +744,17 @@ fu! readline#unix_line_discard(mode) abort "{{{2
         let s:before_cursor = matchstr(line, '.*\%'.pos.'c')
         call timer_start(0, {-> s:add_to_kill_ring(a:mode,
         \                                          substitute(s:before_cursor,
-        \                                                     matchstr(getline("."),
-        \                                                              ".*\\%".col(".")."c"),
-        \                                                     "", ""),
+        \                                                     matchstr(getline('.'),
+        \                                                              '.*\%'.col('.').'c'),
+        \                                                     '', ''),
         \                                          0, 1)
         \                   })
     endif
     return s:break_undo_before_deletions(a:mode)."\<c-u>"
 endfu
 
-fu! readline#upcase_word(mode) abort "{{{2
+fu! readline#upcase_word(mode, ...) abort "{{{2
+    "                          ^ downcase instead of upcase
     let isk_save = &l:isk
     try
         let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 1, 1)
@@ -711,12 +766,12 @@ fu! readline#upcase_word(mode) abort "{{{2
             if pos > strlen(line)
                 return ''
             else
-                return repeat("\<del>", length).toupper(word)
+                return repeat("\<del>", length).(a:0 ? tolower(word) : toupper(word))
             endif
         elseif a:mode ==# 'i'
-            return repeat("\<del>", length).toupper(word)
+            return repeat("\<del>", length).(a:0 ? tolower(word) : toupper(word))
         elseif a:mode ==# 'n'
-            let new_line = substitute(line, pat, '\U\0', '')
+            let new_line = substitute(line, pat, (a:0 ? '\L' : '\U').'\0', '')
             let new_pos  = match(line, pat.'\zs') + 1
             call setline(line('.'), new_line)
             call cursor(line('.'), new_pos)
@@ -750,6 +805,11 @@ endfu
 
 let s:deleting = 0
 
+let s:fast_scroll_in_pum = 5
+
+let s:mark_i = 0
+let s:mark_c = 0
+
 let s:undolist_i = []
 let s:undolist_c = []
 
@@ -766,8 +826,6 @@ let s:undolist_c = []
 "
 " Basically, we should NOT concat 2 consecutive big kills.
 let s:last_kill_was_big = 0
-
-let s:concat_next_kill   = 0
-let s:fast_scroll_in_pum = 5
-let s:kill_ring_i        = ['']
-let s:kill_ring_c        = ['']
+let s:concat_next_kill  = 0
+let s:kill_ring_i       = ['']
+let s:kill_ring_c       = ['']
