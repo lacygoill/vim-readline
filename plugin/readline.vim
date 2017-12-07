@@ -109,51 +109,51 @@ augroup END
 " But if for some reason, you choose another key, or remove the mapping entirely,
 " make sure to disable these keys again.
 "}}}
-cno <expr><unique>  <c-@>  readline#set_mark('c')
-ino <expr><unique>  <c-@>  readline#set_mark('i')
+cno  <expr><unique>  <c-@>  readline#set_mark('c')
+ino  <expr><unique>  <c-@>  readline#set_mark('i')
 
 " C-_        undo {{{3
 
-cno <expr><unique>  <c-_>  readline#undo('c')
-ino <expr><unique>  <c-_>  readline#undo('i')
+cno  <expr><unique>  <c-_>  readline#undo('c')
+ino  <expr><unique>  <c-_>  readline#undo('i')
 
 " C-a        beginning-of-line {{{3
 
-cno <expr><unique>  <c-a>  readline#beginning_of_line('c')
-ino <expr><unique>  <c-a>  readline#beginning_of_line('i')
+cno  <expr><unique>  <c-a>  readline#beginning_of_line('c')
+ino  <expr><unique>  <c-a>  readline#beginning_of_line('i')
 
 " C-b        backward-char {{{3
 
-cno <expr><unique>  <c-b>  readline#backward_char('c')
-ino <expr><unique>  <c-b>  readline#backward_char('i')
+cno  <expr><unique>  <c-b>  readline#backward_char('c')
+ino  <expr><unique>  <c-b>  readline#backward_char('i')
 
 " C-d        delete-char {{{3
 
-cno <expr><unique>  <c-d>  readline#delete_char('c')
-ino <expr><unique>  <c-d>  readline#delete_char('i')
+cno  <expr><unique>  <c-d>  readline#delete_char('c')
+ino  <expr><unique>  <c-d>  readline#delete_char('i')
 
 " C-e        end-of-line {{{3
 
-ino <expr><unique>  <c-e>  readline#end_of_line()
+ino  <expr><unique>  <c-e>  readline#end_of_line()
 
 " C-f        forward-char {{{3
 
-cno <expr><unique>  <c-f>  readline#forward_char('c')
-ino <expr><unique>  <c-f>  readline#forward_char('i')
+cno  <expr><unique>  <c-f>  readline#forward_char('c')
+ino  <expr><unique>  <c-f>  readline#forward_char('i')
 
 " C-g        abort {{{3
 
-cno <expr><unique>  <c-g>  '<c-c>'
+cno  <expr><unique>  <c-g>  '<c-c>'
 
 " C-h        backward-delete-char {{{3
 
-cno <expr><unique>  <c-h>  readline#backward_delete_char('c')
-ino <expr><unique>  <c-h>  readline#backward_delete_char('i')
+cno  <expr><unique>  <c-h>  readline#backward_delete_char('c')
+ino  <expr><unique>  <c-h>  readline#backward_delete_char('i')
 
 " C-k        kill-line {{{3
 
-cno <expr><unique>  <c-k>       readline#kill_line('c')
-ino <expr><unique>  <c-k><c-k>  readline#kill_line('i')
+cno  <expr><unique>  <c-k>       readline#kill_line('c')
+ino  <expr><unique>  <c-k><c-k>  readline#kill_line('i')
 " In insert mode, we want C-k to keep its original behavior (insert digraph).
 " It makes more sense than bind it to a `kill-line` function, because inserting
 " digraph is more frequent than killing a line.
@@ -163,23 +163,23 @@ ino <expr><unique>  <c-k><c-k>  readline#kill_line('i')
 
 " C-t        transpose-chars {{{3
 
-cno <expr><unique>  <c-t>  readline#transpose_chars('c')
-ino <expr><unique>  <c-t>  readline#transpose_chars('i')
+cno  <expr><unique>  <c-t>  readline#transpose_chars('c')
+ino  <expr><unique>  <c-t>  readline#transpose_chars('i')
 
 " C-u        unix-line-discard {{{3
 
-cno <expr><unique>  <c-u>  readline#unix_line_discard('c')
-ino <expr><unique>  <c-u>  readline#unix_line_discard('i')
+cno  <expr><unique>  <c-u>  readline#unix_line_discard('c')
+ino  <expr><unique>  <c-u>  readline#unix_line_discard('i')
 
 " C-w        backward-kill-word {{{3
 
-cno <expr><unique>  <c-w>  readline#backward_kill_word('c')
-ino <expr><unique>  <c-w>  readline#backward_kill_word('i')
+cno  <expr><unique>  <c-w>  readline#backward_kill_word('c')
+ino  <expr><unique>  <c-w>  readline#backward_kill_word('i')
 
 " C-x C-x    exchange-point-and-mark {{{3
 
-cno <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('c')
-ino <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
+cno  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('c')
+ino  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 
 " C-y        yank {{{3
 
@@ -192,8 +192,8 @@ ino <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 "
 " … we should be able to paste it with C-y, like in readline.
 
-ino <expr><unique>  <c-y>  readline#yank('i', 0)
-cno <expr><unique>  <c-y>  readline#yank('c', 0)
+ino  <expr><unique>  <c-y>  readline#yank('i', 0)
+cno  <expr><unique>  <c-y>  readline#yank('c', 0)
 
 " META {{{2
 " M-b/f      forward-word    backward-word {{{3
@@ -206,23 +206,23 @@ cno <expr><unique>  <c-y>  readline#yank('c', 0)
 " Because it seems to consider `-` as part of a word.
 " `M-b`, `M-f` would move too far compared to readline.
 
-"                                             ┌─  close wildmenu
-"                                             │
-cno <expr><unique>  <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0)
-cno <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1)
+"                                              ┌─  close wildmenu
+"                                              │
+cno  <expr><unique>  <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0)
+cno  <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1)
 
-ino <expr><unique>  <m-b>  readline#move_by_words('i', 0)
-ino <expr><unique>  <m-f>  readline#move_by_words('i', 1)
+ino  <expr><unique>  <m-b>  readline#move_by_words('i', 0)
+ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1)
 
 " M-u c      capitalize-word {{{3
 
-cno <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
-ino <expr><unique>  <m-u>c  readline#move_by_words('i', 1, 1)
+cno  <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
+ino  <expr><unique>  <m-u>c  readline#move_by_words('i', 1, 1)
 
 " M-u l      downcase-word {{{3
 
-cno <expr><unique>  <m-u>l  readline#upcase_word('c', 1)
-ino <expr><unique>  <m-u>l  readline#upcase_word('i', 1)
+cno  <expr><unique>  <m-u>l  readline#upcase_word('c', 1)
+ino  <expr><unique>  <m-u>l  readline#upcase_word('i', 1)
 
 nmap         <unique>  <m-u>l                 <plug>(downcase-word)
 nno  <silent>          <plug>(downcase-word)  :<c-u>exe readline#upcase_word('n', 1)<cr>
@@ -233,14 +233,14 @@ xno  <silent><unique>  <m-u>l                 :<c-u>sil keepj keepp '<,'>s/\%V[A
 " Delete until the beginning of the next word.
 " In bash, M-d does the same, and is bound to the function kill-word.
 
-cno <expr><unique>  <m-d>  readline#kill_word('c')
-ino <expr><unique>  <m-d>  readline#kill_word('i')
+cno  <expr><unique>  <m-d>  readline#kill_word('c')
+ino  <expr><unique>  <m-d>  readline#kill_word('i')
 
 " M-n/p      down up {{{3
 
 " For the `M-n` mapping to work, we need to give the same value for 'wildchar'
 " and 'wildcharm'. We gave them both the value `<Tab>`.
-cno <unique>  <m-n>  <down>
+cno  <unique>  <m-n>  <down>
 
 " For more info:
 "
@@ -249,12 +249,12 @@ cno <unique>  <m-n>  <down>
 
 " history-search-backward
 " history-search-forward
-cno <unique>  <m-p>  <up>
+cno  <unique>  <m-p>  <up>
 
 " M-t        transpose-words {{{3
 
-cno <expr><unique>  <m-t>  readline#transpose_words('c')
-ino <expr><unique>  <m-t>  readline#transpose_words('i')
+cno  <expr><unique>  <m-t>  readline#transpose_words('c')
+ino  <expr><unique>  <m-t>  readline#transpose_words('i')
 
 nmap         <unique>  <m-t>                    <plug>(transpose_words)
 nno  <silent>          <plug>(transpose_words)  :<c-u>exe readline#transpose_words('n')<cr>
@@ -390,7 +390,7 @@ endfu
 call s:set_keysyms(1)
 
 fu! s:toggle_keysyms_in_terminal() abort "{{{3
-    nno <buffer> <expr> <nowait> : <sid>enable_keysyms_on_command_line()
+    nno  <buffer><expr><nowait>  :  <sid>enable_keysyms_on_command_line()
 
     augroup toggle_keysyms_in_terminal
         au! * <buffer>
@@ -500,7 +500,7 @@ augroup END
 " … then reenable them once the macro has been used (`:ToggleMetaKeys` again).
 " This is the purpose of the next mapping.
 "}}}
-nmap <expr> @ <sid>do_not_break_macro_replay()
+nmap  <expr>  @  <sid>do_not_break_macro_replay()
 
 " Do NOT use `<nowait>`.
 " If we hit `@?`, the previous mapping must not be used. It wouldn't work.
