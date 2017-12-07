@@ -89,7 +89,7 @@ augroup END
 " CTRL {{{2
 " C-@        set-mark {{{3
 
-" Disable `C-@` if you don't use it anymore in these mappings.{{{
+" If you don't use `C-@` in the insert mode mapping, disable the key.{{{
 "
 " By default,  in insert mode,  C-@ (:h ^@) inserts  the last inserted  text and
 " leaves insert mode.
@@ -99,11 +99,6 @@ augroup END
 "
 "     ino <c-@>     <nop>
 
-" We did  the same for C-SPC,  even though it wasn't  necessary, because hitting
-" C-SPC doesn't produce the keycode C-SPC (it produces C-@).
-"
-"     ino <c-space> <nop>
-
 " There's no need for that anymore, since we use `C-@` for setting a mark, which
 " is harmless: it doesn't insert / remove any text in the buffer.
 " But if for some reason, you choose another key, or remove the mapping entirely,
@@ -111,6 +106,21 @@ augroup END
 "}}}
 cno  <expr><unique>  <c-@>  readline#set_mark('c')
 ino  <expr><unique>  <c-@>  readline#set_mark('i')
+" For some reason, there's no conflict between this mapping and `i_C-j` in vimrc.{{{
+" Even though `C-j` produces `C-@` (C-v C-j → c-@).
+" Watch:
+"
+"     ino  <c-j>  foo
+"     ino  <c-@>  bar
+"
+"     press C-j in insert mode  →  foo
+"     press C-@ "               →  bar
+"
+" Summary:
+" C-j  C-SPC  C-@  all seem to produce the same keycode C-@ when inserted literally.
+" But in practice, the only conflict which we must take into consideration is between
+" C-j/C-SPC and C-@.
+"}}}
 
 " C-_        undo {{{3
 
