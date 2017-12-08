@@ -714,6 +714,7 @@ fu! readline#transpose_words(mode) abort "{{{2
     finally
         let &l:isk = isk_save
     endtry
+    return ''
 endfu
 
 fu! readline#undo(mode) abort "{{{2
