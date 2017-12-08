@@ -298,6 +298,7 @@ fu! readline#backward_kill_word(mode) abort "{{{2
         \     .repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>",
         \             strchars(killed_text, 1))
     catch
+        call my_lib#catch_error()
     finally
         let &l:isk = isk_save
     endtry
@@ -449,6 +450,7 @@ fu! readline#kill_word(mode) abort "{{{2
         return s:break_undo_before_deletions(a:mode).repeat("\<del>", strchars(killed_text, 1))
 
     catch
+        call my_lib#catch_error()
     finally
         let &l:isk = isk_save
     endtry
@@ -534,6 +536,7 @@ fu! readline#move_by_words(mode, fwd, ...) abort "{{{2
     " if you try to throw the exception manually (echo v:exception, echo
     " v:throwpoint), nothing will be displayed, so don't bother
     catch
+        call my_lib#catch_error()
     finally
         let &l:isk = isk_save
     endtry
@@ -707,12 +710,10 @@ fu! readline#transpose_words(mode) abort "{{{2
         endif
 
     catch
-        return 'echoerr '.string(v:exception)
+        call my_lib#catch_error()
     finally
         let &l:isk = isk_save
     endtry
-
-    return ''
 endfu
 
 fu! readline#undo(mode) abort "{{{2
@@ -780,7 +781,7 @@ fu! readline#upcase_word(mode, ...) abort "{{{2
         endif
 
     catch
-        return 'echoerr '.string(v:exception)
+        call my_lib#catch_error()
     finally
         let &l:isk = isk_save
     endtry
