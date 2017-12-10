@@ -280,8 +280,8 @@ xno        <unique>  <m-u>u  U
 cno  <expr><unique>  <m-u>u  readline#upcase_word('c')
 ino  <expr><unique>  <m-u>u  readline#upcase_word('i')
 
-nmap       <unique>  <m-u>u               <plug>(upcase_word)
-nno  <expr><silent>  <plug>(upcase_word)  readline#upcase_word('n')
+nmap       <unique>  <m-u>u               <plug>(upcase-word)
+nno  <expr><silent>  <plug>(upcase-word)  readline#upcase_word('n')
 
 " M-y        yank-pop {{{3
 

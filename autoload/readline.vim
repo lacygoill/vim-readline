@@ -769,8 +769,7 @@ fu! readline#upcase_word(mode, ...) abort "{{{2
             let new_line = substitute(line, pat, (a:0 ? '\L' : '\U').'\0', '')
             let new_pos  = match(line, pat.'\zs') + 1
             call timer_start(0, {-> setline(line('.'), new_line) + cursor(line('.'), new_pos)})
-            sil! call repeat#set("\<plug>(upcase_word)")
-            return ''
+            sil! call repeat#set(a:0 ? "\<plug>(downcase-word)" : "\<plug>(upcase-word)")
         endif
 
     catch
