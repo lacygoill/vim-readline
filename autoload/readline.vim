@@ -698,7 +698,7 @@ fu! readline#transpose_words(mode) abort "{{{2
         else
             call timer_start(0, {-> setline(line('.'), new_line) + cursor(line('.'), new_pos+1)})
             if a:mode ==# 'n'
-                sil! call repeat#set("\<plug>(transpose_words)")
+                sil! repeat call#set("\<plug>(transpose_words)")
             endif
         endif
 
