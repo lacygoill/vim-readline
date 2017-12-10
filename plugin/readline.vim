@@ -229,13 +229,17 @@ ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1)
 cno  <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
 ino  <expr><unique>  <m-u>c  readline#move_by_words('i', 1, 1)
 
+nmap       <unique>  <m-u>c                   <plug>(capitalize-word)
+nno  <expr><silent>  <plug>(capitalize-word)  readline#move_by_words('n', 1, 1)
+" xno  <silent><unique>  <m-u>c                   ???
+
 " M-u l      downcase-word {{{3
 
 cno  <expr><unique>  <m-u>l  readline#upcase_word('c', 1)
 ino  <expr><unique>  <m-u>l  readline#upcase_word('i', 1)
 
 nmap         <unique>  <m-u>l                 <plug>(downcase-word)
-nno  <silent>          <plug>(downcase-word)  :<c-u>exe readline#upcase_word('n', 1)<cr>
+nno    <expr><silent>  <plug>(downcase-word)  readline#upcase_word('n', 1)
 xno  <silent><unique>  <m-u>l                 :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
 
 " M-d        kill-word {{{3
@@ -266,17 +270,17 @@ cno  <unique>  <m-p>  <up>
 cno  <expr><unique>  <m-t>  readline#transpose_words('c')
 ino  <expr><unique>  <m-t>  readline#transpose_words('i')
 
-nmap         <unique>  <m-t>                    <plug>(transpose_words)
-nno  <silent>          <plug>(transpose_words)  :<c-u>exe readline#transpose_words('n')<cr>
+nmap       <unique>  <m-t>                    <plug>(transpose_words)
+nno  <expr><silent>  <plug>(transpose_words)  readline#transpose_words('n')
 
-" M-u u    upcase-word {{{3
+" M-u u      upcase-word {{{3
 
 xno        <unique>  <m-u>u  U
 cno  <expr><unique>  <m-u>u  readline#upcase_word('c')
 ino  <expr><unique>  <m-u>u  readline#upcase_word('i')
 
-nmap         <unique>  <m-u>u               <plug>(upcase_word)
-nno  <silent>          <plug>(upcase_word)  :<c-u>exe readline#upcase_word('n')<cr>
+nmap       <unique>  <m-u>u               <plug>(upcase_word)
+nno  <expr><silent>  <plug>(upcase_word)  readline#upcase_word('n')
 
 " M-y        yank-pop {{{3
 

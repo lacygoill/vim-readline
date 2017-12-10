@@ -501,9 +501,7 @@ fu! readline#move_by_words(mode, fwd, ...) abort "{{{2
         let diff = old_char_idx - new_char_idx
         let building_motion = a:mode ==# 'i'
         \?                        diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
-        \:                    a:mode ==# 'c'
-        \?                        diff > 0 ? "\<left>" : "\<right>"
-        \:                        diff > 0 ? "\<c-b>"  : "\<c-f>"
+        \:                        diff > 0 ? "\<left>" : "\<right>"
 
         " capitalize
         " Here's how it works in readline:{{{
@@ -523,10 +521,10 @@ fu! readline#move_by_words(mode, fwd, ...) abort "{{{2
             let new_line = substitute(line,
             \                         '\v%'.(old_char_idx+1).'v.{-}\zs(\k)(.{-})%'.(new_char_idx+1).'v',
             \                         '\u\1\L\2', '')
-            if a:mode ==# 'i'
-                call timer_start(0, {-> setline(line('.'), new_line )})
-            else
+            if a:mode ==# 'c'
                 return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_char_idx)
+            else
+                call timer_start(0, {-> setline(line('.'), new_line )})
             endif
         endif
 
@@ -775,8 +773,7 @@ fu! readline#upcase_word(mode, ...) abort "{{{2
         elseif a:mode ==# 'n'
             let new_line = substitute(line, pat, (a:0 ? '\L' : '\U').'\0', '')
             let new_pos  = match(line, pat.'\zs') + 1
-            call setline(line('.'), new_line)
-            call cursor(line('.'), new_pos)
+            call timer_start(0, {-> setline(line('.'), new_line) + cursor(line('.'), new_pos)})
             sil! call repeat#set("\<plug>(upcase_word)")
             return ''
         endif
