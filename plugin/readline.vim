@@ -229,9 +229,10 @@ ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1)
 cno  <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
 ino  <expr><unique>  <m-u>c  readline#move_by_words('i', 1, 1)
 
-nmap       <unique>  <m-u>c                   <plug>(capitalize-word)
-nno  <expr><silent>  <plug>(capitalize-word)  readline#move_by_words('n', 1, 1)
-" xno  <silent><unique>  <m-u>c                   ???
+nmap         <unique>  <m-u>c                   <plug>(capitalize-word)
+nno    <expr><silent>  <plug>(capitalize-word)  readline#move_by_words('n', 1, 1)
+xno  <silent><unique>  <m-u>c                   :<c-u>sil keepj keepp
+\                                               '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
 
 " M-u l      downcase-word {{{3
 
