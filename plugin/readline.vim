@@ -412,6 +412,11 @@ call s:set_keysyms(1)
 fu! s:toggle_keysyms_in_terminal() abort "{{{3
     nno  <buffer><expr><nowait>  :  <sid>enable_keysyms_on_command_line()
 
+    " Warning: don't change the name of the augroup{{{
+    " without doing the same in:
+    "
+    "     ~/.vim/plugged/vim-window/autoload/window.vim
+    "}}}
     augroup toggle_keysyms_in_terminal
         au! * <buffer>
         au CursorMoved <buffer> call s:set_keysyms(0)
