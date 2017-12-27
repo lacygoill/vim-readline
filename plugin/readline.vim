@@ -156,10 +156,6 @@ ino  <expr><unique>  <c-e>  readline#end_of_line()
 cno  <expr><unique>  <c-f>  readline#forward_char('c')
 ino  <expr><unique>  <c-f>  readline#forward_char('i')
 
-" C-g        abort {{{3
-
-cno  <expr><unique>  <c-g>  '<c-c>'
-
 " C-h        backward-delete-char {{{3
 
 cno  <expr><unique>  <c-h>  readline#backward_delete_char('c')
@@ -385,6 +381,7 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-d>=\ed"
         exe "set <m-e>=\ee"
         exe "set <m-f>=\ef"
+        exe "set <m-g>=\eg"
         exe "set <m-m>=\em"
         exe "set <m-n>=\en"
         exe "set <m-p>=\ep"
@@ -398,6 +395,7 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-d>="
         exe "set <m-e>="
         exe "set <m-f>="
+        exe "set <m-g>="
         exe "set <m-m>="
         exe "set <m-n>="
         exe "set <m-p>="
