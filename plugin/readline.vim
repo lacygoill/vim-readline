@@ -326,6 +326,16 @@ endif
 
 " functions {{{2
 fu! s:do_not_break_macro_replay() abort "{{{3
+    " ask which register we want to replay
+    let char = nr2char(getchar(),1)
+    " Don't toggle keysyms if we want to reexecute last Ex command.
+    " Why?
+    "     1. It's probably useless.
+    "     2. If the Ex command prints a message, it will be automatically erased.
+    if char ==# ':'
+        return '@:'
+    endif
+
     " Warning:{{{
     " `do_not_break_macro_replay()` will NOT work when you do this:
     "
@@ -356,13 +366,13 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     augroup do_not_break_macro_replay
         au!
         au CursorHold,CursorHoldI * call s:set_keysyms(1)
-                                    \| let &ut = s:ut_save
-                                    \| unlet! s:ut_save
-                                    \| exe 'au! do_not_break_macro_replay'
-                                    \| exe 'aug! do_not_break_macro_replay'
+        \|                          let &ut = s:ut_save
+        \|                          unlet! s:ut_save
+        \|                          exe 'au! do_not_break_macro_replay'
+        \|                          exe 'aug! do_not_break_macro_replay'
     augroup END
 
-    return '@'.nr2char(getchar(),1)
+    return '@'.char
 endfu
 
 fu! s:enable_keysyms_on_command_line() abort "{{{3

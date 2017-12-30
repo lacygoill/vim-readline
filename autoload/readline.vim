@@ -717,6 +717,9 @@ fu! readline#undo(mode) abort "{{{2
     let [ old_line, old_pos ] = remove(s:undolist_{a:mode}, -1)
 
     if a:mode ==# 'c'
+        " if we had performed a transformation,  we undo it by mistake, and want
+        " to re-perform it, we need to reset a flag in `vim-cmdline`
+        call cmdline#reset_did_transform()
         return "\<c-e>\<c-u>"
         \     .old_line."\<c-b>"
         \     .repeat("\<right>", old_pos)
