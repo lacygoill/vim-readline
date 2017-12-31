@@ -287,7 +287,13 @@ nno  <expr><silent>  <plug>(upcase-word)  readline#upcase_word('n')
 " M-y        yank-pop {{{3
 
 cno  <expr><unique>  <m-y>  readline#yank('c', 1)
-ino  <expr><unique>  <m-y>  readline#yank('i', 1)
+
+" Disabled in Vim, because we press `ù` by accident too frequently.
+" When it happens, we invoke `readline#yank()` which is extremely distracting.
+" It completely changes the text we've typed.
+if has('nvim')
+    ino  <expr><unique>  <m-y>  readline#yank('i', 1)
+endif
 
 " OPTIONS {{{1
 
