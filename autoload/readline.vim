@@ -452,7 +452,7 @@ fu! readline#kill_word(mode) abort "{{{2
     return ''
 endfu
 
-fu! readline#move_by_words(mode, fwd, ...) abort "{{{2
+fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
 " NOTE:
 " Implementing this function was tricky, it has to handle:
 "
@@ -476,7 +476,7 @@ fu! readline#move_by_words(mode, fwd, ...) abort "{{{2
         "          ́ foo  ́ bar  ́                                     │
         let old_char_idx = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
 
-        if a:fwd
+        if a:is_fwd
             " all characters from the beginning of the line until the last
             " character of the nearest NEXT word (current one if we're in a word,
             " or somewhere AFTER otherwise)
