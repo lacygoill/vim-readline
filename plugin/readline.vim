@@ -386,7 +386,7 @@ fu! s:enable_keysyms_on_command_line() abort "{{{3
     " Do NOT return `:` immediately.
     " The previous function call sets some special options, and for some reason,
     " setting these prevents us from displaying a message with `:echo`.
-    call timer_start(0, {-> feedkeys(':', 'int')})
+    call timer_start(0, {-> feedkeys(':', 'in')})
     return ''
 endfu
 
