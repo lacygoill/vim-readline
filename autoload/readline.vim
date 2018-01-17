@@ -38,7 +38,7 @@ let g:autoloaded_readline = 1
 "
 " If you break it just after, then  a custom abbreviation may be expanded in the
 " middle of a word you type.
-" Watch:
+" MWE:
 "
 "         :inorea al la
 "
@@ -178,7 +178,7 @@ let g:autoloaded_readline = 1
 "             special characters  in `v:char`,  like `BS` and  `C-g`; they  would be
 "             inserted literally.
 "
-"             Watch:
+"             MWE:
 "             the goal being to replace any `a` with `x`:
 "
 "                     augroup replace_a_with_x

@@ -113,7 +113,7 @@ cno  <expr><unique>  <c-@>  readline#set_mark('c')
 ino  <expr><unique>  <c-@>  readline#set_mark('i')
 " For some reason, there's no conflict between this mapping and `i_C-j` in vimrc.{{{
 " Even though `C-j` produces `C-@` (C-v C-j → c-@).
-" Watch:
+" MWE:
 "
 "     ino  <c-j>  foo
 "     ino  <c-@>  bar
