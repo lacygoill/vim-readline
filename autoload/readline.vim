@@ -247,7 +247,7 @@ fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
             endif
             " before adding  sth in  the kill-ring,  check whether  it's already
             " there, and if it is, remove it
-            call filter(s:kill_ring_{a:mode}, { i,v -> v !=# a:text })
+            call filter(s:kill_ring_{a:mode}, { i,v -> v isnot# a:text })
             call add(s:kill_ring_{a:mode}, a:text)
         endif
     endif
@@ -607,11 +607,11 @@ fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{
     \:                      [ getline('.'), col('.') ]
 
     " `transpose_words()` may call this function from normal mode
-    if a:add_to_undolist && a:mode !=# 'n'
+    if a:add_to_undolist && a:mode isnot# 'n'
         call s:add_to_undolist(a:mode, line, pos)
     endif
 
-    if a:reset_concat && a:mode !=# 'n'
+    if a:reset_concat && a:mode isnot# 'n'
         let s:concat_next_kill = 0
     endif
 
