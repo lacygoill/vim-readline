@@ -187,7 +187,7 @@ let g:autoloaded_readline = 1
 "                     augroup END
 "
 "                     fu! Func() abort
-"                         if v:char ==# 'a'
+"                         if v:char is# 'a'
 "                             " ✔
 "                             " let v:char = 'x'
 "                             " ✘ fails when putting a register containing `abc`
@@ -268,7 +268,7 @@ fu! readline#backward_char(mode) abort "{{{2
     let s:concat_next_kill = 0
 
     " SPC + C-h = close wildmenu
-    return a:mode ==# 'i'
+    return a:mode is# 'i'
     \?         "\<c-g>U\<left>"
     \:         (wildmenumode() ? "\<space>\<c-h>" : '')."\<left>"
 endfu
@@ -295,7 +295,7 @@ fu! readline#backward_kill_word(mode) abort "{{{2
         " It may happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
         " Instead, feed "Left Del".
         return s:break_undo_before_deletions(a:mode)
-        \     .repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>",
+        \     .repeat((a:mode is# 'i' ? "\<c-g>U" : '')."\<left>\<del>",
         \             strchars(killed_text, 1))
     catch
         return lg#catch_error()
@@ -307,7 +307,7 @@ endfu
 
 fu! readline#beginning_of_line(mode) abort "{{{2
     let s:concat_next_kill = 0
-    return a:mode ==# 'c'
+    return a:mode is# 'c'
     \?         "\<home>"
     \:     col('.') >= match(getline('.'), '\S') + 1
     \?         repeat("\<c-g>U\<left>", col('.') - match(getline('.'), '\S') - 1)
@@ -315,7 +315,7 @@ fu! readline#beginning_of_line(mode) abort "{{{2
 endfu
 
 fu! s:break_undo_before_deletions(mode) abort "{{{2
-    if a:mode ==# 'c' || s:deleting
+    if a:mode is# 'c' || s:deleting
         return ''
     else
         " If  the execution  has reached  this point,  it means  we're going  to
@@ -355,7 +355,7 @@ endfu
 fu! readline#delete_char(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
 
-    if a:mode ==# 'c'
+    if a:mode is# 'c'
         " If the cursor is  at the end of the command line, we  want C-d to keep
         " its normal behavior  which is to list names that  match the pattern in
         " front of the cursor.  However, if it's  before the end, we want C-d to
@@ -388,7 +388,7 @@ fu! readline#exchange_point_and_mark(mode) abort "{{{2
     let [ line, pos ] = s:setup_and_get_info(a:mode, 0, 0, 0)
     let new_pos = s:mark_{a:mode}
 
-    if a:mode ==# 'i'
+    if a:mode is# 'i'
         let old_pos = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
         let motion = new_pos > old_pos
         \?               "\<c-g>U\<right>"
@@ -396,14 +396,14 @@ fu! readline#exchange_point_and_mark(mode) abort "{{{2
     endif
 
     let s:mark_{a:mode} = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
-    return a:mode ==# 'c'
+    return a:mode is# 'c'
     \?         "\<c-b>".repeat("\<right>", new_pos)
     \:         repeat(motion, abs(new_pos - old_pos))
 endfu
 
 fu! readline#forward_char(mode) abort "{{{2
     let s:concat_next_kill = 0
-    return a:mode ==# 'c'
+    return a:mode is# 'c'
     \?        (wildmenumode() ? "\<space>\<c-h>" : '')."\<right>"
     \:     col('.') > strlen(getline('.'))
     \?         "\<c-f>"
@@ -499,7 +499,7 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         endif
 
         let diff = old_char_idx - new_char_idx
-        let building_motion = a:mode ==# 'i'
+        let building_motion = a:mode is# 'i'
         \?                        diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
         \:                        diff > 0 ? "\<left>" : "\<right>"
 
@@ -521,7 +521,7 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
             let new_line = substitute(line,
             \                         '\v%'.(old_char_idx+1).'v.{-}\zs(\k)(.{-})%'.(new_char_idx+1).'v',
             \                         '\u\1\L\2', '')
-            if a:mode ==# 'c'
+            if a:mode is# 'c'
                 return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_char_idx)
             else
                 call timer_start(0, {-> setline(line('.'), new_line )})
@@ -545,7 +545,7 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     let s:concat_next_kill  = a:this_kill_is_big && s:last_kill_was_big ? 0 : 1
     let s:last_kill_was_big = a:this_kill_is_big
 
-    if a:mode ==# 'c'
+    if a:mode is# 'c'
         " After  the next  deletion, it  the command-line  gets empty,  the deletion
         " after that shouldn't be concatenated:
         "
@@ -595,14 +595,14 @@ fu! s:set_isk() abort "{{{2
 endfu
 
 fu! readline#set_mark(mode) abort "{{{2
-    let s:mark_{a:mode} = a:mode ==# 'i'
+    let s:mark_{a:mode} = a:mode is# 'i'
     \?                        virtcol('.') -1
     \:                        strchars(matchstr(getcmdline(), '.*\%'.getcmdpos().'c'), 1)
     return ''
 endfu
 
 fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
-    let [ line, pos ] = a:mode ==# 'c'
+    let [ line, pos ] = a:mode is# 'c'
     \?                      [ getcmdline(), getcmdpos() ]
     \:                      [ getline('.'), col('.') ]
 
@@ -629,12 +629,12 @@ fu! readline#transpose_chars(mode) abort "{{{2
         " Test on this:
         "
         "     âêîôû
-        return a:mode ==# 'i'
+        return a:mode is# 'i'
         \?         "\<c-g>U\<left>\<bs>\<c-g>U\<right>".matchstr(line, '.\ze.\%'.pos.'c')
         \:         "\<left>\<bs>\<right>".matchstr(line, '.\ze.\%'.pos.'c')
 
     elseif pos > 1
-        return a:mode ==# 'i'
+        return a:mode is# 'i'
         \?         "\<bs>\<c-g>U\<right>".matchstr(line, '.\%'.pos.'c')
         \:         "\<bs>\<right>".matchstr(line, '.\%'.pos.'c')
 
@@ -696,13 +696,13 @@ fu! readline#transpose_words(mode) abort "{{{2
         let rep      = '\3\2\1'
         let new_line = substitute(line, pat, rep, '')
 
-        if a:mode ==# 'c'
+        if a:mode is# 'c'
             return "\<c-e>\<c-u>"
             \     .new_line
             \     ."\<c-b>".repeat("\<right>", new_pos)
         else
             call timer_start(0, {-> setline(line('.'), new_line) + cursor(line('.'), new_pos+1)})
-            if a:mode ==# 'n'
+            if a:mode is# 'n'
                 sil! call repeat#set("\<plug>(transpose_words)")
             endif
         endif
@@ -721,7 +721,7 @@ fu! readline#undo(mode) abort "{{{2
     endif
     let [ old_line, old_pos ] = remove(s:undolist_{a:mode}, -1)
 
-    if a:mode ==# 'c'
+    if a:mode is# 'c'
         " if we had performed a transformation,  we undo it by mistake, and want
         " to re-perform it, we need to reset a flag in `vim-cmdline`
         call cmdline#reset_did_transform()
@@ -741,7 +741,7 @@ fu! readline#unix_line_discard(mode) abort "{{{2
 
     let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 0, 0)
 
-    if a:mode ==# 'c'
+    if a:mode is# 'c'
         call s:add_to_kill_ring(a:mode, matchstr(line, '.*\%'.pos.'c'), 0, 1)
     else
         let s:before_cursor = matchstr(line, '.*\%'.pos.'c')
@@ -759,21 +759,22 @@ endfu
 fu! readline#upcase_word(mode, ...) abort "{{{2
     "                          ^ downcase instead of upcase
     let isk_save = &l:isk
+
     try
         let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 1, 1)
         let pat    = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
         let word   = matchstr(line, pat)
         let length = strchars(word, 1)
 
-        if a:mode ==# 'c'
+        if a:mode is# 'c'
             if pos > strlen(line)
                 return ''
             else
                 return repeat("\<del>", length).(a:0 ? tolower(word) : toupper(word))
             endif
-        elseif a:mode ==# 'i'
+        elseif a:mode is# 'i'
             return repeat("\<del>", length).(a:0 ? tolower(word) : toupper(word))
-        elseif a:mode ==# 'n'
+        elseif a:mode is# 'n'
             let new_line = substitute(line, pat, (a:0 ? '\L' : '\U').'\0', '')
             let new_pos  = match(line, pat.'\zs') + 1
             call timer_start(0, {-> setline(line('.'), new_line) + cursor(line('.'), new_pos)})
@@ -797,7 +798,7 @@ fu! readline#yank(mode, pop) abort "{{{2
     endif
     let @- = s:kill_ring_{a:mode}[-1]
     return (a:pop
-    \       ?    repeat((a:mode ==# 'i' ? "\<c-g>U" : '')."\<left>\<del>", length)
+    \       ?    repeat((a:mode is# 'i' ? "\<c-g>U" : '')."\<left>\<del>", length)
     \       :    '')
     \       ."\<c-r>-"
 endfu

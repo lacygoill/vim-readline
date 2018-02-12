@@ -338,7 +338,7 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     " Why?
     "     1. It's probably useless.
     "     2. If the Ex command prints a message, it will be automatically erased.
-    if char ==# ':'
+    if char is# ':'
         return '@:'
     endif
 
@@ -483,7 +483,7 @@ com! -bar ToggleMetaKeys call s:toggle_meta_keys()
 " autocommand {{{2
 augroup handle_keysyms
     au!
-    au BufWinEnter * if &buftype ==# 'terminal'
+    au BufWinEnter * if &bt is# 'terminal'
                     \|     call s:set_keysyms(0)
                     \|     call s:toggle_keysyms_in_terminal()
                     \| endif
