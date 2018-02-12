@@ -236,7 +236,7 @@ fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
         \?                                 s:kill_ring_{a:mode}[-1].a:text
         \:                                 a:text.s:kill_ring_{a:mode}[-1]
     else
-        if s:kill_ring_{a:mode} == [ '' ]
+        if s:kill_ring_{a:mode} ==# [ '' ]
             let s:kill_ring_{a:mode} = [ a:text ]
         else
             " the kill ring  is never reset in readline; we  should not reset it
