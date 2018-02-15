@@ -330,6 +330,8 @@ if has('nvim') || has('gui_running')
     finish
 endif
 
+let s:original_ut = &ut
+
 " functions {{{2
 fu! s:do_not_break_macro_replay() abort "{{{3
     " ask which register we want to replay
@@ -353,27 +355,11 @@ fu! s:do_not_break_macro_replay() abort "{{{3
 "}}}
     call s:set_keysyms(0)
 
-    " We need to save the current value of 'updatetime', to restore it later.
-    " However, suppose we do this:
-    "
-    "         g/pat/norm @q
-    "           │
-    "           └─ `pat` matching at least 2 texts in the buffer
-    "
-    " On the second invocation of `@q`, 'ut' will probably be 5ms, not 2000ms.
-    " This is because, Vim has executed the 2 macros very fast. In less than 5 ms.
-    " CursorHold(I) hasn't been  fired once between the 2  invocations, and 'ut'
-    " hasn't been restored properly.
-    " So, we must NOT save `&ut` if  its value is abnormally low (less than 1s),
-    " instead we'll use 2s as a default value.
-
-    let s:ut_save = &ut >= 1000 ? &ut : 2000
     set updatetime=5
     augroup do_not_break_macro_replay
         au!
         au CursorHold,CursorHoldI * call s:set_keysyms(1)
-        \|                          let &ut = s:ut_save
-        \|                          unlet! s:ut_save
+        \|                          let &ut = s:original_ut
         \|                          exe 'au! do_not_break_macro_replay'
         \|                          exe 'aug! do_not_break_macro_replay'
     augroup END
