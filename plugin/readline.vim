@@ -407,7 +407,11 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-z>="
     endif
 endfu
-call s:set_keysyms(1)
+
+augroup set_keysyms
+    au!
+    au VimEnter,TermChanged * sil! call s:set_keysyms(1)
+augroup END
 
 fu! s:toggle_keysyms_in_terminal() abort "{{{3
     nno  <buffer><expr><nowait>  :  <sid>enable_keysyms_on_command_line()
