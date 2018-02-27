@@ -367,7 +367,7 @@ fu! readline#delete_char(mode) abort "{{{2
     " If no menu, and we're BEFORE the end of the line,   delete next character.
     " "                     AT the end of the line,       delete the newline.
     if pumvisible()
-        let l:key = repeat("\<c-n>", s:fast_scroll_in_pum)
+        let l:key = repeat("\<c-n>", s:FAST_SCROLL_IN_PUM)
 
     elseif col('.') <= strlen(getline('.'))
         let l:key = "\<del>"
@@ -736,7 +736,7 @@ endfu
 
 fu! readline#unix_line_discard(mode) abort "{{{2
     if pumvisible()
-        return repeat("\<c-p>", s:fast_scroll_in_pum)
+        return repeat("\<c-p>", s:FAST_SCROLL_IN_PUM)
     endif
 
     let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 0, 0)
@@ -807,7 +807,7 @@ endfu
 
 let s:deleting = 0
 
-let s:fast_scroll_in_pum = 5
+let s:FAST_SCROLL_IN_PUM = 5
 
 let s:mark_i = 0
 let s:mark_c = 0
