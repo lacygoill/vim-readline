@@ -164,13 +164,17 @@ ino  <expr><unique>  <c-h>  readline#backward_delete_char('i')
 " C-k        kill-line {{{3
 
 cno  <expr><unique>  <c-k>       readline#kill_line('c')
-ino  <expr><unique>  <c-k><c-k>  readline#kill_line('i')
+
+" We need to restore the insertion of digraph functionality on the command-line.
+cno  <unique>  <c-x>k  <c-k>
+
 " In insert mode, we want C-k to keep its original behavior (insert digraph).
 " It makes more sense than bind it to a `kill-line` function, because inserting
 " digraph is more frequent than killing a line.
 "
 " But doing so, we lose the possibility to delete everything after the cursor.
 " To restore this functionality, we map it to C-k C-k.
+ino  <expr><unique>  <c-k><c-k>  readline#kill_line('i')
 
 " C-t        transpose-chars {{{3
 
