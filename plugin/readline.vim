@@ -164,22 +164,6 @@ ino  <expr><unique>  <c-e>  readline#end_of_line()
 cno  <expr><unique>  <c-f>  readline#forward_char('c')
 ino  <expr><unique>  <c-f>  readline#forward_char('i')
 
-" Restore default C-f on the command-line (using C-x C-e){{{
-" Isn't `q:` enough?
-"
-" No.
-" What if  we're in the middle  of a command, and  we don't want to  escape then
-" press `q:`? And  what if  we're on  the expression  command line,  opened from
-" insert mode?  There's no default key  binding to access the expression command
-" line window (no `q=`).
-"}}}
-" Why C-x C-e?{{{
-"
-" To stay consistent with  how we open the editor to edit the  command line in a
-" shell.
-"}}}
-let &cedit = "\<c-x>\<c-e>"
-
 " C-h        backward-delete-char {{{3
 
 cno  <expr><unique>  <c-h>  readline#backward_delete_char('c')
@@ -214,6 +198,47 @@ ino  <expr><unique>  <c-u>  readline#unix_line_discard('i')
 
 cno  <expr><unique>  <c-w>  readline#backward_kill_word('c')
 ino  <expr><unique>  <c-w>  readline#backward_kill_word('i')
+
+" C-x C-e       edit-and-execute-command {{{3
+
+" Restore default C-f on the command-line (using C-x C-e){{{
+" Isn't `q:` enough?
+"
+" No.
+" What if  we're in the middle  of a command, and  we don't want to  escape then
+" press `q:`? And  what if  we're on  the expression  command line,  opened from
+" insert mode?  There's no default key  binding to access the expression command
+" line window (no `q=`).
+"}}}
+" Why C-x C-e?{{{
+"
+" To stay consistent with  how we open the editor to edit the  command line in a
+" shell.
+"}}}
+" Why not simply assigning "\<c-x>\<c-e>" to 'cedit'?{{{
+"
+" I think this option accepts only 1 key.
+" If you give it 2 keys, it will only consider the 1st one.
+" So, here's what will  happen if you press C-x:
+"
+"   • Vim waits for more keys to be typed because we have mappings beginning with C-x
+"   • we press C-g
+"   • assuming C-x C-g is not mapped to anything Vim will open the command-line window ✘
+"
+"     Not because `&cedit = "\<c-x>\<c-g>"` (which  is not the case anyway), but
+"     because the 1st key in '&cedit' matches the previous key we pressed.
+"
+"     This is wrong, Vim should open the command-line window ONLY when we press C-x C-e.
+"}}}
+
+let &cedit = ''
+cno  <expr><unique>  <c-x><c-e>  readline#edit_and_execute_command()
+fu! readline#edit_and_execute_command() abort
+    let &cedit = "\<c-x>"
+    call feedkeys(&cedit, 'int')
+    call timer_start(0, {-> execute('let &cedit = ""')})
+    return ''
+endfu
 
 " C-x C-x    exchange-point-and-mark {{{3
 
