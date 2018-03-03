@@ -161,6 +161,7 @@ ino  <expr><unique>  <c-e>  readline#end_of_line()
 
 " C-f        forward-char {{{3
 
+let &cedit = ''
 cno  <expr><unique>  <c-f>  readline#forward_char('c')
 ino  <expr><unique>  <c-f>  readline#forward_char('i')
 
@@ -230,15 +231,7 @@ ino  <expr><unique>  <c-w>  readline#backward_kill_word('i')
 "
 "     This is wrong, Vim should open the command-line window ONLY when we press C-x C-e.
 "}}}
-
-let &cedit = ''
 cno  <expr><unique>  <c-x><c-e>  readline#edit_and_execute_command()
-fu! readline#edit_and_execute_command() abort
-    let &cedit = "\<c-x>"
-    call feedkeys(&cedit, 'int')
-    call timer_start(0, {-> execute('let &cedit = ""')})
-    return ''
-endfu
 
 " C-x C-x    exchange-point-and-mark {{{3
 

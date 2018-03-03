@@ -379,6 +379,13 @@ fu! readline#delete_char(mode) abort "{{{2
     return l:key
 endfu
 
+fu! readline#edit_and_execute_command() abort "{{{2
+    let &cedit = "\<c-x>"
+    call feedkeys(&cedit, 'int')
+    call timer_start(0, {-> execute('let &cedit = ""')})
+    return ''
+endfu
+
 fu! readline#end_of_line() abort "{{{2
     let s:concat_next_kill = 0
     return repeat("\<c-g>U\<right>", col('$') - col('.'))
