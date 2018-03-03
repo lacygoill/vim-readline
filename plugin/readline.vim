@@ -180,11 +180,6 @@ ino  <expr><unique>  <c-f>  readline#forward_char('i')
 "}}}
 let &cedit = "\<c-x>\<c-e>"
 
-" C-f        forward-char {{{3
-
-cno  <expr><unique>  <c-f>  readline#forward_char('c')
-ino  <expr><unique>  <c-f>  readline#forward_char('i')
-
 " C-h        backward-delete-char {{{3
 
 cno  <expr><unique>  <c-h>  readline#backward_delete_char('c')
@@ -239,60 +234,6 @@ ino  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 ino  <expr><unique>  <c-y>  readline#yank('i', 0)
 cno  <expr><unique>  <c-y>  readline#yank('c', 0)
 
-
-" C-h        backward-delete-char {{{3
-
-cno  <expr><unique>  <c-h>  readline#backward_delete_char('c')
-ino  <expr><unique>  <c-h>  readline#backward_delete_char('i')
-
-" C-k        kill-line {{{3
-
-cno  <expr><unique>  <c-k>       readline#kill_line('c')
-
-" We need to restore the insertion of digraph functionality on the command-line.
-cno  <unique>  <c-x>k  <c-k>
-
-" In insert mode, we want C-k to keep its original behavior (insert digraph).
-" It makes more sense than bind it to a `kill-line` function, because inserting
-" digraph is more frequent than killing a line.
-"
-" But doing so, we lose the possibility to delete everything after the cursor.
-" To restore this functionality, we map it to C-k C-k.
-ino  <expr><unique>  <c-k><c-k>  readline#kill_line('i')
-
-" C-t        transpose-chars {{{3
-
-cno  <expr><unique>  <c-t>  readline#transpose_chars('c')
-ino  <expr><unique>  <c-t>  readline#transpose_chars('i')
-
-" C-u        unix-line-discard {{{3
-
-cno  <expr><unique>  <c-u>  readline#unix_line_discard('c')
-ino  <expr><unique>  <c-u>  readline#unix_line_discard('i')
-
-" C-w        backward-kill-word {{{3
-
-cno  <expr><unique>  <c-w>  readline#backward_kill_word('c')
-ino  <expr><unique>  <c-w>  readline#backward_kill_word('i')
-
-" C-x C-x    exchange-point-and-mark {{{3
-
-cno  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('c')
-ino  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
-
-" C-y        yank {{{3
-
-" Whenever we delete some multi-character text, with:
-"
-"         • M-d
-"         • C-w
-"         • C-k
-"         • C-u
-"
-" … we should be able to paste it with C-y, like in readline.
-
-ino  <expr><unique>  <c-y>  readline#yank('i', 0)
-cno  <expr><unique>  <c-y>  readline#yank('c', 0)
 
 " META {{{2
 " M-b/f      forward-word    backward-word {{{3
