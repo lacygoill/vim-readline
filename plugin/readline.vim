@@ -200,7 +200,7 @@ ino  <expr><unique>  <c-u>  readline#unix_line_discard('i')
 cno  <expr><unique>  <c-w>  readline#backward_kill_word('c')
 ino  <expr><unique>  <c-w>  readline#backward_kill_word('i')
 
-" C-x C-e       edit-and-execute-command {{{3
+" C-x C-e    edit-and-execute-command {{{3
 
 " Restore default C-f on the command-line (using C-x C-e){{{
 " Isn't `q:` enough?
