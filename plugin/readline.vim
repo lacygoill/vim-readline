@@ -137,7 +137,11 @@ ino  <expr><unique>  <c-_>  readline#undo('i')
 cno  <expr><unique>  <c-a>  readline#beginning_of_line('c')
 ino  <expr><unique>  <c-a>  readline#beginning_of_line('i')
 
-" restore default C-a
+" restore default i_C-a
+" insert previously inserted text
+ino  <c-x><c-a>  <c-a>
+
+" restore default c_C-a
 " dump all candidates on the command-line
 cno  <unique>  <c-x><c-a>  <c-a>
 
