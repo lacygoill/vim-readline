@@ -142,10 +142,10 @@ let g:autoloaded_readline = 1
 "@             call feedkeys("\<c-g>u", 'int')
 "             Why?{{{
 "
-"             To be  sure that the  contents of a register  we put from  insert mode
-"             will never be altered.
+"             To be  sure that the register  we put from insert  mode will never
+"             mutate.
             "}}}
-"             When could it be altered?{{{
+"             When could it mutate?{{{
 "
 "             If you delete  some text, with `C-w` for example,  then put a register
 "             whose contents is 'hello', you will insert 'hellh':
