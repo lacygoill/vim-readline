@@ -33,7 +33,7 @@ let g:autoloaded_readline = 1
 "         • or you break it just AFTER
 "
 " If you break it just before, then  when you insert a register after a sequence
-" of deletions,  the last  character of  the register  is altered  (deleted then
+" of deletions,  the last  character of  the register  is changed  (deleted then
 " replaced with the 1st).
 "
 " If you break it just after, then  a custom abbreviation may be expanded in the
