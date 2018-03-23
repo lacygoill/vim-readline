@@ -360,7 +360,21 @@ fu! readline#delete_char(mode) abort "{{{2
         " its normal behavior  which is to list names that  match the pattern in
         " front of the cursor.  However, if it's  before the end, we want C-d to
         " delete the character after it.
-        return getcmdpos() > strlen(getcmdline()) ? "\<c-d>" : "\<del>"
+
+        if getcmdpos() <= strlen(getcmdline()) || getcmdtype() isnot# ':'
+            return "\<del>"
+        endif
+
+        let cmdline = getcmdline()
+        " Before pressing  `C-d`, we first  escape to erase the  possible listed
+        " completion suggestions. This makes consecutive listings more readable.
+        " MWE:
+        "       :h dir       C-d
+        "       :h dire      C-d
+        "       :h directory C-d
+        let keys = "\e:".cmdline."\<c-d>"
+        call feedkeys(keys, 'int')
+        return ''
     endif
 
     " If the popup menu is visible, scroll a page down.
