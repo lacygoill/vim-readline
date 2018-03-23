@@ -524,10 +524,8 @@ com! -bar ToggleMetaKeys call s:toggle_meta_keys()
 " autocommand {{{2
 augroup handle_keysyms
     au!
-    au BufWinEnter * if &bt is# 'terminal'
-                    \|     call s:set_keysyms(0)
-                    \|     call s:toggle_keysyms_in_terminal()
-                    \| endif
+    au TerminalOpen  *  call s:set_keysyms(0)
+                    \|  call s:toggle_keysyms_in_terminal()
 augroup END
 
 " mapping {{{2
