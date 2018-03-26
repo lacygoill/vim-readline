@@ -233,8 +233,8 @@ augroup END
 fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
     if s:concat_next_kill
         let s:kill_ring_{a:mode}[-1] = a:after
-        \?                                 s:kill_ring_{a:mode}[-1].a:text
-        \:                                 a:text.s:kill_ring_{a:mode}[-1]
+                                   \ ?     s:kill_ring_{a:mode}[-1].a:text
+                                   \ :     a:text.s:kill_ring_{a:mode}[-1]
     else
         if s:kill_ring_{a:mode} ==# [ '' ]
             let s:kill_ring_{a:mode} = [ a:text ]
@@ -269,8 +269,8 @@ fu! readline#backward_char(mode) abort "{{{2
 
     " SPC + C-h = close wildmenu
     return a:mode is# 'i'
-    \?         "\<c-g>U\<left>"
-    \:         (wildmenumode() ? "\<space>\<c-h>" : '')."\<left>"
+       \ ?     "\<c-g>U\<left>"
+       \ :     (wildmenumode() ? "\<space>\<c-h>" : '')."\<left>"
 endfu
 
 fu! readline#backward_delete_char(mode) abort "{{{2
@@ -308,10 +308,10 @@ endfu
 fu! readline#beginning_of_line(mode) abort "{{{2
     let s:concat_next_kill = 0
     return a:mode is# 'c'
-    \?         "\<home>"
-    \:     col('.') >= match(getline('.'), '\S') + 1
-    \?         repeat("\<c-g>U\<left>", col('.') - match(getline('.'), '\S') - 1)
-    \:         repeat("\<c-g>U\<right>", match(getline('.'), '\S') - col('.') + 1)
+       \ ?     "\<home>"
+       \ : col('.') >= match(getline('.'), '\S') + 1
+       \ ?     repeat("\<c-g>U\<left>", col('.') - match(getline('.'), '\S') - 1)
+       \ :     repeat("\<c-g>U\<right>", match(getline('.'), '\S') - col('.') + 1)
 endfu
 
 fu! s:break_undo_before_deletions(mode) abort "{{{2
@@ -412,23 +412,23 @@ fu! readline#exchange_point_and_mark(mode) abort "{{{2
     if a:mode is# 'i'
         let old_pos = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
         let motion = new_pos > old_pos
-        \?               "\<c-g>U\<right>"
-        \:               "\<c-g>U\<left>"
+                 \ ?     "\<c-g>U\<right>"
+                 \ :     "\<c-g>U\<left>"
     endif
 
     let s:mark_{a:mode} = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
     return a:mode is# 'c'
-    \?         "\<c-b>".repeat("\<right>", new_pos)
-    \:         repeat(motion, abs(new_pos - old_pos))
+       \ ?     "\<c-b>".repeat("\<right>", new_pos)
+       \ :     repeat(motion, abs(new_pos - old_pos))
 endfu
 
 fu! readline#forward_char(mode) abort "{{{2
     let s:concat_next_kill = 0
     return a:mode is# 'c'
-    \?        (wildmenumode() ? "\<space>\<c-h>" : '')."\<right>"
-    \:     col('.') > strlen(getline('.'))
-    \?         "\<c-f>"
-    \:         "\<c-g>U\<right>"
+       \ ?    (wildmenumode() ? "\<space>\<c-h>" : '')."\<right>"
+       \ : col('.') > strlen(getline('.'))
+       \ ?     "\<c-f>"
+       \ :     "\<c-g>U\<right>"
     " Go the right if we're in the middle of the line (custom), or fix the
     " indentation if we're at the end (default)
 endfu
@@ -521,8 +521,8 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
 
         let diff = old_char_idx - new_char_idx
         let building_motion = a:mode is# 'i'
-        \?                        diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
-        \:                        diff > 0 ? "\<left>" : "\<right>"
+                          \ ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
+                          \ :     diff > 0 ? "\<left>" : "\<right>"
 
         " capitalize
         " Here's how it works in readline:{{{
@@ -617,15 +617,15 @@ endfu
 
 fu! readline#set_mark(mode) abort "{{{2
     let s:mark_{a:mode} = a:mode is# 'i'
-    \?                        virtcol('.') -1
-    \:                        strchars(matchstr(getcmdline(), '.*\%'.getcmdpos().'c'), 1)
+                      \ ?     virtcol('.') -1
+                      \ :     strchars(matchstr(getcmdline(), '.*\%'.getcmdpos().'c'), 1)
     return ''
 endfu
 
 fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
     let [ line, pos ] = a:mode is# 'c'
-    \?                      [ getcmdline(), getcmdpos() ]
-    \:                      [ getline('.'), col('.') ]
+                    \ ?     [ getcmdline(), getcmdpos() ]
+                    \ :     [ getline('.'), col('.') ]
 
     " `transpose_words()` may call this function from normal mode
     if a:add_to_undolist && a:mode isnot# 'n'
@@ -651,13 +651,13 @@ fu! readline#transpose_chars(mode) abort "{{{2
         "
         "     âêîôû
         return a:mode is# 'i'
-        \?         "\<c-g>U\<left>\<bs>\<c-g>U\<right>".matchstr(line, '.\ze.\%'.pos.'c')
-        \:         "\<left>\<bs>\<right>".matchstr(line, '.\ze.\%'.pos.'c')
+           \ ?     "\<c-g>U\<left>\<bs>\<c-g>U\<right>".matchstr(line, '.\ze.\%'.pos.'c')
+           \ :     "\<left>\<bs>\<right>".matchstr(line, '.\ze.\%'.pos.'c')
 
     elseif pos > 1
         return a:mode is# 'i'
-        \?         "\<bs>\<c-g>U\<right>".matchstr(line, '.\%'.pos.'c')
-        \:         "\<bs>\<right>".matchstr(line, '.\%'.pos.'c')
+           \ ?     "\<bs>\<c-g>U\<right>".matchstr(line, '.\%'.pos.'c')
+           \ :     "\<bs>\<right>".matchstr(line, '.\%'.pos.'c')
 
     else
         return ''
