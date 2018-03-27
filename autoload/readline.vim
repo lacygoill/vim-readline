@@ -365,15 +365,13 @@ fu! readline#delete_char(mode) abort "{{{2
             return "\<del>"
         endif
 
-        let cmdline = getcmdline()
-        " Before pressing  `C-d`, we first  escape to erase the  possible listed
+        " Before pressing  `C-d`, we first  redraw to erase the  possible listed
         " completion suggestions. This makes consecutive listings more readable.
         " MWE:
         "       :h dir       C-d
         "       :h dire      C-d
         "       :h directory C-d
-        let keys = "\e:".cmdline."\<c-d>"
-        call feedkeys(keys, 'int')
+        call timer_start(0, {-> execute('redraw') + feedkeys("\<c-d>", 'int')})
         return ''
     endif
 
