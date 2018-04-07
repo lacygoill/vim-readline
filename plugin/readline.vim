@@ -480,7 +480,7 @@ fu! s:toggle_keysyms_in_terminal() abort "{{{3
 endfu
 
 fu! s:toggle_meta_keys() abort "{{{3
-    let is_unset = execute('sil! set <M-p>') =~# 'E846'
+    let is_unset = execute('set <M-p>', 'silent!') =~# 'E846'
 
     call s:set_keysyms(is_unset)
 
