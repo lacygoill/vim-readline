@@ -750,7 +750,7 @@ fu! readline#undo(mode) abort "{{{2
     else
         " `old_pos` expresses a position with a character count.
         " `cursor()` expects a byte count.
-        let pos = strlen(matchstr(old_line, '.\{'.old_pos.'}'))
+        let pos = strlen(matchstr(old_line, '.\{'.old_pos.'}')) + 1
         call timer_start(0, {-> setline(line('.'), old_line)
         \                     + cursor(line('.'), pos)})
         return ''
