@@ -756,7 +756,7 @@ fu! readline#undo(mode) abort "{{{2
         "
         " Because, `old_pos` contains the old position of the cursor in terms of
         " character count.
-        " While `setline()` expects a position in byte count.
+        " While `cursor()` expects a position in byte count.
         call timer_start(0, {-> setline(line('.'), old_line) })
         return ''
     endif
