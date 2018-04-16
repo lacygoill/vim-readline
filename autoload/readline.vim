@@ -748,16 +748,11 @@ fu! readline#undo(mode) abort "{{{2
         \     .old_line."\<c-b>"
         \     .repeat("\<right>", old_pos)
     else
-        " We don't restore the position atm, it seems unnecessary.
-        " But if  you have to, be  aware that you can't  use `old_pos` directly,
-        " like that:
-        "
-        "         call timer_start(0, {-> setline(line('.'), old_line) + cursor(line('.'), old_pos + 1)})
-        "
-        " Because, `old_pos` contains the old position of the cursor in terms of
-        " character count.
-        " While `cursor()` expects a position in byte count.
-        call timer_start(0, {-> setline(line('.'), old_line) })
+        " `old_pos` expresses a position with a character count.
+        " `cursor()` expects a byte count.
+        let pos = strlen(matchstr(old_line, '.\{'.old_pos.'}'))
+        call timer_start(0, {-> setline(line('.'), old_line)
+        \                     + cursor(line('.'), pos)})
         return ''
     endif
 endfu
