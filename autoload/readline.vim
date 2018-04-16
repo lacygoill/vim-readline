@@ -310,8 +310,8 @@ fu! readline#beginning_of_line(mode) abort "{{{2
     return a:mode is# 'c'
        \ ?     "\<home>"
        \ : col('.') >= match(getline('.'), '\S') + 1
-       \ ?     repeat("\<c-g>U\<left>", col('.') - match(getline('.'), '\S') - 1)
-       \ :     repeat("\<c-g>U\<right>", match(getline('.'), '\S') - col('.') + 1)
+       \ ?     repeat("\<c-g>U\<left>", strchars(matchstr(getline('.'), '\S.*\%'.col('.').'c'), 1))
+       \ :     repeat("\<c-g>U\<right>", strchars(matchstr(getline('.'), '\%'.col('.').'c\s*\ze\S'), 1))
 endfu
 
 fu! s:break_undo_before_deletions(mode) abort "{{{2
