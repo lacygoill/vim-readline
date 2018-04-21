@@ -352,7 +352,7 @@ if !has('nvim')
     " don't use `c-w` as a prefix to execute commands manipulating the window in
     " which a  terminal buffer  is displayed; `c-w`  should delete  the previous
     " word; use `c-g` instead
-    set termkey=<c-g>
+    set termwinkey=<c-g>
 endif
 
 " KEYSYMS {{{1
