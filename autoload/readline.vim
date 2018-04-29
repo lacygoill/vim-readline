@@ -431,10 +431,11 @@ fu! readline#forward_char(mode) abort "{{{2
     " indentation if we're at the end (default)
 endfu
 
-fu! readline#install_cmdline_transformation_pre() abort "{{{2
-    augroup add_to_undolist_before_transforming
+fu! readline#add_to_undolist() abort "{{{2
+    augroup add_to_undolist
         au!
-        au User CmdlineTransformationPre call s:add_to_undolist('c', getcmdline(), getcmdpos())
+        au User add_to_undolist_c call s:add_to_undolist('c', getcmdline(), getcmdpos())
+        au User add_to_undolist_i call s:add_to_undolist('i', getline('.'), col('.'))
     augroup END
 endfu
 

@@ -79,9 +79,9 @@ let g:loaded_readline = 1
 
 augroup my_lazy_loaded_readline
     au!
-    au CmdlineEnter * call readline#install_cmdline_transformation_pre()
-    \|                exe 'au! my_lazy_loaded_readline'
-    \|                aug! my_lazy_loaded_readline
+    au CmdlineEnter,InsertEnter * call readline#add_to_undolist()
+    \|                            exe 'au! my_lazy_loaded_readline'
+    \|                            aug! my_lazy_loaded_readline
 augroup END
 
 " MAPPINGS {{{1
