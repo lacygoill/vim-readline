@@ -327,8 +327,8 @@ fu! s:break_undo_before_deletions(mode) abort "{{{2
         augroup enable_break_undo_before_deletions
             au!
             au InsertLeave,InsertCharPre * let s:deleting = 0
-            \|                             exe 'au! enable_break_undo_before_deletions'
-            \|                             aug! enable_break_undo_before_deletions
+            \ |                            exe 'au! enable_break_undo_before_deletions'
+            \ |                            aug! enable_break_undo_before_deletions
         augroup END
         return "\<c-g>u"
     endif
@@ -590,8 +590,8 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
         au!
         au InsertCharPre,InsertEnter,InsertLeave *
         \      let s:concat_next_kill = 0
-        \|     exe 'au! reset_concatenate_kills'
-        \|     aug! reset_concatenate_kills
+        \ |    exe 'au! reset_concatenate_kills'
+        \ |    aug! reset_concatenate_kills
     augroup END
 endfu
 

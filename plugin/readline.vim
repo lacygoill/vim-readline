@@ -80,8 +80,8 @@ let g:loaded_readline = 1
 augroup my_lazy_loaded_readline
     au!
     au CmdlineEnter,InsertEnter * call readline#add_to_undolist()
-    \|                            exe 'au! my_lazy_loaded_readline'
-    \|                            aug! my_lazy_loaded_readline
+    \ |                           exe 'au! my_lazy_loaded_readline'
+    \ |                           aug! my_lazy_loaded_readline
 augroup END
 
 " MAPPINGS {{{1
@@ -410,9 +410,9 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     augroup do_not_break_macro_replay
         au!
         au CursorHold,CursorHoldI * call s:set_keysyms(1)
-        \|                          let &ut = s:original_ut
-        \|                          exe 'au! do_not_break_macro_replay'
-        \|                          exe 'aug! do_not_break_macro_replay'
+        \ |                         let &ut = s:original_ut
+        \ |                         exe 'au! do_not_break_macro_replay'
+        \ |                         exe 'aug! do_not_break_macro_replay'
     augroup END
 
     return '@'.char
@@ -525,7 +525,7 @@ com! -bar ToggleMetaKeys call s:toggle_meta_keys()
 augroup handle_keysyms
     au!
     au TerminalOpen  *  call s:set_keysyms(0)
-                    \|  call s:toggle_keysyms_in_terminal()
+                   \ |  call s:toggle_keysyms_in_terminal()
 augroup END
 
 " mapping {{{2
