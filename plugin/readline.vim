@@ -484,13 +484,10 @@ fu! s:toggle_meta_keys() abort "{{{3
 
     call s:set_keysyms(is_unset)
 
-    " '' → execute NON-silently
-    call timer_start(0, { -> execute(
-                        \            "echom '[Fix Macro] Meta keys '."
-                        \            .(is_unset ? string('Enabled') : string('Disabled')),
-                        \            ''
-                        \           )
-                        \ })
+    " Flush any delayed screen updates before printing the metadata.
+    " See :h :echo-redraw
+    redraw
+    echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
 
     " Why do we use a timer to display our message?{{{
     " Why not simply echo it now?
