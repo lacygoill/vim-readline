@@ -480,37 +480,20 @@ fu! s:toggle_keysyms_in_terminal() abort "{{{3
 endfu
 
 fu! s:toggle_meta_keys() abort "{{{3
-    let is_unset = execute('set <M-p>', 'silent!') =~# 'E846'
+    let is_unset = execute('set <M-p>', 'silent!') is# "\n"
 
     call s:set_keysyms(is_unset)
 
     " Flush any delayed screen updates before printing the metadata.
     " See :h :echo-redraw
-    redraw
-    echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
-
-    " Why do we use a timer to display our message?{{{
-    " Why not simply echo it now?
-    "
-    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
-    "         echo ''
-    "
-    " Because, it seems that `set <M-key>` redraws the command-line after
-    " we echo the next message. Therefore, it's erased, and we can't read it.
-    " We could echo a 2nd empty message to prevent Vim from redrawing the
-    " command-line:
-    "
-    "         echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
-    "         echo ''
-    "
-    " But then, we would have to hit Enter to exit the prompt.
-    "
-    " MWE (Minimal Working Example) to reproduce the pb:
+    " MWE (Minimal Working Example) to reproduce the pb:{{{
     "
     "     :set fdm=manual | echo 'hello'           ✔
     "     :set <M-a>=     | echo 'hello'           ✘
     "     :set <M-a>=     | echo "hello\nworld"    ✔
-    "     }}}
+    "}}}
+    redraw
+    echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
 endfu
 
 " command {{{2
