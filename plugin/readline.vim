@@ -486,7 +486,7 @@ fu! s:toggle_meta_keys() abort "{{{3
 
     " Flush any delayed screen updates before printing the metadata.
     " See :h :echo-redraw
-    " MWE:
+    " MWE: {{{
     "
     "     :set fdm=manual | echo 'hello'           ✔
     "     :set <M-a>=     | echo 'hello'           ✘
