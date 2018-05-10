@@ -616,7 +616,7 @@ endfu
 
 fu! readline#set_mark(mode) abort "{{{2
     let s:mark_{a:mode} = a:mode is# 'i'
-                      \ ?     virtcol('.') -1
+                      \ ?     strchars(matchstr(getline('.'), '.*\%'.col('.').'c'), 1)
                       \ :     strchars(matchstr(getcmdline(), '.*\%'.getcmdpos().'c'), 1)
     return ''
 endfu
