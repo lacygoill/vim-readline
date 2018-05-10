@@ -493,13 +493,13 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         "                                                          │ to be able to undo
         "                                                ┌─────────┤
         let [ line, pos ] = s:setup_and_get_info(a:mode, a:0 ? 1 : 0, 1, 1)
-        " old_char_idx = nr of characters before cursor in its current position
-        " new_char_idx = "                                         new     "
+        " old_pos_char = nr of characters before cursor in its current position
+        " new_pos_char = "                                         new     "
 
         "                               ignore composing characters ┐
         " necessary to move correctly on a line such as:            │
         "          ́ foo  ́ bar  ́                                     │
-        let old_char_idx = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
+        let old_pos_char = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
 
         if a:is_fwd
             " all characters from the beginning of the line until the last
@@ -509,16 +509,17 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
             "                                    │
             "   if there's no word where we are, ┘
             " nor after us, then go on until the end of the line
-            let new_char_idx = strchars(matchstr(line, pat), 1)
         else
             " all characters from the beginning of the line until the first
             " character of the nearest PREVIOUS word (current one if we're in a
             " word, or somewhere BEFORE otherwise)
-            let pat          = '\v.*\ze<.{-1,}%'.pos.'c'
-            let new_char_idx = strchars(matchstr(line, pat), 1)
+            let pat = '\v.*\ze<.{-1,}%'.pos.'c'
         endif
+        let str          = matchstr(line, pat)
+        let new_pos      = len(str)
+        let new_pos_char = strchars(str, 1)
 
-        let diff = old_char_idx - new_char_idx
+        let diff = old_pos_char - new_pos_char
         let building_motion = a:mode is# 'i'
                           \ ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
                           \ :     diff > 0 ? "\<left>" : "\<right>"
@@ -539,10 +540,10 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         "}}}
         if a:0
             let new_line = substitute(line,
-            \                         '\v%'.(old_char_idx+1).'v.{-}\zs(\k)(.{-})%'.(new_char_idx+1).'v',
+            \                         '\v%'.pos.'c.{-}\zs(\k)(.{-})%'.(new_pos+1).'c',
             \                         '\u\1\L\2', '')
             if a:mode is# 'c'
-                return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_char_idx)
+                return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_pos_char)
             else
                 call timer_start(0, {-> setline(line('.'), new_line )})
             endif
