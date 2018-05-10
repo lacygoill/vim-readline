@@ -514,9 +514,10 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         " pos_char     = nr of characters before cursor in its current position
         " new_pos_char = "                                         new     "
 
-        "                               ignore composing characters ┐
-        " necessary to move correctly on a line such as:            │
-        "          ́ foo  ́ bar  ́                                     │
+        "                           ignore composing characters ┐
+        "                                                       │
+        " necessary to move correctly on a line such as:        │
+        "          ́ foo  ́ bar  ́                                 │
         let pos_char = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
 
         let diff = pos_char - new_pos_char
