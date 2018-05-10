@@ -507,8 +507,8 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
             " word, or somewhere BEFORE otherwise)
             let pat = '\v.*\ze<.{-1,}%'.pos.'c'
         endif
-        let str          = matchstr(line, pat)
-        let new_pos      = len(str)
+        let str     = matchstr(line, pat)
+        let new_pos = len(str)
 
         let new_pos_char = strchars(str, 1)
         " old_pos_char = nr of characters before cursor in its current position
