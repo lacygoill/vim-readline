@@ -511,15 +511,15 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         let new_pos = len(str)
 
         let new_pos_char = strchars(str, 1)
-        " old_pos_char = nr of characters before cursor in its current position
+        " pos_char     = nr of characters before cursor in its current position
         " new_pos_char = "                                         new     "
 
         "                               ignore composing characters ┐
         " necessary to move correctly on a line such as:            │
         "          ́ foo  ́ bar  ́                                     │
-        let old_pos_char = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
+        let pos_char = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
 
-        let diff = old_pos_char - new_pos_char
+        let diff = pos_char - new_pos_char
         let building_motion = a:mode is# 'i'
                           \ ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
                           \ :     diff > 0 ? "\<left>" : "\<right>"
