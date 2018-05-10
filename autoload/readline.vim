@@ -493,14 +493,6 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         "                                                          │ to be able to undo
         "                                                ┌─────────┤
         let [ line, pos ] = s:setup_and_get_info(a:mode, a:0 ? 1 : 0, 1, 1)
-        " old_pos_char = nr of characters before cursor in its current position
-        " new_pos_char = "                                         new     "
-
-        "                               ignore composing characters ┐
-        " necessary to move correctly on a line such as:            │
-        "          ́ foo  ́ bar  ́                                     │
-        let old_pos_char = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
-
         if a:is_fwd
             " all characters from the beginning of the line until the last
             " character of the nearest NEXT word (current one if we're in a word,
@@ -517,7 +509,15 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         endif
         let str          = matchstr(line, pat)
         let new_pos      = len(str)
+
         let new_pos_char = strchars(str, 1)
+        " old_pos_char = nr of characters before cursor in its current position
+        " new_pos_char = "                                         new     "
+
+        "                               ignore composing characters ┐
+        " necessary to move correctly on a line such as:            │
+        "          ́ foo  ́ bar  ́                                     │
+        let old_pos_char = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
 
         let diff = old_pos_char - new_pos_char
         let building_motion = a:mode is# 'i'
