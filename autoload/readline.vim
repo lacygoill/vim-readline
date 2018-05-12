@@ -546,7 +546,12 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
             if a:mode is# 'c'
                 return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_pos_char)
             else
-                call timer_start(0, {-> setline('.', new_line )})
+                " Why redraw?{{{
+                "
+                " The  cursor  appears  to  end  in a  too-far  position  when  some
+                " characters are concealed before it on the line.
+                "}}}
+                call timer_start(0, {-> setline('.', new_line) + execute('redraw')})
             endif
         endif
 
