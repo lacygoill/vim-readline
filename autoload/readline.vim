@@ -546,7 +546,7 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
             if a:mode is# 'c'
                 return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_pos_char)
             else
-                call timer_start(0, {-> setline(line('.'), new_line )})
+                call timer_start(0, {-> setline('.', new_line )})
             endif
         endif
 
@@ -723,7 +723,12 @@ fu! readline#transpose_words(mode) abort "{{{2
             \     .new_line
             \     ."\<c-b>".repeat("\<right>", new_pos)
         else
-            call timer_start(0, {-> setline(line('.'), new_line) + cursor(line('.'), new_pos+1)})
+            " Why redraw?{{{
+            "
+            " The  cursor  appears  to  end  in a  too-far  position  when  some
+            " characters are concealed before it on the line.
+            "}}}
+            call timer_start(0, {-> setline('.', new_line) + cursor('.', new_pos+1) + execute('redraw')})
             if a:mode is# 'n'
                 sil! call repeat#set("\<plug>(transpose_words)")
             endif
@@ -754,8 +759,8 @@ fu! readline#undo(mode) abort "{{{2
         " `old_pos` expresses a position with a character count.
         " `cursor()` expects a byte count.
         let pos = strlen(matchstr(old_line, '.\{'.old_pos.'}')) + 1
-        call timer_start(0, {-> setline(line('.'), old_line)
-        \                     + cursor(line('.'), pos)})
+        call timer_start(0, {-> setline('.', old_line)
+        \                     + cursor('.', pos)})
         return ''
     endif
 endfu
@@ -803,7 +808,7 @@ fu! readline#upcase_word(mode, ...) abort "{{{2
         elseif a:mode is# 'n'
             let new_line = substitute(line, pat, (a:0 ? '\L' : '\U').'\0', '')
             let new_pos  = match(line, pat.'\zs') + 1
-            call timer_start(0, {-> setline(line('.'), new_line) + cursor(line('.'), new_pos)})
+            call timer_start(0, {-> setline('.', new_line) + cursor('.', new_pos)})
             sil! call repeat#set(a:0 ? "\<plug>(downcase-word)" : "\<plug>(upcase-word)")
         endif
 
