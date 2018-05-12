@@ -813,7 +813,12 @@ fu! readline#upcase_word(mode, ...) abort "{{{2
         elseif a:mode is# 'n'
             let new_line = substitute(line, pat, (a:0 ? '\L' : '\U').'\0', '')
             let new_pos  = match(line, pat.'\zs') + 1
-            call timer_start(0, {-> setline('.', new_line) + cursor('.', new_pos)})
+            " Why redraw?{{{
+            "
+            " The  cursor  appears  to  end  in a  too-far  position  when  some
+            " characters are concealed before it on the line.
+            "}}}
+            call timer_start(0, {-> setline('.', new_line) + cursor('.', new_pos) + execute('redraw')})
             sil! call repeat#set(a:0 ? "\<plug>(downcase-word)" : "\<plug>(upcase-word)")
         endif
 
