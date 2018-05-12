@@ -8,6 +8,9 @@ let g:loaded_readline = 1
 " Because of the  latter, we sometimes have to  invoke `execute('redraw')` which
 " is ugly.
 " We also have to invoke timers because of it.
+"
+" Note that  if you  remove `<expr>`, you  will have to  use `<c-r>=`  in insert
+" mode, and probably have to invoke `feedkeys()` from command-line mode.
 "}}}
 " TODO:     Try to implement these:{{{
 "
