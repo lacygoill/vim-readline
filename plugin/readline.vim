@@ -3,6 +3,12 @@ if exists('g:loaded_readline')
 endif
 let g:loaded_readline = 1
 
+" TODO:     Try to remove the `<expr>` argument in all the mappings.{{{
+"
+" Because of the  latter, we sometimes have to  invoke `execute('redraw')` which
+" is ugly.
+" We also have to invoke timers because of it.
+"}}}
 " TODO:     Try to implement these:{{{
 "
 "     • kill-region (zle)                ???
