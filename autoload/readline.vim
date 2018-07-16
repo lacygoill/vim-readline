@@ -425,7 +425,7 @@ fu! readline#forward_char(mode) abort "{{{2
     return a:mode is# 'c'
        \ ?    (wildmenumode() ? "\<space>\<c-h>" : '')."\<right>"
        \ : col('.') > strlen(getline('.'))
-       \ ?     "\<c-f>"
+       \ ?     ''
        \ :     "\<c-g>U\<right>"
     " Go the right if we're in the middle of the line (custom), or fix the
     " indentation if we're at the end (default)
