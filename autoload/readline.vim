@@ -485,7 +485,6 @@ fu! readline#kill_word(mode) abort "{{{2
 endfu
 
 fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
-" NOTE:
 " Implementing this function was tricky, it has to handle:
 "
 "    • multi-byte characters (éàî)
@@ -515,7 +514,7 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
             " word, or somewhere BEFORE otherwise)
             let pat = '\v.*\ze<.{-1,}%'.pos.'c'
         endif
-        let str     = matchstr(line, pat)
+        let str = matchstr(line, pat)
         let new_pos = len(str)
 
         let new_pos_char = strchars(str, 1)
