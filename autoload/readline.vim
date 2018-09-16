@@ -382,8 +382,8 @@ fu! readline#delete_char(mode) abort "{{{2
         "       :h dir       C-d
         "       :h dire      C-d
         "       :h directory C-d
-        redraw
-        return "\<c-d>"
+        call timer_start(0, {-> execute('redraw') + feedkeys("\<c-d>", 'int')})
+        return ''
     endif
 
     " If the popup menu is visible, scroll a page down.
@@ -399,8 +399,7 @@ fu! readline#delete_char(mode) abort "{{{2
         let l:key = "\<c-g>j\<home>\<bs>"
     endif
 
-    call feedkeys(l:key, 'int')
-    return ''
+    return l:key
 endfu
 
 fu! readline#edit_and_execute_command() abort "{{{2
