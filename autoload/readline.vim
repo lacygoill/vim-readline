@@ -254,6 +254,14 @@ fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
     call s:set_concat_next_kill(a:mode, a:this_kill_is_big)
 endfu
 
+fu! readline#add_to_undolist() abort "{{{2
+    augroup add_to_undolist
+        au!
+        au User add_to_undolist_c call s:add_to_undolist('c', getcmdline(), getcmdpos())
+        au User add_to_undolist_i call s:add_to_undolist('i', getline('.'), col('.'))
+    augroup END
+endfu
+
 fu! s:add_to_undolist(mode, line, pos) abort "{{{2
     let undo_len = len(s:undolist_{a:mode})
     if undo_len > 100
@@ -434,14 +442,6 @@ fu! readline#forward_char(mode) abort "{{{2
        \ :     "\<c-g>U\<right>"
     " Go the right if we're in the middle of the line (custom), or fix the
     " indentation if we're at the end (default)
-endfu
-
-fu! readline#add_to_undolist() abort "{{{2
-    augroup add_to_undolist
-        au!
-        au User add_to_undolist_c call s:add_to_undolist('c', getcmdline(), getcmdpos())
-        au User add_to_undolist_i call s:add_to_undolist('i', getline('.'), col('.'))
-    augroup END
 endfu
 
 fu! readline#kill_line(mode) abort "{{{2
