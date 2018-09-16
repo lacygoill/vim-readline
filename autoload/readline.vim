@@ -261,7 +261,7 @@ fu! s:add_to_undolist(mode, line, pos) abort "{{{2
         call remove(s:undolist_{a:mode}, 0, undo_len - 101)
     endif
     let s:undolist_{a:mode} += [[ a:line,
-    \                             strchars(matchstr(a:line, '.*\%'.a:pos.'c'), 1) ]   ]
+                                \ strchars(matchstr(a:line, '.*\%'.a:pos.'c'), 1) ]   ]
 endfu
 
 fu! readline#backward_char(mode) abort "{{{2
@@ -282,10 +282,12 @@ fu! readline#backward_kill_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
         let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 0, 1)
-        "              ┌ word before cursor
-        "              │            ┌ there may be some non-word text between the word and the cursor
-        "              │            │         ┌ the cursor
-        "            ┌─┤┌───────────┤┌────────┤
+        "            ┌ word before cursor{{{
+        "            │
+        "            │  ┌ there may be some non-word text between the word and the cursor
+        "            │  │
+        "            │  │            ┌ the cursor
+        "            ├┐ ├───────────┐├───────┐}}}
         let pat = '\v\k*%(%(\k@!.)+)?%'.pos.'c'
 
         let killed_text = matchstr(line, pat)
@@ -362,7 +364,8 @@ fu! readline#delete_char(mode) abort "{{{2
         " delete the character after it.
 
         if getcmdpos() <= strlen(getcmdline()) || getcmdtype() isnot# ':'
-            return "\<del>"
+            call timer_start(0, {-> feedkeys("\<del>", 'int')})
+            return ''
         endif
 
         " Before pressing  `C-d`, we first  redraw to erase the  possible listed
@@ -371,7 +374,8 @@ fu! readline#delete_char(mode) abort "{{{2
         "       :h dir       C-d
         "       :h dire      C-d
         "       :h directory C-d
-        call timer_start(0, {-> execute('redraw') + feedkeys("\<c-d>", 'int')})
+        redraw
+        call feedkeys("\<c-d>", 'int')
         return ''
     endif
 
@@ -388,7 +392,8 @@ fu! readline#delete_char(mode) abort "{{{2
         let l:key = "\<c-g>j\<home>\<bs>"
     endif
 
-    return l:key
+    call feedkeys(l:key, 'int')
+    return ''
 endfu
 
 fu! readline#edit_and_execute_command() abort "{{{2
@@ -453,16 +458,18 @@ fu! readline#kill_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
         let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 0, 1)
-        "                       ┌ from the beginning of the word containing the cursor
-        "                       │ until the cursor
-        "                       │ if the cursor is outside of a word, the pattern
-        "                       │ still matches, because we use `*`, not `+`
-        "            ┌──────────┤
+        "            ┌ from the beginning of the word containing the cursor{{{
+        "            │ until the cursor
+        "            │ if the cursor is outside of a word, the pattern
+        "            │ still matches, because we use `*`, not `+`
+        "            │
+        "            ├──────────┐}}}
         let pat = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
-        "                             └─┤ └───────┤ └───────┤
-        "                               │         │         └ or all the non-word text we're in
-        "                               │         └───────── or the next word if we're outside of a word
-        "                               └─────────────────── the rest of the word after the cursor
+        "                             ├─┘ ├───────┘ ├───────┘{{{
+        "                             │   │         └ or all the non-word text we're in
+        "                             │   └ or the next word if we're outside of a word
+        "                             └ the rest of the word after the cursor
+        "}}}
 
         let killed_text = matchstr(line, pat)
         call s:add_to_kill_ring(a:mode, killed_text, 1, 0)
@@ -487,11 +494,12 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
 
     let isk_save = &l:isk
     try
-        "                                                          ┌ if, in addition to moving the cursor forward,
-        "                                                          │ we're going to capitalize,
-        "                                                          │ we want to add the current line to the undolist
-        "                                                          │ to be able to undo
-        "                                                ┌─────────┤
+        "                                                ┌ if, in addition to moving the cursor forward,{{{
+        "                                                │ we're going to capitalize,
+        "                                                │ we want to add the current line to the undolist
+        "                                                │ to be able to undo
+        "                                                │
+        "                                                ├─────────┐}}}
         let [ line, pos ] = s:setup_and_get_info(a:mode, a:0 ? 1 : 0, 1, 1)
         if a:is_fwd
             " all characters from the beginning of the line until the last
@@ -514,11 +522,11 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         " pos_char     = nr of characters before cursor in its current position
         " new_pos_char = "                                         new     "
 
-        "                           ignore composing characters ┐
-        "                                                       │
-        " necessary to move correctly on a line such as:        │
-        "          ́ foo  ́ bar  ́                                 │
+        " necessary to move correctly on a line such as:
+        "          ́ foo  ́ bar
         let pos_char = strchars(matchstr(line, '.*\%'.pos.'c'), 1)
+        "                                                       │
+        "                                                       └ ignore composing characters
 
         let diff = pos_char - new_pos_char
         let building_motion = a:mode is# 'i'
@@ -573,6 +581,8 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     let s:last_kill_was_big = a:this_kill_is_big
 
     if a:mode is# 'c'
+        " Why?{{{
+        "
         " After  the next  deletion, it  the command-line  gets empty,  the deletion
         " after that shouldn't be concatenated:
         "
@@ -581,6 +591,7 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
         "         C-y
         "         → twoone    ✘
         "         → two       ✔
+        "}}}
         call timer_start(0, {-> getcmdline() =~# '^\s*$' ? execute('let s:concat_next_kill = 0') : '' })
         return
     endif
@@ -603,6 +614,8 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
 endfu
 
 fu! s:set_isk() abort "{{{2
+    " Why re-setting 'isk'?{{{
+    "
     " readline doesn't consider `-`, `#`, `_` as part of a word,
     " contrary to Vim which may disagree for some of them.
     "
@@ -611,13 +624,16 @@ fu! s:set_isk() abort "{{{2
     "         foo-bar
     "         foo#bar
     "         foo_bar
-
+    "}}}
+    " Why not using `-=` instead of `=`?{{{
+    "
     " Previously, we used this code:
     "         setl isk-=_ isk-=- isk-=#
     "
     " But sometimes, the mapping behaved strangely.
     " So now, I prefer to give an explicit value to `isk`.
-
+    "
+    "}}}
     setl isk=@,48-57,192-255
 endfu
 
@@ -675,46 +691,54 @@ fu! readline#transpose_words(mode) abort "{{{2
     try
         let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 1, 1)
         " We're looking for 2 words which are separated by non-word characters.
+        " Why non-word characters, and not whitespace?{{{
         "
-        " Why non-word characters, and not whitespace?
         " Because transposition works even when 2 words are separated by special
         " characters such as backticks:
         "
         "     foo``|``bar    ⇒    bar````foo
         "          ^
         "          cursor
+        "}}}
         let pat = '(<\k+>)(%(\k@!.)+)(<\k+>)'
 
-        " This concat will be used at the end, once Vim thinks it has found
-        " a match for 2 words.
+        " What's this concat (\&) for?{{{
+        "
+        " It will be used at the end, once Vim thinks it has found a match for 2
+        " words.
         " It checks that the cursor isn't on the first word. For example, the
         " cursor being represented by the pipe:
         "
         "                 e|cho foo
         "
-        " … there should be no transposition (to mimic readline)
+        " ... there should be no transposition (to mimic readline)
+        "}}}
         let not_on_first = '\v%(<\k*%'.pos.'c\k+>)@!&'
 
-        " The cursor mustn't be before the 2 words:
+        " The cursor mustn't be before the 2 words:{{{
         "
         "         foo | bar baz
-        "               └─────┤
-        "                     └ don't transpose those 2
+        "               ├─────┘
+        "               └ don't transpose those 2
+        "}}}
         let not_before = '%(%'.pos.'c.*)@<!'
 
-        " The cursor mustn't be after the 2 words, unless it is inside
-        " a sequence of non-words characters at the end of the line:
+        " The cursor mustn't be after the 2 words,{{{
+        " unless it is  inside a sequence of non-words characters  at the end of
+        " the line:
         "
         "         foo bar | baz
-        "         └─────┤
-        "               └ don't transpose those 2
-        let not_after = '%(%(.*%'.pos.'c)@!|%(%(\k@!.)*$)@=)'
+        "         ├─────┘
+        "         └ don't transpose those 2
+        "
         " OR it is after them, BUT there are only non-word characters between
         " them and the end of the line
         "
         "         foo bar !?`,;:.
-        "                └──────┤
-        "                       └ the cursor may be anywhere in here
+        "                ├──────┘
+        "                └ the cursor may be anywhere in here
+        "}}}
+        let not_after = '%(%(.*%'.pos.'c)@!|%(%(\k@!.)*$)@=)'
 
         " final pattern
         let pat = not_on_first.not_before.pat.not_after

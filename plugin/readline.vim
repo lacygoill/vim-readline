@@ -165,8 +165,24 @@ ino  <expr><unique>  <c-b>  readline#backward_char('i')
 
 " C-d        delete-char {{{3
 
-cno  <expr><unique>  <c-d>  readline#delete_char('c')
-ino  <expr><unique>  <c-d>  readline#delete_char('i')
+" Why don't you use `<expr>`?{{{
+"
+" If we do, we'll have to execute `:redraw` with a timer to avoid the textlock.
+" This has some issues in Neovim, where `:redraw` seems to be buggy.
+" Atm, in Neovim, if I type:
+"
+"     :h *html*
+"
+" Then, press C-d, I should see a list of tags.
+" I don't see anything.
+" If I press the left arrow key right after C-d, the tags are listed.
+" But not if I press the right arrow key!
+"
+" Anyway, the issue is fixed if we don't use `<expr>` + timer/redraw.
+"
+"}}}
+cno  <silent><unique>  <c-d>  <c-r>=readline#delete_char('c')<cr>
+ino  <silent><unique>  <c-d>  <c-r>=readline#delete_char('i')<cr>
 
 " C-e        end-of-line {{{3
 
