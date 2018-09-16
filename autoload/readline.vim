@@ -383,8 +383,7 @@ fu! readline#delete_char(mode) abort "{{{2
         "       :h dire      C-d
         "       :h directory C-d
         redraw
-        call feedkeys("\<c-d>", 'int')
-        return ''
+        return "\<c-d>"
     endif
 
     " If the popup menu is visible, scroll a page down.
