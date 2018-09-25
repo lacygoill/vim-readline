@@ -25,8 +25,9 @@ let g:loaded_readline = 1
 "     https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
 " TODO:     Use `vim-submode` to make `M-u` enter a submode {{{
-" in which `c`, `l`, `u` change the  case of words. It would make them easier to
-" repeat. Do the same for the shell.
+" in which `c`, `l`, `u` change the  case of words.
+" It would make them easier to repeat in insert mode.
+" Do the same for the shell.
 "}}}
 " TODO:     The repetition of `M-u` is broken after an undo.{{{
 "
@@ -305,14 +306,21 @@ nno    <expr><silent>  <plug>(capitalize-word)  readline#move_by_words('n', 1, 1
 xno  <silent><unique>  <m-u>c                   :<c-u>sil keepj keepp
 \                                               '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
 
-" M-u l      downcase-word {{{3
+" M-u [lu]   change-case-word {{{3
 
-cno  <expr><unique>  <m-u>l  readline#upcase_word('c', 1)
-ino  <expr><unique>  <m-u>l  readline#upcase_word('i', 1)
+cno          <unique>  <m-u>l  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'c')<cr>
+ino  <silent><unique>  <m-u>l  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'i')<cr>
+xno  <silent><unique>  <m-u>l  :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
+nno  <silent><unique>  <m-u>l  :<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l
+"                                                                              ^{{{
+"                                                                         don't write `_`
+" It would break the repetition of the edit with the dot command.
+"}}}
 
-nmap         <unique>  <m-u>l                 <plug>(downcase-word)
-nno    <expr><silent>  <plug>(downcase-word)  readline#upcase_word('n', 1)
-xno  <silent><unique>  <m-u>l                 :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
+cno          <unique>  <m-u>u  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'c')<cr>
+ino  <silent><unique>  <m-u>u  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'i')<cr>
+xno          <unique>  <m-u>u  U
+nno  <silent><unique>  <m-u>u  :<c-u>call readline#change_case_save(1)<bar>set opfunc=readline#change_case_word<cr>g@l
 
 " M-d        kill-word {{{3
 
@@ -339,20 +347,9 @@ cno  <unique>  <m-p>  <up>
 
 " M-t        transpose-words {{{3
 
-cno  <expr><unique>  <m-t>  readline#transpose_words('c')
-ino  <expr><unique>  <m-t>  readline#transpose_words('i')
-
-nmap       <unique>  <m-t>                    <plug>(transpose_words)
-nno  <expr><silent>  <plug>(transpose_words)  readline#transpose_words('n')
-
-" M-u u      upcase-word {{{3
-
-xno        <unique>  <m-u>u  U
-cno  <expr><unique>  <m-u>u  readline#upcase_word('c')
-ino  <expr><unique>  <m-u>u  readline#upcase_word('i')
-
-nmap       <unique>  <m-u>u               <plug>(upcase-word)
-nno  <expr><silent>  <plug>(upcase-word)  readline#upcase_word('n')
+cno          <unique>  <m-t>  <c-r>=readline#transpose_words('', 'c')<cr>
+ino  <silent><unique>  <m-t>  <c-r>=readline#transpose_words('', 'i')<cr>
+nno  <silent><unique>  <m-t>  :<c-u>set opfunc=readline#transpose_words<cr>g@l
 
 " M-y        yank-pop {{{3
 

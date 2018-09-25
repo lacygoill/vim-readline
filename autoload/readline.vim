@@ -362,6 +362,48 @@ endfu
 " because it leads to too many issues.
 "}}}
 
+fu! readline#change_case_save(upcase) abort "{{{2
+    let s:change_case_up = a:upcase
+    return ''
+endfu
+
+fu! readline#change_case_word(type, ...) abort "{{{2
+    "                               ^ mode
+    let isk_save = &l:isk
+    try
+        let mode = get(a:, '1', 'n')
+        let [line, pos] = s:setup_and_get_info(mode, 1, 1, 1)
+        let pat    = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
+        let word   = matchstr(line, pat)
+        let length = strchars(word, 1)
+
+        if mode is# 'c'
+            if pos > strlen(line)
+                return ''
+            else
+                " we  can't return `Del`,  so we directly  feed the keys  to the
+                " typeahead buffer
+                call feedkeys(repeat("\<del>", length), 'int')
+                return s:change_case_up ? toupper(word) : tolower(word)
+            endif
+        elseif mode is# 'i'
+            return repeat("\<del>", length).(s:change_case_up ? toupper(word) : tolower(word))
+        elseif mode is# 'n'
+            let new_line = substitute(line, pat, (s:change_case_up ? '\U' : '\L').'\0', '')
+            let new_pos  = match(line, pat.'\zs') + 1
+            call setline('.', new_line)
+            call cursor('.', new_pos)
+        endif
+
+    catch
+        return lg#catch_error()
+    finally
+        let &l:isk = isk_save
+    endtry
+
+    return ''
+endfu
+
 fu! readline#delete_char(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
 
@@ -684,10 +726,13 @@ fu! readline#transpose_chars(mode) abort "{{{2
     endif
 endfu
 
-fu! readline#transpose_words(mode) abort "{{{2
+fu! readline#transpose_words(type, ...) abort "{{{2
+    "                              ^
+    "                              mode
     let isk_save = &l:isk
     try
-        let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 1, 1)
+        let mode = get(a:, '1', 'n')
+        let [ line, pos ] = s:setup_and_get_info(mode, 1, 1, 1)
         " We're looking for 2 words which are separated by non-word characters.
         " Why non-word characters, and not whitespace?{{{
         "
@@ -745,21 +790,14 @@ fu! readline#transpose_words(mode) abort "{{{2
         let rep      = '\3\2\1'
         let new_line = substitute(line, pat, rep, '')
 
-        if a:mode is# 'c'
-            return "\<c-e>\<c-u>"
-            \     .new_line
-            \     ."\<c-b>".repeat("\<right>", new_pos)
+        if mode is# 'c'
+            let seq = "\<c-e>\<c-u>"
+                \ .new_line
+                \ ."\<c-b>".repeat("\<right>", new_pos)
+            call feedkeys(seq, 'int')
         else
-            " Why redraw?{{{
-            "
-            " The  cursor  appears  to  end  in a  too-far  position  when  some
-            " characters are concealed before it on the line.
-            "}}}
-            call timer_start(0, {-> setline('.', new_line)
-                \ + cursor('.', new_pos+1)
-                \ + execute('redraw')
-                \ + (a:mode is# 'n' ? repeat#set("\<plug>(transpose_words)") : 0)
-                \ })
+            call setline('.', new_line)
+            call cursor('.', new_pos+1)
         endif
 
     catch
@@ -813,64 +851,6 @@ fu! readline#unix_line_discard(mode) abort "{{{2
         \                   })
     endif
     return s:break_undo_before_deletions(a:mode)."\<c-u>"
-endfu
-
-fu! readline#upcase_word(mode, ...) abort "{{{2
-    "                          ^ downcase instead of upcase
-    let isk_save = &l:isk
-
-    try
-        let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 1)
-        let pat    = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
-        let word   = matchstr(line, pat)
-        let length = strchars(word, 1)
-
-        if a:mode is# 'c'
-            if pos > strlen(line)
-                return ''
-            else
-                return repeat("\<del>", length).(a:0 ? tolower(word) : toupper(word))
-            endif
-        elseif a:mode is# 'i'
-            return repeat("\<del>", length).(a:0 ? tolower(word) : toupper(word))
-        elseif a:mode is# 'n'
-            let new_line = substitute(line, pat, (a:0 ? '\L' : '\U').'\0', '')
-            let new_pos  = match(line, pat.'\zs') + 1
-            " Why redraw?{{{
-            "
-            " The  cursor  appears  to  end  in a  too-far  position  when  some
-            " characters are concealed before it on the line.
-            "}}}
-            " Why do you include `repeat#set()` in the timer?{{{
-            "
-            " Because it must be invoked AFTER the edition.
-            " If you invoke it now, and edit later, the repetition won't work as
-            " expected (you may have to press `.` twice).
-            "}}}
-            " Why saving `a:0` in a variable?{{{
-            "
-            " For the lambda, `a:000` is `[123]` (`123` being the id of the timer).
-            " And because of this, `a:0` is `1`.
-            " As  a result,  if we  used `a:0`  in the  lambda, we  would always
-            " repeat a  downcase transformation, even when  we've just perfromed
-            " an uppercase one.
-            "
-            " For more info:
-            "     https://github.com/vim/vim/issues/3482
-            "}}}
-            let downcase = a:0
-            call timer_start(0, {-> setline('.', new_line) + cursor('.', new_pos)
-                \ + execute('redraw')
-                \ + repeat#set(downcase ? "\<plug>(downcase-word)" : "\<plug>(upcase-word)")})
-        endif
-
-    catch
-        return lg#catch_error()
-    finally
-        let &l:isk = isk_save
-    endtry
-
-    return ''
 endfu
 
 fu! readline#yank(mode, pop) abort "{{{2
