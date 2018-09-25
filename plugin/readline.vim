@@ -81,7 +81,6 @@ let g:loaded_readline = 1
 
 " FIXME:    How to make `M-u c` repeatable? {{{1
 
-" Also, why must we press `.` twice to repeat `M-u u` and `M-u l`?
 " Also, why does it fail sometimes (Vim deletes some line(s) instead)?
 
 " AUTOCMD {{{1

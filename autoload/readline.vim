@@ -818,7 +818,7 @@ fu! readline#upcase_word(mode, ...) abort "{{{2
     let isk_save = &l:isk
 
     try
-        let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 1, 1)
+        let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 1)
         let pat    = '\v\k*%'.pos.'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
         let word   = matchstr(line, pat)
         let length = strchars(word, 1)
@@ -839,8 +839,27 @@ fu! readline#upcase_word(mode, ...) abort "{{{2
             " The  cursor  appears  to  end  in a  too-far  position  when  some
             " characters are concealed before it on the line.
             "}}}
-            call timer_start(0, {-> setline('.', new_line) + cursor('.', new_pos) + execute('redraw')})
-            sil! call repeat#set(a:0 ? "\<plug>(downcase-word)" : "\<plug>(upcase-word)")
+            " Why do you include `repeat#set()` in the timer?{{{
+            "
+            " Because it must be invoked AFTER the edition.
+            " If you invoke it now, and edit later, the repetition won't work as
+            " expected (you may have to press `.` twice).
+            "}}}
+            " Why saving `a:0` in a variable?{{{
+            "
+            " For the lambda, `a:000` is `[123]` (`123` being the id of the timer).
+            " And because of this, `a:0` is `1`.
+            " As  a result,  if we  used `a:0`  in the  lambda, we  would always
+            " repeat a  downcase transformation, even when  we've just perfromed
+            " an uppercase one.
+            "
+            " For more info:
+            "     https://github.com/vim/vim/issues/3482
+            "}}}
+            let downcase = a:0
+            call timer_start(0, {-> setline('.', new_line) + cursor('.', new_pos)
+                \ + execute('redraw')
+                \ + repeat#set(downcase ? "\<plug>(downcase-word)" : "\<plug>(upcase-word)")})
         endif
 
     catch
