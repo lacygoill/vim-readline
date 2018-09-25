@@ -755,10 +755,11 @@ fu! readline#transpose_words(mode) abort "{{{2
             " The  cursor  appears  to  end  in a  too-far  position  when  some
             " characters are concealed before it on the line.
             "}}}
-            call timer_start(0, {-> setline('.', new_line) + cursor('.', new_pos+1) + execute('redraw')})
-            if a:mode is# 'n'
-                sil! call repeat#set("\<plug>(transpose_words)")
-            endif
+            call timer_start(0, {-> setline('.', new_line)
+                \ + cursor('.', new_pos+1)
+                \ + execute('redraw')
+                \ + (a:mode is# 'n' ? repeat#set("\<plug>(transpose_words)") : 0)
+                \ })
         endif
 
     catch
