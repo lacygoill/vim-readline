@@ -29,21 +29,6 @@ let g:loaded_readline = 1
 " It would make them easier to repeat in insert mode.
 " Do the same for the shell.
 "}}}
-" TODO:     The repetition of `M-u` is broken after an undo.{{{
-"
-" If you press `M-u`, the next word is written in uppercase.
-" You can press the dot command to repeat the edit as many times as you want.
-" However, if you press `u` to undo, then `.` to redo, the repetition won't work
-" anymore.
-" The issue comes from `vim-repeat`:
-"
-"         https://github.com/tpope/vim-repeat/issues/63
-"
-" And this issue affects `M-l` and `M-c` too.
-"
-" Try to eliminate `repeat#set()`, and use an operator instead (`g@`).
-" It would fix the issue.
-"}}}
 " FIXME:    M-a inserts â in terminal gVim {{{
 "
 " Same thing for other M-…
@@ -290,21 +275,20 @@ cno  <expr><unique>  <c-y>  readline#yank('c', 0)
 
 "                                              ┌─  close wildmenu
 "                                              │
-cno  <expr><unique>  <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0)
-cno  <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1)
+cno  <expr><unique>  <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0, 0)
+cno  <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1, 0)
 
-ino  <expr><unique>  <m-b>  readline#move_by_words('i', 0)
-ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1)
+ino  <expr><unique>  <m-b>  readline#move_by_words('i', 0, 0)
+ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1, 0)
 
 " M-u c      capitalize-word {{{3
 
-cno  <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
-ino  <expr><unique>  <m-u>c  readline#move_by_words('i', 1, 1)
+cno    <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
+ino  <silent><unique>  <m-u>c  <c-r>=readline#move_by_words('i', 1, 1)<cr>
 
-nmap         <unique>  <m-u>c                   <plug>(capitalize-word)
-nno    <expr><silent>  <plug>(capitalize-word)  readline#move_by_words('n', 1, 1)
-xno  <silent><unique>  <m-u>c                   :<c-u>sil keepj keepp
-\                                               '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
+nno  <unique><unique>  <m-u>c  :<c-u>set opfunc=readline#move_by_words<cr>g@l
+xno  <silent><unique>  <m-u>c  :<c-u>sil keepj keepp
+\                              '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
 
 " M-u [lu]   change-case-word {{{3
 

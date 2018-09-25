@@ -236,8 +236,8 @@ fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
                                    \ ?     s:kill_ring_{a:mode}[-1].a:text
                                    \ :     a:text.s:kill_ring_{a:mode}[-1]
     else
-        if s:kill_ring_{a:mode} ==# [ '' ]
-            let s:kill_ring_{a:mode} = [ a:text ]
+        if s:kill_ring_{a:mode} ==# ['']
+            let s:kill_ring_{a:mode} = [a:text]
         else
             " the kill ring  is never reset in readline; we  should not reset it
             " either but I don't like letting it  grow too much, so we keep only
@@ -268,8 +268,8 @@ fu! s:add_to_undolist(mode, line, pos) abort "{{{2
         " limit the size of the undolist to 100 entries
         call remove(s:undolist_{a:mode}, 0, undo_len - 101)
     endif
-    let s:undolist_{a:mode} += [[ a:line,
-                                \ strchars(matchstr(a:line, '.*\%'.a:pos.'c'), 1) ]   ]
+    let s:undolist_{a:mode} += [[a:line,
+                                \ strchars(matchstr(a:line, '.*\%'.a:pos.'c'), 1)]]
 endfu
 
 fu! readline#backward_char(mode) abort "{{{2
@@ -289,7 +289,7 @@ endfu
 fu! readline#backward_kill_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
-        let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 0, 1)
+        let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
         "            ┌ word before cursor{{{
         "            │
         "            │  ┌ there may be some non-word text between the word and the cursor
@@ -457,7 +457,7 @@ fu! readline#end_of_line() abort "{{{2
 endfu
 
 fu! readline#exchange_point_and_mark(mode) abort "{{{2
-    let [ line, pos ] = s:setup_and_get_info(a:mode, 0, 0, 0)
+    let [line, pos] = s:setup_and_get_info(a:mode, 0, 0, 0)
     let new_pos = s:mark_{a:mode}
 
     if a:mode is# 'i'
@@ -485,7 +485,7 @@ fu! readline#forward_char(mode) abort "{{{2
 endfu
 
 fu! readline#kill_line(mode) abort "{{{2
-    let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 0, 0)
+    let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 0)
 
     let killed_text = matchstr(line, '.*\%'.pos.'c\zs.*')
     call s:add_to_kill_ring(a:mode, killed_text, 1, 1)
@@ -497,7 +497,7 @@ endfu
 fu! readline#kill_word(mode) abort "{{{2
     let isk_save = &l:isk
     try
-        let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 0, 1)
+        let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
         "            ┌ from the beginning of the word containing the cursor{{{
         "            │ until the cursor
         "            │ if the cursor is outside of a word, the pattern
@@ -524,23 +524,33 @@ fu! readline#kill_word(mode) abort "{{{2
     return ''
 endfu
 
-fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
-" Implementing this function was tricky, it has to handle:
+fu! readline#move_by_words(mode, ...) abort "{{{2
+" Implementing this function was tricky, it has to handle:{{{
 "
 "    • multi-byte characters (éàî)
 "    • multi-cell characters (tab)
 "    • composing characters  ( ́)
+"}}}
 
     let isk_save = &l:isk
     try
-        "                                                ┌ if, in addition to moving the cursor forward,{{{
-        "                                                │ we're going to capitalize,
-        "                                                │ we want to add the current line to the undolist
-        "                                                │ to be able to undo
-        "                                                │
-        "                                                ├─────────┐}}}
-        let [ line, pos ] = s:setup_and_get_info(a:mode, a:0 ? 1 : 0, 1, 1)
-        if a:is_fwd
+        let [mode, is_fwd, capitalize] = a:0
+            \ ? [a:mode, a:1, a:2]
+            \ : ['n', 1, 1]
+        "         ^{{{
+        " When  this  function will  be  invoked  from  normal mode,  the  first
+        " argument won't be the current mode, but the type of a text-object.
+        " We need to pass the mode manually in this case (`'n'`).
+        "}}}
+
+        "                                            ┌ if, in addition to moving the cursor forward,{{{
+        "                                            │ we're going to capitalize,
+        "                                            │ we want to add the current line to the undolist
+        "                                            │ to be able to undo
+        "                                            │
+        "                                            ├────────┐}}}
+        let [line, pos] = s:setup_and_get_info(mode, capitalize, 1, 1)
+        if is_fwd
             " all characters from the beginning of the line until the last
             " character of the nearest NEXT word (current one if we're in a word,
             " or somewhere AFTER otherwise)
@@ -568,11 +578,10 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         "                                                       └ ignore composing characters
 
         let diff = pos_char - new_pos_char
-        let building_motion = a:mode is# 'i'
+        let building_motion = mode is# 'i'
                           \ ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
                           \ :     diff > 0 ? "\<left>" : "\<right>"
 
-        " capitalize
         " Here's how it works in readline:{{{
         "
         "     1. it looks for the keyword character after the cursor
@@ -586,20 +595,14 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
         "     3. it replaces all subsequent characters until a non-keyword character
         "        with their lowercase counterparts
         "}}}
-        if a:0
+        if capitalize
             let new_line = substitute(line,
             \                         '\v%'.pos.'c.{-}\zs(\k)(.{-})%'.(new_pos+1).'c',
             \                         '\u\1\L\2', '')
-            if a:mode is# 'c'
+            if mode is# 'c'
                 return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_pos_char)
             else
-                " Why redraw?{{{
-                "
-                " The  cursor  appears  to  end  in a  too-far  position  when  some
-                " characters are concealed before it on the line.
-                "}}}
-                call timer_start(0, {-> setline('.', new_line) + execute('redraw')
-                \ + repeat#set("\<plug>(capitalize-word)")})
+                call setline('.', new_line)
             endif
         endif
 
@@ -685,9 +688,9 @@ fu! readline#set_mark(mode) abort "{{{2
 endfu
 
 fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
-    let [ line, pos ] = a:mode is# 'c'
-                    \ ?     [ getcmdline(), getcmdpos() ]
-                    \ :     [ getline('.'), col('.') ]
+    let [line, pos] = a:mode is# 'c'
+                  \ ?     [getcmdline(), getcmdpos()]
+                  \ :     [getline('.'), col('.')]
 
     " `transpose_words()` may call this function from normal mode
     if a:add_to_undolist && a:mode isnot# 'n'
@@ -702,11 +705,11 @@ fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{
         call s:set_isk()
     endif
 
-    return [ line, pos ]
+    return [line, pos]
 endfu
 
 fu! readline#transpose_chars(mode) abort "{{{2
-    let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 1, 0)
+    let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
     if pos > strlen(line)
         " We use `matchstr()` because of potential multibyte characters.
         " Test on this:
@@ -732,7 +735,7 @@ fu! readline#transpose_words(type, ...) abort "{{{2
     let isk_save = &l:isk
     try
         let mode = get(a:, '1', 'n')
-        let [ line, pos ] = s:setup_and_get_info(mode, 1, 1, 1)
+        let [line, pos] = s:setup_and_get_info(mode, 1, 1, 1)
         " We're looking for 2 words which are separated by non-word characters.
         " Why non-word characters, and not whitespace?{{{
         "
@@ -812,7 +815,7 @@ fu! readline#undo(mode) abort "{{{2
     if empty(s:undolist_{a:mode})
         return ''
     endif
-    let [ old_line, old_pos ] = remove(s:undolist_{a:mode}, -1)
+    let [old_line, old_pos] = remove(s:undolist_{a:mode}, -1)
 
     if a:mode is# 'c'
         " if we had performed a transformation,  we undo it by mistake, and want
@@ -836,7 +839,7 @@ fu! readline#unix_line_discard(mode) abort "{{{2
         return repeat("\<c-p>", s:FAST_SCROLL_IN_PUM)
     endif
 
-    let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 0, 0)
+    let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 0)
 
     if a:mode is# 'c'
         call s:add_to_kill_ring(a:mode, matchstr(line, '.*\%'.pos.'c'), 0, 1)
@@ -854,7 +857,7 @@ fu! readline#unix_line_discard(mode) abort "{{{2
 endfu
 
 fu! readline#yank(mode, pop) abort "{{{2
-    let [ line, pos ] = s:setup_and_get_info(a:mode, 1, 1, 0)
+    let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
     if a:pop
         let length = strchars(s:kill_ring_{a:mode}[-1], 1)
         call insert(s:kill_ring_{a:mode}, remove(s:kill_ring_{a:mode}, -1), 0)
