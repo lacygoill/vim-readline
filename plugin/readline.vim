@@ -28,6 +28,21 @@ let g:loaded_readline = 1
 " in which `c`, `l`, `u` change the  case of words. It would make them easier to
 " repeat. Do the same for the shell.
 "}}}
+" TODO:     The repetition of `M-u` is broken after an undo.{{{
+"
+" If you press `M-u`, the next word is written in uppercase.
+" You can press the dot command to repeat the edit as many times as you want.
+" However, if you press `u` to undo, then `.` to redo, the repetition won't work
+" anymore.
+" The issue comes from `vim-repeat`:
+"
+"         https://github.com/tpope/vim-repeat/issues/63
+"
+" And this issue affects `M-l` and `M-c` too.
+"
+" Try to eliminate `repeat#set()`, and use an operator instead (`g@`).
+" It would fix the issue.
+"}}}
 " FIXME:    M-a inserts â in terminal gVim {{{
 "
 " Same thing for other M-…
