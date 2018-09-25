@@ -556,7 +556,8 @@ fu! readline#move_by_words(mode, is_fwd, ...) abort "{{{2
                 " The  cursor  appears  to  end  in a  too-far  position  when  some
                 " characters are concealed before it on the line.
                 "}}}
-                call timer_start(0, {-> setline('.', new_line) + execute('redraw')})
+                call timer_start(0, {-> setline('.', new_line) + execute('redraw')
+                \ + repeat#set("\<plug>(capitalize-word)")})
             endif
         endif
 
