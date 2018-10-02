@@ -600,13 +600,23 @@ fu! readline#move_by_words(mode, ...) abort "{{{2
             \                         '\v%'.pos.'c.{-}\zs(\k)(.{-})%'.(new_pos+1).'c',
             \                         '\u\1\L\2', '')
             if mode is# 'c'
-                return "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_pos_char)
+                let seq = "\<c-e>\<c-u>".new_line."\<c-b>".repeat("\<right>", new_pos_char)
+                call feedkeys(seq, 'int')
+                return ''
             else
                 call setline('.', new_line)
             endif
         endif
 
-        return repeat(building_motion, abs(diff))
+        " Why `feedkeys()`?{{{
+        "
+        " Needed  to move  the cursor at  the end  of the word  when we  want to
+        " capitalize it in normal mode.
+        "}}}
+        let seq = repeat(building_motion, abs(diff))
+        return mode is# 'i'
+            \ ? seq
+            \ : feedkeys(seq, 'int')[-1]
 
     " the `catch` clause prevents errors from being echoed
     " if you try to throw the exception manually (echo v:exception, echo

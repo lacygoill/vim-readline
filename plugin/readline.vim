@@ -283,7 +283,7 @@ ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1, 0)
 
 " M-u c      capitalize-word {{{3
 
-cno    <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
+cno          <unique>  <m-u>c  <c-r>=readline#move_by_words('c', 1, 1)<cr>
 ino  <silent><unique>  <m-u>c  <c-r>=readline#move_by_words('i', 1, 1)<cr>
 
 nno  <silent><unique>  <m-u>c  :<c-u>set opfunc=readline#move_by_words<cr>g@l
