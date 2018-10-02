@@ -286,7 +286,7 @@ ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1, 0)
 cno    <expr><unique>  <m-u>c  readline#move_by_words('c', 1, 1)
 ino  <silent><unique>  <m-u>c  <c-r>=readline#move_by_words('i', 1, 1)<cr>
 
-nno  <unique><unique>  <m-u>c  :<c-u>set opfunc=readline#move_by_words<cr>g@l
+nno  <silent><unique>  <m-u>c  :<c-u>set opfunc=readline#move_by_words<cr>g@l
 xno  <silent><unique>  <m-u>c  :<c-u>sil keepj keepp
 \                              '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
 
