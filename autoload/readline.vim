@@ -445,9 +445,16 @@ fu! readline#delete_char(mode) abort "{{{2
 endfu
 
 fu! readline#edit_and_execute_command() abort "{{{2
+    let s:cedit_save = &cedit
     let &cedit = "\<c-x>"
     call feedkeys(&cedit, 'int')
-    call timer_start(0, {-> execute('let &cedit = ""')})
+    augroup restore_cedit
+        au!
+        au CmdWinEnter * let &cedit = s:cedit_save
+        \ | unlet! s:cedit_save
+        \ | au! restore_cedit
+        \ | aug! restore_cedit
+    augroup END
     return ''
 endfu
 
