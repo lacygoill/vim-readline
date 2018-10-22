@@ -16,7 +16,6 @@ let g:loaded_readline = 1
 "
 "     • kill-region (zle)                ???
 "     • quote-region (zle)               M-"
-"     • operate-and-get-next             C-o
 "     • yank-nth-arg                     M-C-y
 "
 " Source:
@@ -79,6 +78,7 @@ let g:loaded_readline = 1
 " Use abbreviation
 "
 " Use equivalence class in a search command
+" }}}
 
 " AUTOCMD {{{1
 
@@ -87,6 +87,16 @@ augroup my_lazy_loaded_readline
     au CmdlineEnter,InsertEnter * call readline#add_to_undolist()
     \ |                           exe 'au! my_lazy_loaded_readline'
     \ |                           aug! my_lazy_loaded_readline
+augroup END
+
+augroup operate_and_get_next
+    au!
+    " Why a timer?{{{
+    "
+    " To avoid remembering commands which  we haven't executed manually like the
+    " ones in mappings.
+    "}}}
+    au CmdlineEnter : call timer_start(0, {-> readline#operate_and_get_next#remember('on_leave')})
 augroup END
 
 " MAPPINGS {{{1
@@ -194,6 +204,11 @@ cno  <unique>  <c-x>k  <c-k>
 " To restore this functionality, we map it to C-k C-k.
 ino  <expr><unique>  <c-k><c-k>  readline#kill_line('i')
 
+" C-o        operate-and-get-next {{{3
+
+" Also called `accept-line-and-down-history` by zle.
+cno  <expr>  <c-o>  readline#operate_and_get_next#main()
+
 " C-t        transpose-chars {{{3
 
 cno  <expr><unique>  <c-t>  readline#transpose_chars('c')
@@ -260,8 +275,7 @@ ino  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 
 ino  <expr><unique>  <c-y>  readline#yank('i', 0)
 cno  <expr><unique>  <c-y>  readline#yank('c', 0)
-
-
+" }}}2
 " META {{{2
 " M-b/f      forward-word    backward-word {{{3
 
@@ -345,7 +359,7 @@ cno  <expr><unique>  <m-y>  readline#yank('c', 1)
 if has('nvim')
     ino  <expr><unique>  <m-y>  readline#yank('i', 1)
 endif
-
+" }}}1
 " OPTIONS {{{1
 
 if !has('nvim')

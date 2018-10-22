@@ -207,7 +207,7 @@ let g:autoloaded_readline = 1
 " functions to work, it must exist no matter what.
 "
 "@     let s:deleting = 0
-
+" }}}1
 " Autocmds {{{1
 
 augroup my_granular_undo
@@ -885,7 +885,7 @@ fu! readline#yank(mode, pop) abort "{{{2
     \       :    '')
     \       ."\<c-r>-"
 endfu
-
+" }}}1
 " Variables {{{1
 
 let s:deleting = 0
@@ -914,3 +914,4 @@ let s:last_kill_was_big = 0
 let s:concat_next_kill  = 0
 let s:kill_ring_i       = ['']
 let s:kill_ring_c       = ['']
+
