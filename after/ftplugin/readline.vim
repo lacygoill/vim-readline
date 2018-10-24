@@ -12,6 +12,8 @@ augroup END
 
 let b:undo_ftplugin = get(b:, 'undo_ftplugin', '')
     \ . (empty(get(b:, 'undo_ftplugin', '')) ? '' : '|')
-    \ . 'setl cocu< cole< fdm< fdt<'
-    \ . '| exe "au! my_readline * <buffer>"'
+    \ . "
+    \ setl cocu< cole< fdm< fdt<
+    \|exe 'au! my_readline * <buffer>'
+    \"
 
