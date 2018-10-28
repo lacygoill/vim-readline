@@ -176,7 +176,7 @@ ino  <expr><unique>  <c-b>  readline#backward_char('i')
 " You would need to invoke feedkeys from a timer because `:redraw` has no effect
 " during a textlock and this doesn't work well in Neovim.
 "}}}
-cno          <unique>  <c-d>  <c-r>=readline#delete_char('c')<cr>
+cno  <silent><unique>  <c-d>  <c-r>=readline#delete_char('c')<cr>
 ino  <silent><unique>  <c-d>  <c-r>=readline#delete_char('i')<cr>
 
 " C-e        end-of-line {{{3
