@@ -171,8 +171,13 @@ ino  <expr><unique>  <c-b>  readline#backward_char('i')
 
 " C-d        delete-char {{{3
 
-cno  <expr>        <unique>  <c-d>  readline#delete_char('c')
-ino  <expr><silent><unique>  <c-d>  readline#delete_char('i')
+" Do NOT use `<expr>` for these mappings!{{{
+"
+" You would need to invoke feedkeys from a timer because `:redraw` has no effect
+" during a textlock and this doesn't work well in Neovim.
+"}}}
+cno          <unique>  <c-d>  <c-r>=readline#delete_char('c')<cr>
+ino  <silent><unique>  <c-d>  <c-r>=readline#delete_char('i')<cr>
 
 " C-e        end-of-line {{{3
 

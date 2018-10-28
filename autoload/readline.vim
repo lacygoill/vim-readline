@@ -414,34 +414,30 @@ fu! readline#delete_char(mode) abort "{{{2
         " delete the character after it.
 
         if getcmdpos() <= strlen(getcmdline()) || getcmdtype() isnot# ':'
-            call timer_start(0, {-> feedkeys("\<del>", 'int')})
-            return ''
+            call feedkeys("\<del>", 'int')
+        else
+            " Before pressing  `C-d`, we first  redraw to erase the  possible listed
+            " completion suggestions. This makes consecutive listings more readable.
+            " MWE:
+            "       :h dir       C-d
+            "       :h dire      C-d
+            "       :h directory C-d
+            redraw
+            call feedkeys("\<c-d>", 'int')
         endif
-
-        " Before pressing  `C-d`, we first  redraw to erase the  possible listed
-        " completion suggestions. This makes consecutive listings more readable.
-        " MWE:
-        "       :h dir       C-d
-        "       :h dire      C-d
-        "       :h directory C-d
-        call timer_start(0, {-> execute('redraw') + feedkeys("\<c-d>", 'int')})
         return ''
     endif
 
     " If the popup menu is visible, scroll a page down.
     " If no menu, and we're BEFORE the end of the line,   delete next character.
     " "                     AT the end of the line,       delete the newline.
-    if pumvisible()
-        let l:key = repeat("\<c-n>", s:FAST_SCROLL_IN_PUM)
-
-    elseif col('.') <= strlen(getline('.'))
-        let l:key = "\<del>"
-
-    elseif col('.') > strlen(getline('.'))
-        let l:key = "\<c-g>j\<home>\<bs>"
-    endif
-
-    return l:key
+    let seq = pumvisible()
+        \ ?     repeat("\<c-n>", s:FAST_SCROLL_IN_PUM)
+        \ : col('.') <= strlen(getline('.'))
+        \ ?     "\<del>"
+        \ :     "\<c-g>j\<home>\<bs>"
+    call feedkeys(seq, 'int')
+    return ''
 endfu
 
 fu! readline#edit_and_execute_command() abort "{{{2
