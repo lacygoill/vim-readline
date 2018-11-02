@@ -14,7 +14,6 @@ let g:loaded_readline = 1
 "}}}
 " TODO:     Try to implement these:{{{
 "
-"     • revert-line                      M-r
 "     • kill-region (zle)                ???
 "     • quote-region (zle)               M-"
 "     • yank-nth-arg                     M-C-y
