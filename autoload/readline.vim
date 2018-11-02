@@ -213,8 +213,7 @@ let g:autoloaded_readline = 1
 augroup my_granular_undo
     au!
 
-    " `s:concat_next_kill` should  always be  reset when we  leave command-line,
-    " even if it's not empty:
+    " Why resetting `s:concat_next_kill`?{{{
     "
     "         :one two
     "         C-w Esc
@@ -222,11 +221,50 @@ augroup my_granular_undo
     "         C-w
     "         C-y → threetwo    ✘
     "         C-y → three       ✔
+    "}}}
+    " Why `[^=]` instead of `*`?{{{
     "
-    au CmdlineLeave  *  let s:concat_next_kill = 0
+    " We have some readline mappings in  insert mode and command line mode whose
+    " rhs uses `c-r =`.
+    " When they are invoked, we shouldn't reset those variables.
+    " Otherwise:
+    "
+    "     " press C-d
+    "     echo b|ar
+    "           ^
+    "           cursor
+    "
+    "     " press C-d
+    "     echo br
+    "
+    "     " press C-d
+    "     echo b
+    "
+    "     " press C-_ (✔)
+    "     echo br
+    "
+    "     " press C-_ (✘ we should get bar)
+    "     echo br
+    "}}}
+    " Won't it cause an issue when we leave the expression command line?{{{
+    "
+    " Usually, we enter the expression command line from command line mode,
+    " so the variables will be reset after we leave the regular command line.
+    "
+    " But yeah, after entering the command line from insert mode or command line
+    " mode, then getting back to the previous mode, we'll have an outdated undolist,
+    " which won't be removed until we get back to normal mode.
+    "
+    " It should rarely happen, as I don't use the expression register frequently.
+    " And when it does happen, the real  issue will only occur if we press `C-_`
+    " enough to get back to this outdated undolist.
+    "
+    " It doesn't seem a big deal atm.
+    "}}}
+    au CmdlineLeave  [^=]  let s:concat_next_kill = 0
     " reset undolist and marks when we leave insert/command line mode
-    au CmdlineLeave  *  let s:undolist_c = [] | let s:mark_c = 0
-    au InsertLeave   *  let s:undolist_i = [] | let s:mark_i = 0
+    au CmdlineLeave  [^=]  let s:undolist_c = [] | let s:mark_c = 0
+    au InsertLeave   [^=]  let s:undolist_i = [] | let s:mark_i = 0
 augroup END
 
 " Functions {{{1
