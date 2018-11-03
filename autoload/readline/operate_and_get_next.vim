@@ -9,9 +9,10 @@ fu! readline#operate_and_get_next#main() abort "{{{1
     let cmdline = getcmdline()
     let history = get(s:, 'cmdline_history', [])
     let s:pos_in_history = (index(history, cmdline) + 1) % len(history)
-    if len(history) > 0
-        let seq = history[s:pos_in_history]
+    if len(history) == 0
+        return ''
     endif
+    let seq = history[s:pos_in_history]
     return "\<cr>:".seq
 endfu
 
