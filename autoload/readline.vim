@@ -486,7 +486,7 @@ fu! readline#edit_and_execute_command() abort "{{{2
         au!
         au CmdWinEnter * let &cedit = s:cedit_save
         \ | unlet! s:cedit_save
-        \ | au! restore_cedit
+        \ | exe 'au! restore_cedit'
         \ | aug! restore_cedit
     augroup END
     return ''

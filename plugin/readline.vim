@@ -431,7 +431,7 @@ fu! s:do_not_break_macro_replay() abort "{{{3
         au CursorHold,CursorHoldI * call s:set_keysyms(1)
         \ |                         let &ut = s:original_ut
         \ |                         exe 'au! do_not_break_macro_replay'
-        \ |                         exe 'aug! do_not_break_macro_replay'
+        \ |                         aug! do_not_break_macro_replay
     augroup END
 
     return '@'.char
