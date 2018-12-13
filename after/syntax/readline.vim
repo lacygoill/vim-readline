@@ -1,12 +1,9 @@
-" syntax {{{1
-
-syn region readlineBackticks matchgroup=Comment start=/`/ end=/`/ oneline concealends containedin=readlineComment
-
-" replace noisy markers, used in folds, with ❭ and ❬
-exe 'syn match readlineFoldMarkers  /#\=\s*{'.'{{\d*\s*\ze\n/  conceal cchar=❭  containedin=readlineComment'
-exe 'syn match readlineFoldMarkers  /#\=\s*}'.'}}\d*\s*\ze\n/  conceal cchar=❬  containedin=readlineComment'
-
-" colors {{{1
-
-hi link  readlineBackticks  Backticks
+" Redefine the `readlineComment` group to include our custom `readlineCommentTitle` item.{{{
+"
+" The latter is defined in `lg#styled_comment#syntax()`:
+"
+"     ~/.vim/plugged/vim-lg-lib/autoload/lg/styled_comment.vim
+"}}}
+syn clear readlineComment
+syn region readlineComment start=/#/ end=/$/  display contained oneline contains=readlineTodo,@Spell,readlineCommentTitle
 

@@ -224,7 +224,7 @@ augroup my_granular_undo
     "}}}
     " Why `[^=]` instead of `*`?{{{
     "
-    " We have some readline mappings in  insert mode and command line mode whose
+    " We have some readline mappings in  insert mode and command-line mode whose
     " rhs uses `c-r =`.
     " When they are invoked, we shouldn't reset those variables.
     " Otherwise:
@@ -246,12 +246,12 @@ augroup my_granular_undo
     "     " press C-_ (✘ we should get bar)
     "     echo br
     "}}}
-    " Won't it cause an issue when we leave the expression command line?{{{
+    " Won't it cause an issue when we leave the expression command-line?{{{
     "
-    " Usually, we enter the expression command line from command line mode,
-    " so the variables will be reset after we leave the regular command line.
+    " Usually, we enter the expression command-line from command-line mode,
+    " so the variables will be reset after we leave the regular command-line.
     "
-    " But yeah, after entering the command line from insert mode or command line
+    " But yeah, after entering the command-line from insert mode or command-line
     " mode, then getting back to the previous mode, we'll have an outdated undolist,
     " which won't be removed until we get back to normal mode.
     "
@@ -262,7 +262,7 @@ augroup my_granular_undo
     " It doesn't seem a big deal atm.
     "}}}
     au CmdlineLeave  [^=]  let s:concat_next_kill = 0
-    " reset undolist and marks when we leave insert/command line mode
+    " reset undolist and marks when we leave insert/command-line mode
     au CmdlineLeave  [^=]  let s:undolist_c = [] | let s:mark_c = 0
     au InsertLeave   [^=]  let s:undolist_i = [] | let s:mark_i = 0
 augroup END
@@ -446,7 +446,7 @@ fu! readline#delete_char(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
 
     if a:mode is# 'c'
-        " If the cursor is  at the end of the command line, we  want C-d to keep
+        " If the cursor is  at the end of the command-line, we  want C-d to keep
         " its normal behavior  which is to list names that  match the pattern in
         " front of the cursor.  However, if it's  before the end, we want C-d to
         " delete the character after it.

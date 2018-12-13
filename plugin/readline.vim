@@ -236,13 +236,13 @@ ino  <expr><unique>  <c-w>  readline#backward_kill_word('i')
 "
 " No.
 " What if  we're in the middle  of a command, and  we don't want to  escape then
-" press `q:`? And  what if  we're on  the expression  command line,  opened from
+" press `q:`? And  what if  we're on  the expression  command-line,  opened from
 " insert mode?  There's no default key  binding to access the expression command
 " line window (no `q=`).
 "}}}
 " Why C-x C-e?{{{
 "
-" To stay consistent with  how we open the editor to edit the  command line in a
+" To stay consistent with  how we open the editor to edit the  command-line in a
 " shell.
 "}}}
 " Why not simply assigning "\<c-x>\<c-e>" to 'cedit'?{{{
