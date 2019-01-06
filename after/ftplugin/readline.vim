@@ -1,5 +1,3 @@
-finish
-
 " Options "{{{1
 
 augroup my_readline
