@@ -47,7 +47,7 @@ let g:loaded_readline = 1
 "
 "         1. ino <m-b> …
 "         2. i_â
-"                → moves cursor one word backward
+"         moves cursor one word backward~
 "
 " Why?
 " Because, for  some reason,  Vim doesn't make the difference between `Esc b` and `â`.
@@ -65,15 +65,18 @@ let g:loaded_readline = 1
 "
 " Use literal insertion:
 "
-"     C-v ^ a    →    â
+"     C-v ^ a
+"     â~
 "
 " Use digraph:
 "
-"     C-k a a    →    â
+"     C-k a a
+"     â~
 "
 " Use replace mode:
 "
-"     r ^ a     →    â
+"     r ^ a
+"     â~
 "
 " Use abbreviation
 "

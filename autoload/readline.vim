@@ -52,36 +52,36 @@ let g:autoloaded_readline = 1
 "             → vla ✘
 "
 " MWE:
-"@        :inorea al la
-"@        :ino <c-x>d  <bs><bs><bs>v<c-g>ual
-"                                   └────┤
-"                                        └ this is where our custom function
-"                                          was breaking the undo sequence
+"     :inorea al la
+"     :ino <c-x>d  <bs><bs><bs>v<c-g>ual
+"                               └────┤
+"                                    └ this is where our custom function
+"                                      was breaking the undo sequence
 "
-"         val C-x d SPC
-"             → vla ✘
+"     val C-x d SPC
+"     vla ✘~
 
 " What dit the code look like? {{{2
 " Autocmd {{{3
 "
-"@     augroup my_granular_undo
-"@         …
+"      augroup my_granular_undo
+"          ...
 "
 "          We could probably  have replaced these 2  permanent autocommands with
 "          fire-once equivalent.
 "
-"@         au InsertLeave      * let s:deleting = 0
-"@         au InsertCharPre    * call s:break_undo_after_deletions(v:char)
+"          au InsertLeave      * let s:deleting = 0
+"          au InsertCharPre    * call s:break_undo_after_deletions(v:char)
 "                                                                  ├────┘
 "                                                                  │
 "          not  needed if  you  break  the undo  sequence  just  AFTER the  next
 "          insertion of a character, after  a sequence of deletions (only needed
 "          if you do it just BEFORE)
-"@     augroup END
+"      augroup END
 
 " Function {{{3
-"@     fu! s:break_undo_after_deletions(char) abort {{{4
-"@         if s:deleting
+"      fu! s:break_undo_after_deletions(char) abort {{{4
+"          if s:deleting
 "             To exclude  the first  inserted character from  the undo  sequence, we
 "             should call `feedkeys()` like this:
 "
@@ -139,7 +139,7 @@ let g:autoloaded_readline = 1
 
 "             But we won't try to exclude it:
 "
-"@             call feedkeys("\<c-g>u", 'int')
+"              call feedkeys("\<c-g>u", 'int')
 "             Why?{{{
 "
 "             To be  sure that the register  we put from insert  mode will never
@@ -151,8 +151,8 @@ let g:autoloaded_readline = 1
 "             whose contents is 'hello', you will insert 'hellh':
 "
 "                     C-w C-r "
-"                                 → hellh
-"                                       ^✘
+"                     hellh~
+"                         ^✘
             "}}}
 "             Why does it happen?{{{
 "
@@ -195,9 +195,9 @@ let g:autoloaded_readline = 1
 "                         endif
 "                     endfu
             "}}}
-"@             let s:deleting = 0
-"@         endif
-"@     endfu
+"              let s:deleting = 0
+"          endif
+"      endfu
 
 " Initialization {{{3
 "
@@ -206,7 +206,7 @@ let g:autoloaded_readline = 1
 " have been  installed, and `s:deleting` won't  have been set yet.   But for our
 " functions to work, it must exist no matter what.
 "
-"@     let s:deleting = 0
+"      let s:deleting = 0
 " }}}1
 " Autocmds {{{1
 
@@ -219,8 +219,10 @@ augroup my_granular_undo
     "         C-w Esc
     "         :three
     "         C-w
-    "         C-y → threetwo    ✘
-    "         C-y → three       ✔
+    "         C-y
+    "         threetwo    ✘~
+    "         C-y
+    "         three       ✔~
     "}}}
     " Why `[^=]` instead of `*`?{{{
     "
@@ -683,8 +685,8 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
         "         :one C-u
         "         :two C-w
         "         C-y
-        "         → twoone    ✘
-        "         → two       ✔
+        "         twoone    ✘~
+        "         two       ✔~
         "}}}
         call timer_start(0, {-> getcmdline() =~# '^\s*$' ? execute('let s:concat_next_kill = 0') : '' })
         return
