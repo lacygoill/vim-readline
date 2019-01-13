@@ -693,7 +693,7 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     endif
 
     " If we delete a multi-char text, then  move the cursor OR insert some text,
-    " then re-delete  a multi-char  text the  2 multi-char  texts should  NOT be
+    " then re-delete  a multi-char text,  the 2  multi-char texts should  NOT be
     " concatenated.
     "
     " FIXME:
