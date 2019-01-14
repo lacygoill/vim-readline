@@ -267,6 +267,7 @@ cno  <expr><unique>  <c-x><c-e>  readline#edit_and_execute_command()
 
 " C-x C-x    exchange-point-and-mark {{{3
 
+" See also: https://gist.github.com/lacygoill/c8ccf30dfac6393f737e3fa4efccdf9d
 cno  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('c')
 ino  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 
