@@ -23,8 +23,8 @@ fu! readline#operate_and_get_next#remember(when) abort "{{{1
     if a:when is# 'on_leave'
         augroup remember_command
             au!
-            au CmdlineLeave : call readline#operate_and_get_next#remember('now')
-            au CmdlineLeave : exe 'au! remember_command' | aug! remember_command
+            au CmdlineLeave : sil! call readline#operate_and_get_next#remember('now')
+                \ | exe 'au! remember_command' | aug! remember_command
         augroup END
     else
         let cmdline = getcmdline()

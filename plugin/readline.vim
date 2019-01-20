@@ -87,9 +87,8 @@ let g:loaded_readline = 1
 
 augroup my_lazy_loaded_readline
     au!
-    au CmdlineEnter,InsertEnter * call readline#add_to_undolist()
-    au CmdlineEnter,InsertEnter *
-        \ exe 'au! my_lazy_loaded_readline'
+    au CmdlineEnter,InsertEnter * sil! call readline#add_to_undolist()
+        \ | exe 'au! my_lazy_loaded_readline'
         \ | aug! my_lazy_loaded_readline
 augroup END
 
@@ -433,10 +432,9 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     set updatetime=5
     augroup do_not_break_macro_replay
         au!
-        au CursorHold,CursorHoldI * call s:set_keysyms(1)
-            \ | let &ut = s:original_ut
-        au CursorHold,CursorHoldI *
-            \ exe 'au! do_not_break_macro_replay'
+        au CursorHold,CursorHoldI * sil! call s:set_keysyms(1)
+            \ | sil! let &ut = s:original_ut
+            \ | exe 'au! do_not_break_macro_replay'
             \ | aug! do_not_break_macro_replay
     augroup END
 
