@@ -12,8 +12,8 @@ let g:autoloaded_readline = 1
 "
 " Press, `Del` while the cursor is at the beginning of the word, in a buffer; it
 " works.
-" Now, do  the same on  the command-line; you'll have  to press the  key several
-" dozens of times!
+" Now, do the same on the command-line; you'll have to press the key `51` times!
+" `51` is the output of `strchars('Ë͙͙̬̹͈͔̜́̽D̦̩̱͕͗̃͒̅̐I̞̟̣̫ͯ̀ͫ͑ͧT̞Ŏ͍̭̭̞͙̆̎̍R̺̟̼͈̟̓͆')`, btw.
 " Because of this, some readline functions  don't work with these types of text,
 " while on the command-line, like `M-d` and `C-w`.
 "}}}
