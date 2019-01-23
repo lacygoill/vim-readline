@@ -507,8 +507,8 @@ fu! s:toggle_meta_keys() abort "{{{3
 
     call s:set_keysyms(is_unset)
 
-    " Flush any delayed screen updates before printing the metadata.
-    " See :h :echo-redraw
+    " Flush any delayed screen updates before printing the message.
+    " See `:h :echo-redraw`.
     " MWE: {{{
     "
     "     :set fdm=manual | echo 'hello'           ✔
