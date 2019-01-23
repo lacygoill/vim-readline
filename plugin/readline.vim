@@ -14,9 +14,9 @@ let g:loaded_readline = 1
 "}}}
 " TODO:     Try to implement these:{{{
 "
-"     • kill-region (zle)                ???
-"     • quote-region (zle)               M-"
-"     • yank-nth-arg                     M-C-y
+"     - kill-region (zle)                ???
+"     - quote-region (zle)               M-"
+"     - yank-nth-arg                     M-C-y
 "
 " Source:
 "     man zshzle
@@ -254,9 +254,9 @@ ino  <expr><unique>  <c-w>  readline#backward_kill_word('i')
 " If you give it 2 keys, it will only consider the 1st one.
 " So, here's what will  happen if you press C-x:
 "
-"   • Vim waits for more keys to be typed because we have mappings beginning with C-x
-"   • we press C-g
-"   • assuming C-x C-g is not mapped to anything Vim will open the command-line window ✘
+"   - Vim waits for more keys to be typed because we have mappings beginning with C-x
+"   - we press C-g
+"   - assuming C-x C-g is not mapped to anything Vim will open the command-line window ✘
 "
 "     Not because `&cedit = "\<c-x>\<c-g>"` (which  is not the case anyway), but
 "     because the 1st key in '&cedit' matches the previous key we pressed.
@@ -275,10 +275,10 @@ ino  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 
 " Whenever we delete some multi-character text, with:
 "
-"         • M-d
-"         • C-w
-"         • C-k
-"         • C-u
+"         - M-d
+"         - C-w
+"         - C-k
+"         - C-u
 "
 " … we should be able to paste it with C-y, like in readline.
 

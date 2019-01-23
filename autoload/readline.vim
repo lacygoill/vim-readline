@@ -42,10 +42,10 @@ let g:autoloaded_readline = 1
 "
 " Because:
 "
-"         • either you break  the undo sequence just BEFORE the next
+"         - either you break  the undo sequence just BEFORE the next
 "           insertion of a character, after a sequence of deletion
 "
-"         • or you break it just AFTER
+"         - or you break it just AFTER
 "
 " If you break it just before, then  when you insert a register after a sequence
 " of deletions,  the last  character of  the register  is changed  (deleted then
@@ -124,16 +124,16 @@ let g:autoloaded_readline = 1
 "
 "               2. d e f                 expansion due to mapping
 "
-"                                                • the expansion occurs as soon as we type `c`
+"                                                - the expansion occurs as soon as we type `c`
 "
-"                                                • 3 InsertCharPre events occurs right after `d`
+"                                                - 3 InsertCharPre events occurs right after `d`
 "                                                  is written inside the typeahead buffer
 "
-"                                                • this function will be called only for the 1st one,
+"                                                - this function will be called only for the 1st one,
 "                                                  because after its 1st invocation, `s:deleting` will
 "                                                  be reset to 0
 "
-"                                                • when it's called, v:char will be `d`,
+"                                                - when it's called, v:char will be `d`,
 "                                                  the 1st character to be inserted
 "
 "               3. d e f BS C-g u d      the 4 last keys are written by `feedkeys()`
@@ -177,9 +177,9 @@ let g:autoloaded_readline = 1
 "
 "             … it triggers 3 InsertCharPre:
 "
-"                     • v:char = 'a'
-"                     • v:char = 'b'
-"                     • v:char = 'c'
+"                     - v:char = 'a'
+"                     - v:char = 'b'
+"                     - v:char = 'c'
 "
 "             When the 1st one is triggered, and `feedkeys()` is invoked to add some
 "             keys in the typeahead buffer, they are inserted AFTER `bc`.
@@ -400,14 +400,14 @@ fu! s:break_undo_before_deletions(mode) abort "{{{2
 endfu
 " Purpose:{{{
 "
-"         • A is a text we insert
-"         • B is a text we insert after A
-"         • C is a text we insert to replace B after deleting the latter
+"         - A is a text we insert
+"         - B is a text we insert after A
+"         - C is a text we insert to replace B after deleting the latter
 "
 " Without any custom “granular undo“, we can only visit:
 "
-"         • ∅
-"         • AC
+"         - ∅
+"         - AC
 "
 " This function presses `C-g  u` the first time we delete  a multi-char text, in
 " any given sequence of multi-char deletions.
@@ -584,9 +584,9 @@ endfu
 fu! readline#move_by_words(mode, ...) abort "{{{2
 " Implementing this function was tricky, it has to handle:{{{
 "
-"    • multi-byte characters (éàî)
-"    • multi-cell characters (tab)
-"    • composing characters  ( ́)
+"    - multi-byte characters (éàî)
+"    - multi-cell characters (tab)
+"    - composing characters  ( ́)
 "}}}
 
     let isk_save = &l:isk
@@ -947,10 +947,10 @@ let s:undolist_c = []
 
 " When we kill with:
 "
-"         • M-d: the text is appended  to the top of the kill ring
-"         • C-w: the text is prepended "
-"         • C-u: the text is prepended "
-"         • C-k: the text is appended  "
+"         - M-d: the text is appended  to the top of the kill ring
+"         - C-w: the text is prepended "
+"         - C-u: the text is prepended "
+"         - C-k: the text is appended  "
 "
 " Exceptions:
 " C-k + C-u  →  C-u (only the text killed by C-u goes into the top of the kill ring)
