@@ -778,7 +778,7 @@ endfu
 fu! readline#transpose_chars(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
     if pos > strlen(line)
-        " We use `matchstr()` because of potential multibyte characters.
+        " We use `matchstr()` because of potential multi-byte characters.
         " Test on this:
         "
         "     âêîôû
