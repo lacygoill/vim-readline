@@ -42,10 +42,10 @@ let g:autoloaded_readline = 1
 "
 " Because:
 "
-"         - either you break  the undo sequence just BEFORE the next
-"           insertion of a character, after a sequence of deletion
+"    - either you  break the undo sequence  just BEFORE the next  insertion of a
+"    character, after a sequence of deletion
 "
-"         - or you break it just AFTER
+"    - or you break it just AFTER
 "
 " If you break it just before, then  when you insert a register after a sequence
 " of deletions,  the last  character of  the register  is changed  (deleted then
@@ -82,8 +82,8 @@ let g:autoloaded_readline = 1
 "      augroup my_granular_undo
 "          ...
 "
-"          We could probably  have replaced these 2  permanent autocommands with
-"          fire-once equivalent.
+"          We could  probably have replaced  these 2 permanent  autocommands with
+"          one-shot equivalent.
 "
 "          au InsertLeave      * let s:deleting = 0
 "          au InsertCharPre    * call s:break_undo_after_deletions(v:char)
@@ -213,7 +213,7 @@ let g:autoloaded_readline = 1
 "              let s:deleting = 0
 "          endif
 "      endfu
-
+" }}}3
 " Initialization {{{3
 "
 " The autocmd will  be installed after the  1st time we use one  of our mapping.
