@@ -389,12 +389,7 @@ fu! s:break_undo_before_deletions(mode) abort "{{{2
         let s:deleting = 1
         " We'll reenable the breaking of the undo sequence before a deletion, the
         " next time we insert a character, or leave insert mode.
-        augroup enable_break_undo_before_deletions
-            au!
-            au InsertLeave,InsertCharPre * sil! let s:deleting = 0
-                \ | exe 'au! enable_break_undo_before_deletions'
-                \ |     aug! enable_break_undo_before_deletions
-        augroup END
+        au InsertLeave,InsertCharPre * ++once sil! let s:deleting = 0
         return "\<c-g>u"
     endif
 endfu
@@ -499,12 +494,8 @@ fu! readline#edit_and_execute_command() abort "{{{2
     let s:cedit_save = &cedit
     let &cedit = "\<c-x>"
     call feedkeys(&cedit, 'int')
-    augroup restore_cedit
-        au!
-        au CmdWinEnter * sil! let &cedit = s:cedit_save
-            \ | unlet! s:cedit_save
-            \ | exe 'au! restore_cedit' | aug! restore_cedit
-    augroup END
+    au CmdWinEnter * ++once sil! let &cedit = s:cedit_save
+        \ | unlet! s:cedit_save
     return ''
 endfu
 
@@ -714,13 +705,8 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     " We should make the autocmd listen  to CursorMovedI, but it would, wrongly,
     " reset `s:concat_next_kill`  when we  delete a  2nd multi-char  text right
     " after a 1st one.
-    augroup reset_concatenate_kills
-        au!
-        au InsertCharPre,InsertEnter,InsertLeave *
-            \ sil! let s:concat_next_kill = 0
-            \ | exe 'au! reset_concatenate_kills'
-            \ | aug! reset_concatenate_kills
-    augroup END
+    au InsertCharPre,InsertEnter,InsertLeave * ++once
+        \ sil! let s:concat_next_kill = 0
 endfu
 
 fu! s:set_isk() abort "{{{2

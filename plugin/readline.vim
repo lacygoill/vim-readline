@@ -85,12 +85,7 @@ let g:loaded_readline = 1
 
 " AUTOCMD {{{1
 
-augroup my_lazy_loaded_readline
-    au!
-    au CmdlineEnter,InsertEnter * sil! call readline#add_to_undolist()
-        \ | exe 'au! my_lazy_loaded_readline'
-        \ | aug! my_lazy_loaded_readline
-augroup END
+au CmdlineEnter,InsertEnter * ++once sil! call readline#add_to_undolist()
 
 augroup operate_and_get_next
     au!
@@ -430,13 +425,8 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     call s:set_keysyms(0)
 
     set updatetime=5
-    augroup do_not_break_macro_replay
-        au!
-        au CursorHold,CursorHoldI * sil! call s:set_keysyms(1)
-            \ | sil! let &ut = s:original_ut
-            \ | exe 'au! do_not_break_macro_replay'
-            \ | aug! do_not_break_macro_replay
-    augroup END
+    au CursorHold,CursorHoldI * ++once sil! call s:set_keysyms(1)
+        \ | sil! let &ut = s:original_ut
 
     return '@'.char
 endfu
