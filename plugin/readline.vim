@@ -14,9 +14,9 @@ let g:loaded_readline = 1
 "}}}
 " TODO:     Try to implement these:{{{
 "
-"     - kill-region (zle)                ???
-"     - quote-region (zle)               M-"
-"     - yank-nth-arg                     M-C-y
+"    - kill-region (zle)                ???
+"    - quote-region (zle)               M-"
+"    - yank-nth-arg                     M-C-y
 "
 " Source:
 "     man zshzle

@@ -907,6 +907,9 @@ fu! readline#unix_line_discard(mode) abort "{{{2
 endfu
 
 fu! readline#yank(mode, pop) abort "{{{2
+    if pumvisible()
+        return "\<c-y>"
+    endif
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
     if a:pop
         let length = strchars(s:kill_ring_{a:mode}[-1], 1)
