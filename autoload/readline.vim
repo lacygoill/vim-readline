@@ -803,10 +803,10 @@ fu! readline#transpose_words(type, ...) abort "{{{2
 
         " What's this concat (\&) for?{{{
         "
-        " It will be used at the end, once Vim thinks it has found a match for 2
-        " words.
+        " It will be used  at the end, once Vim thinks it has  found a match for
+        " two words.
         " It checks that the cursor isn't on the first word. For example, the
-        " cursor being represented by the pipe:
+        " cursor being represented by the bar:
         "
         "                 e|cho foo
         "
@@ -840,7 +840,7 @@ fu! readline#transpose_words(type, ...) abort "{{{2
         let not_after = '%(%(.*%'.pos.'c)@!|%(%(\k@!.)*$)@=)'
 
         " final pattern
-        let pat = not_on_first.not_before.pat.not_after
+        let pat = not_on_first . not_before . pat . not_after
 
         let new_pos  = match(line, pat.'\zs')
         let rep      = '\3\2\1'
