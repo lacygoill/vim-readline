@@ -85,7 +85,12 @@ let g:loaded_readline = 1
 
 " AUTOCMD {{{1
 
-au CmdlineEnter,InsertEnter * ++once sil! call readline#add_to_undolist()
+unlet! s:one_shot
+au CmdlineEnter,InsertEnter * ++once
+    \ if get(s:, 'one_shot', 1)
+    \ |     let s:one_shot = 0
+    \ |     sil! call readline#add_to_undolist()
+    \ | endif
 
 augroup operate_and_get_next
     au!
@@ -425,8 +430,13 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     call s:set_keysyms(0)
 
     set updatetime=5
-    au CursorHold,CursorHoldI * ++once sil! call s:set_keysyms(1)
-        \ | sil! let &ut = s:original_ut
+    unlet! s:one_shot
+    au CursorHold,CursorHoldI * ++once
+        \ if get(s:, 'one_shot', 1)
+        \ |     let s:one_shot = 0
+        \ |     sil! call s:set_keysyms(1)
+        \ |     sil! let &ut = s:original_ut
+        \ | endif
 
     return '@'.char
 endfu
