@@ -85,10 +85,10 @@ let g:loaded_readline = 1
 
 " AUTOCMD {{{1
 
-unlet! s:one_shot
+unlet! s:did_shoot
 au CmdlineEnter,InsertEnter * ++once
-    \ if get(s:, 'one_shot', 1)
-    \ |     let s:one_shot = 0
+    \ if !get(s:, 'did_shoot', 0)
+    \ |     let s:did_shoot = 1
     \ |     sil! call readline#add_to_undolist()
     \ | endif
 
@@ -430,10 +430,10 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     call s:set_keysyms(0)
 
     set updatetime=5
-    unlet! s:one_shot
+    unlet! s:did_shoot
     au CursorHold,CursorHoldI * ++once
-        \ if get(s:, 'one_shot', 1)
-        \ |     let s:one_shot = 0
+        \ if !get(s:, 'did_shoot', 0)
+        \ |     let s:did_shoot = 1
         \ |     sil! call s:set_keysyms(1)
         \ |     sil! let &ut = s:original_ut
         \ | endif
