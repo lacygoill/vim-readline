@@ -880,15 +880,9 @@ fu! readline#undo(mode) abort "{{{2
     let [old_line, old_pos] = remove(s:undolist_{a:mode}, -1)
 
     if a:mode is# 'c'
-        return "\<c-e>\<c-u>"
-        \     .old_line."\<c-b>"
-        \     .repeat("\<right>", old_pos)
+        return old_line
     else
-        " `old_pos` expresses a position with a character count.
-        " `cursor()` expects a byte count.
-        let pos = strlen(matchstr(old_line, '.\{'.old_pos.'}')) + 1
-        call timer_start(0, {-> setline('.', old_line)
-        \                     + cursor('.', pos)})
+        call setline('.', old_line)
         return ''
     endif
 endfu

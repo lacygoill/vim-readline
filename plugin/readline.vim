@@ -147,8 +147,20 @@ ino  <expr><unique>  <c-@>  readline#set_mark('i')
 
 " C-_        undo {{{3
 
-cno  <expr><unique>  <c-_>  readline#undo('c')
-ino  <expr><unique>  <c-_>  readline#undo('i')
+" Why don't you use an `<expr>` mapping?{{{
+"
+" We can't use `<expr>` because of an issue with Nvim.
+" After pressing  the lhs, you would  need to insert an  additional character to
+" cause a redraw; otherwise, you would not see the new text.
+"
+" It's probably due to:
+" https://github.com/neovim/neovim/issues/9006
+"
+" Besides, using `<expr>` would make the code of `readline#undo()` a little more
+" complicated.
+"}}}
+cno          <unique>  <c-_>  <c-\>ereadline#undo('c')<cr>
+ino  <silent><unique>  <c-_>  <c-r>=readline#undo('i')<cr>
 
 " C-a        beginning-of-line {{{3
 
@@ -275,12 +287,12 @@ ino  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 
 " Whenever we delete some multi-character text, with:
 "
-"         - M-d
-"         - C-w
-"         - C-k
-"         - C-u
+"    - M-d
+"    - C-w
+"    - C-k
+"    - C-u
 "
-" … we should be able to paste it with C-y, like in readline.
+" ... we should be able to paste it with C-y, like in readline.
 
 ino  <expr><unique>  <c-y>  readline#yank('i', 0)
 cno  <expr><unique>  <c-y>  readline#yank('c', 0)
