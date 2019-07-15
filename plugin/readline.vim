@@ -424,8 +424,8 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     let char = nr2char(getchar(),1)
     " Don't toggle keysyms if we want to reexecute last Ex command.
     " Why?
-    "     1. It's probably useless.
-    "     2. If the Ex command prints a message, it will be automatically erased.
+    "    1. It's probably useless.
+    "    2. If the Ex command prints a message, it will be automatically erased.
     if char is# ':'
         return '@:'
     endif
@@ -433,11 +433,11 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     " Warning:{{{
     " `do_not_break_macro_replay()` will NOT work when you do this:
     "
-    "         norm! @q
+    "     norm! @q
     "
-    " … instead, you must do this:
+    " ... instead, you must do this:
     "
-    "         norm @q
+    "     norm @q
 "}}}
     call s:set_keysyms(0)
 
