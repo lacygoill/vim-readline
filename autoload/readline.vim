@@ -278,6 +278,25 @@ augroup my_granular_undo
     "
     " It doesn't seem a big deal atm.
     "}}}
+    " TODO: We may solve the previous issue by using the new `<cmd>` argument:{{{
+    "
+    " https://github.com/vim/vim/issues/4784
+    "
+    " Once it's implemented, try to use  it in readline key bindings which enter
+    " the expression register. Example:
+    "
+    "     cno  <silent><unique>  <c-d>  <cmd>call readline#delete_char('c')<cr>
+    "     ino  <silent><unique>  <c-d>  <cmd>call readline#delete_char('i')<cr>
+    "
+    " Also, once  `<cmd>` is available,  look everywhere for timers  or `<expr>`
+    " mappings. You  may eliminate  them thanks  to `<cmd>`,  and avoid  all the
+    " pitfalls they introduce.
+    "
+    " Maybe get rid of `<c-r>=` too (whenever possible)...
+    " Rationale: entering a command-line (no matter the type: `=`, `:`, `/`, ...)
+    " can  have  undesirable  side-effects  because it  fires  CmdlineEnter  and
+    " CmdlineLeave.
+    "}}}
     au CmdlineLeave  [^=]  let s:concat_next_kill = 0
     " reset undolist and marks when we leave insert/command-line mode
     au CmdlineLeave  [^=]  let s:undolist_c = [] | let s:mark_c = 0
