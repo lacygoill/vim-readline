@@ -497,7 +497,7 @@ fu! readline#delete_char(mode) abort "{{{2
             "       :h dire      C-d
             "       :h directory C-d
             redraw
-            call feedkeys("\<c-d>", 'int')
+            call feedkeys("\<c-d>", 'in')
         endif
         return ''
     endif
@@ -517,7 +517,7 @@ endfu
 fu! readline#edit_and_execute_command() abort "{{{2
     let s:cedit_save = &cedit
     let &cedit = "\<c-x>"
-    call feedkeys(&cedit, 'int')
+    call feedkeys(&cedit, 'in')
     au CmdWinEnter * ++once sil! let &cedit = s:cedit_save
         \ | unlet! s:cedit_save
     return ''

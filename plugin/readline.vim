@@ -177,7 +177,7 @@ cno  <unique>  <c-x><c-a>  <c-a>
 
 " also, create custom C-x C-d
 " capture all candidates in the unnamed register
-cno  <expr>  <c-x><c-d>  '<c-a>'.timer_start(0, {-> setreg('"', getcmdline(), 'l') + feedkeys('<c-c>', 'int') })[-1]
+cno  <expr>  <c-x><c-d>  '<c-a>'.timer_start(0, {-> setreg('"', getcmdline(), 'l') + feedkeys('<c-c>', 'in') })[-1]
 
 " C-b        backward-char {{{3
 
