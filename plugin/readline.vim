@@ -351,9 +351,21 @@ ino  <expr><unique>  <m-d>  readline#kill_word('i')
 
 " M-n/p      down up {{{3
 
-" For the `M-n` mapping to work, we need to give the same value for 'wildchar'
-" and 'wildcharm'. We gave them both the value `<Tab>`.
-cno  <unique>  <m-n>  <down>
+" For the `M-n` mapping to work, we need to make sure that `'wc'` and `'wcm'` have the same value.
+cmap <expr><unique> <m-n>                         <sid>readline_down()
+cno                 <plug>(readline-down)         <down>
+cno  <expr>         <plug>(readline-restore-wcm)  <sid>restore_wcm()
+
+fu! s:readline_down() abort
+    let s:wcm_save = &wcm
+    let &wcm = &wc
+    return "\<plug>(readline-down)\<plug>(readline-restore-wcm)"
+endfu
+
+fu! s:restore_wcm() abort
+    let &wcm = get(s:, 'wcm_save', 9)
+    return ''
+endfu
 
 " For more info:
 "
