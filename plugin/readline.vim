@@ -23,11 +23,6 @@ let g:loaded_readline = 1
 "     https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 "     https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
-" TODO:     Use `vim-submode` to make `M-u` enter a submode {{{
-" in which `u`, `i`, `o` change the  case of words.
-" It would make them easier to repeat in insert mode.
-" Do the same for the shell.
-"}}}
 " FIXME:    M-a inserts â in terminal gVim {{{
 "
 " Same thing for other M-…
@@ -317,6 +312,38 @@ ino  <expr><unique>  <m-b>  readline#move_by_words('i', 0, 0)
 ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1, 0)
 
 " M-u i      capitalize-word {{{3
+
+" Necessary in Nvim.{{{
+"
+" Otherwise, if you press `M-u` then a "wrong" key, you'll get unexpected results.
+"
+" MWE:
+"
+"     $ nvim /tmp/file
+"     itest
+"     Esc
+"     M-u l
+"
+" `l` is "wrong" because we don't have any `M-u l` key binding, and Nvim removes the text.
+"}}}
+nno <m-u> <nop>
+" Same issue.{{{
+"
+" Besides, in Vim, if you press `M-u l`, Vim inserts a weird character:
+"
+"     õl
+"     ^
+"}}}
+noremap! <m-u> <nop>
+" Necessary in Nvim.{{{
+"
+" Without, if you press `M-u l` in visual mode, Nvim makes you quit visual mode,
+" and prints a message such as "5 lines changed".
+"
+" In Vim, `M-u l` in visual mode  simply widens the selection  one character to
+" the right.
+"}}}
+xno <m-u> <nop>
 
 cno          <unique>  <m-u>i  <c-r>=readline#move_by_words('c', 1, 1)<cr>
 ino  <silent><unique>  <m-u>i  <c-r>=readline#move_by_words('i', 1, 1)<cr>
