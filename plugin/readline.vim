@@ -24,7 +24,7 @@ let g:loaded_readline = 1
 "     https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
 " TODO:     Use `vim-submode` to make `M-u` enter a submode {{{
-" in which `c`, `l`, `u` change the  case of words.
+" in which `u`, `i`, `o` change the  case of words.
 " It would make them easier to repeat in insert mode.
 " Do the same for the shell.
 "}}}
@@ -316,21 +316,21 @@ cno  <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_
 ino  <expr><unique>  <m-b>  readline#move_by_words('i', 0, 0)
 ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1, 0)
 
-" M-u c      capitalize-word {{{3
+" M-u i      capitalize-word {{{3
 
-cno          <unique>  <m-u>c  <c-r>=readline#move_by_words('c', 1, 1)<cr>
-ino  <silent><unique>  <m-u>c  <c-r>=readline#move_by_words('i', 1, 1)<cr>
+cno          <unique>  <m-u>i  <c-r>=readline#move_by_words('c', 1, 1)<cr>
+ino  <silent><unique>  <m-u>i  <c-r>=readline#move_by_words('i', 1, 1)<cr>
 
-nno  <silent><unique>  <m-u>c  :<c-u>set opfunc=readline#move_by_words<cr>g@l
-xno  <silent><unique>  <m-u>c  :<c-u>sil keepj keepp
+nno  <silent><unique>  <m-u>i  :<c-u>set opfunc=readline#move_by_words<cr>g@l
+xno  <silent><unique>  <m-u>i  :<c-u>sil keepj keepp
 \                              '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
 
-" M-u [lu]   change-case-word {{{3
+" M-u [uo]   change-case-word {{{3
 
-cno          <unique>  <m-u>l  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'c')<cr>
-ino  <silent><unique>  <m-u>l  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'i')<cr>
-xno  <silent><unique>  <m-u>l  :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
-nno  <silent><unique>  <m-u>l  :<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l
+cno          <unique>  <m-u>o  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'c')<cr>
+ino  <silent><unique>  <m-u>o  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'i')<cr>
+xno  <silent><unique>  <m-u>o  :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
+nno  <silent><unique>  <m-u>o  :<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l
 "                                                                              ^{{{
 "                                                                         don't write `_`
 " It would break the repetition of the edit with the dot command.
