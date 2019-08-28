@@ -311,11 +311,15 @@ cno  <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_
 ino  <expr><unique>  <m-b>  readline#move_by_words('i', 0, 0)
 ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1, 0)
 
-" M-u i      capitalize-word {{{3
+" M-i        capitalize-word {{{3
 
+" The next 3 mappings are commented, because we don't need them anymore.
+" But if  one day you modify  the lhs of the  mappings which change the  case of
+" words, and decide to  use `M-u` as a prefix (e.g. `M-u u`,  `M-u i`, `M-u o`),
+" make sure to uncomment them.
 " Necessary in Nvim.{{{
 "
-" Otherwise, if you press `M-u` then a "wrong" key, you'll get unexpected results.
+" Otherwise, if you press `M-u`, followed by a "wrong" key, you'll get unexpected results.
 "
 " MWE:
 "
@@ -326,7 +330,7 @@ ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1, 0)
 "
 " `l` is "wrong" because we don't have any `M-u l` key binding, and Nvim removes the text.
 "}}}
-nno <m-u> <nop>
+"     nno <m-u> <nop>
 " Same issue.{{{
 "
 " Besides, in Vim, if you press `M-u l`, Vim inserts a weird character:
@@ -334,7 +338,7 @@ nno <m-u> <nop>
 "     õl
 "     ^
 "}}}
-noremap! <m-u> <nop>
+"     noremap! <m-u> <nop>
 " Necessary in Nvim.{{{
 "
 " Without, if you press `M-u l` in visual mode, Nvim makes you quit visual mode,
@@ -343,30 +347,30 @@ noremap! <m-u> <nop>
 " In Vim, `M-u l` in visual mode  simply widens the selection  one character to
 " the right.
 "}}}
-xno <m-u> <nop>
+"     xno <m-u> <nop>
 
-cno          <unique>  <m-u>i  <c-r>=readline#move_by_words('c', 1, 1)<cr>
-ino  <silent><unique>  <m-u>i  <c-r>=readline#move_by_words('i', 1, 1)<cr>
+cno          <unique>  <m-i>  <c-r>=readline#move_by_words('c', 1, 1)<cr>
+ino  <silent><unique>  <m-i>  <c-r>=readline#move_by_words('i', 1, 1)<cr>
 
-nno  <silent><unique>  <m-u>i  :<c-u>set opfunc=readline#move_by_words<cr>g@l
-xno  <silent><unique>  <m-u>i  :<c-u>sil keepj keepp
-\                              '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
+nno  <silent><unique>  <m-i>  :<c-u>set opfunc=readline#move_by_words<cr>g@l
+xno  <silent><unique>  <m-i>  :<c-u>sil keepj keepp
+\                             '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
 
-" M-u [uo]   change-case-word {{{3
+" M-u M-o    change-case-word {{{3
 
-cno          <unique>  <m-u>o  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'c')<cr>
-ino  <silent><unique>  <m-u>o  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'i')<cr>
-xno  <silent><unique>  <m-u>o  :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
-nno  <silent><unique>  <m-u>o  :<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l
-"                                                                              ^{{{
-"                                                                         don't write `_`
+cno          <unique>  <m-o>  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'c')<cr>
+ino  <silent><unique>  <m-o>  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'i')<cr>
+xno  <silent><unique>  <m-o>  :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
+nno  <silent><unique>  <m-o>  :<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l
+"                                                                             ^{{{
+"                                                                        don't write `_`
 " It would break the repetition of the edit with the dot command.
 "}}}
 
-cno          <unique>  <m-u>u  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'c')<cr>
-ino  <silent><unique>  <m-u>u  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'i')<cr>
-xno          <unique>  <m-u>u  U
-nno  <silent><unique>  <m-u>u  :<c-u>call readline#change_case_save(1)<bar>set opfunc=readline#change_case_word<cr>g@l
+cno          <unique>  <m-u>  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'c')<cr>
+ino  <silent><unique>  <m-u>  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'i')<cr>
+xno          <unique>  <m-u>  U
+nno  <silent><unique>  <m-u>  :<c-u>call readline#change_case_save(1)<bar>set opfunc=readline#change_case_word<cr>g@l
 
 " M-d        kill-word {{{3
 
@@ -521,8 +525,10 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-e>=\ee"
         exe "set <m-f>=\ef"
         exe "set <m-g>=\eg"
+        exe "set <m-i>=\ei"
         exe "set <m-m>=\em"
         exe "set <m-n>=\en"
+        exe "set <m-o>=\eo"
         exe "set <m-p>=\ep"
         exe "set <m-t>=\et"
         exe "set <m-u>=\eu"
@@ -535,8 +541,10 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-e>="
         exe "set <m-f>="
         exe "set <m-g>="
+        exe "set <m-i>="
         exe "set <m-m>="
         exe "set <m-n>="
+        exe "set <m-o>="
         exe "set <m-p>="
         exe "set <m-t>="
         exe "set <m-u>="
