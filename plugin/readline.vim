@@ -35,8 +35,8 @@ let g:loaded_readline = 1
 "
 " https://github.com/vim/vim/issues/2397
 "}}}
-" FIXME:    Can't insert ù â î ô  {{{
-
+" FIXME:    Can't insert [áâäåæçéíîïðôõù]  {{{
+"
 " A mapping using a meta key prevents the insertion of some special characters
 " for example:
 "
@@ -533,7 +533,6 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-t>=\et"
         exe "set <m-u>=\eu"
         exe "set <m-y>=\ey"
-        exe "set <m-z>=\ez"
     else
         exe "set <m-a>="
         exe "set <m-b>="
@@ -549,7 +548,6 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-t>="
         exe "set <m-u>="
         exe "set <m-y>="
-        exe "set <m-z>="
     endif
 endfu
 
