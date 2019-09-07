@@ -19,9 +19,9 @@ let g:loaded_readline = 1
 "    - yank-nth-arg                     M-C-y
 "
 " Source:
-"     man zshzle
-"     https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
-"     https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
+" `$ man zshzle`
+" https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
+" https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
 " FIXME:    M-a inserts â in terminal gVim {{{
 "
@@ -303,7 +303,7 @@ cno  <expr><unique>  <c-y>  readline#yank('c', 0)
 " Because it seems to consider `-` as part of a word.
 " `M-b`, `M-f` would move too far compared to readline.
 
-"                                              ┌─  close wildmenu
+"                                              ┌  close wildmenu
 "                                              │
 cno  <expr><unique>  <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0, 0)
 cno  <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1, 0)
@@ -525,7 +525,11 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-e>=\ee"
         exe "set <m-f>=\ef"
         exe "set <m-g>=\eg"
+        exe "set <m-h>=\eh"
         exe "set <m-i>=\ei"
+        exe "set <m-j>=\ej"
+        exe "set <m-k>=\ek"
+        exe "set <m-l>=\el"
         exe "set <m-m>=\em"
         exe "set <m-n>=\en"
         exe "set <m-o>=\eo"
@@ -540,7 +544,11 @@ fu! s:set_keysyms(enable) abort "{{{3
         exe "set <m-e>="
         exe "set <m-f>="
         exe "set <m-g>="
+        exe "set <m-h>="
         exe "set <m-i>="
+        exe "set <m-j>="
+        exe "set <m-k>="
+        exe "set <m-l>="
         exe "set <m-m>="
         exe "set <m-n>="
         exe "set <m-o>="
@@ -610,9 +618,7 @@ augroup END
 "         Esc + {char used in a meta mapping}
 "
 " … produces unexpected results when it's replayed.
-" See here for more info:
-"
-"     https://github.com/tpope/vim-rsi/issues/13
+" See here for more info: https://github.com/tpope/vim-rsi/issues/13
 "
 " Reproduction:
 "

@@ -504,7 +504,7 @@ fu! readline#delete_char(mode) abort "{{{2
 
     " If the popup menu is visible, scroll a page down.
     " If no menu, and we're BEFORE the end of the line,   delete next character.
-    " "                     AT the end of the line,       delete the newline.
+    " "                     AT the end of the line,       delete the newline.
     let seq = pumvisible()
         \ ?     repeat("\<c-n>", s:FAST_SCROLL_IN_PUM)
         \ : col('.') <= strlen(getline('.'))
@@ -656,16 +656,16 @@ fu! readline#move_by_words(mode, ...) abort "{{{2
 
         " Here's how it works in readline:{{{
         "
-        "     1. it looks for the keyword character after the cursor
+        "    1. it looks for the keyword character after the cursor
         "
-        "        The latter could be right after, or further away.
-        "        Which means the capitalization doesn't necessarily uppercase
-        "        the first character of a word.
+        "       The latter could be right after, or further away.
+        "       Which means the capitalization doesn't necessarily uppercase
+        "       the first character of a word.
         "
-        "     2. it replaces it with its uppercase counterpart
+        "    2. it replaces it with its uppercase counterpart
         "
-        "     3. it replaces all subsequent characters until a non-keyword character
-        "        with their lowercase counterparts
+        "    3. it replaces all subsequent characters until a non-keyword character
+        "       with their lowercase counterparts
         "}}}
         if capitalize
             let new_line = substitute(line,
@@ -836,13 +836,13 @@ fu! readline#transpose_words(type, ...) abort "{{{2
         " It checks that the cursor isn't on the first word. For example, the
         " cursor being represented by the bar:
         "
-        "                 e|cho foo
+        "     e|cho foo
         "
         " ... there should be no transposition (to mimic readline)
         "}}}
         let not_on_first = '\v%(<\k*%'.pos.'c\k+>)@!&'
 
-        " The cursor mustn't be before the 2 words:{{{
+        " The cursor must not be before the 2 words:{{{
         "
         "         foo | bar baz
         "               ├─────┘
@@ -850,20 +850,20 @@ fu! readline#transpose_words(type, ...) abort "{{{2
         "}}}
         let not_before = '%(%'.pos.'c.*)@<!'
 
-        " The cursor mustn't be after the 2 words,{{{
+        " The cursor must not be after the 2 words,{{{
         " unless it is  inside a sequence of non-words characters  at the end of
         " the line:
         "
-        "         foo bar | baz
-        "         ├─────┘
-        "         └ don't transpose those 2
+        "     foo bar | baz
+        "     ├─────┘
+        "     └ don't transpose those 2
         "
-        " OR it is after them, BUT there are only non-word characters between
-        " them and the end of the line
+        " *or*  it is  after  them,  *but* there  are  only non-word  characters
+        " between them and the end of the line:
         "
-        "         foo bar !?`,;:.
-        "                ├──────┘
-        "                └ the cursor may be anywhere in here
+        "     foo bar !?`,;:.
+        "            ├──────┘
+        "            └ the cursor may be anywhere in here
         "}}}
         let not_after = '%(%(.*%'.pos.'c)@!|%(%(\k@!.)*$)@=)'
 
