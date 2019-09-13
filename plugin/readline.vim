@@ -19,7 +19,7 @@ let g:loaded_readline = 1
 "    - yank-nth-arg                     M-C-y
 "
 " Source:
-" `$ man zshzle`
+" `man zshzle`
 " https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 " https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
