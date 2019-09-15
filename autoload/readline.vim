@@ -18,7 +18,7 @@ let g:autoloaded_readline = 1
 " while on the command-line, like `M-d` and `C-w`.
 "}}}
 
-" OLD code {{{1
+" Old Code: {{{1
 " What was its purpose? {{{2
 "
 " It was a complicated mechanism to break  the undo sequence after a sequence of
@@ -699,6 +699,18 @@ fu! readline#move_by_words(mode, ...) abort "{{{2
         let &l:isk = isk_save
     endtry
     return ''
+endfu
+
+fu! readline#m_u() abort "{{{2
+    " if a preview window is present in the tab page, scroll half a page up
+    if index(map(range(1, winnr('$')), {_,v -> getwinvar(v, '&pvw')}), 1) >= 0
+        call window#scroll_preview('c-u')
+    else
+        " otherwise, upcase the text up to the end of the current/next word
+        call readline#change_case_save(1)
+        set opfunc=readline#change_case_word
+        norm! g@l
+    endif
 endfu
 
 fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2

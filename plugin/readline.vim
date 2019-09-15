@@ -370,7 +370,7 @@ nno  <silent><unique>  <m-o>  :<c-u>call readline#change_case_save(0)<bar>set op
 cno          <unique>  <m-u>  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'c')<cr>
 ino  <silent><unique>  <m-u>  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'i')<cr>
 xno          <unique>  <m-u>  U
-nno  <silent><unique>  <m-u>  :<c-u>call readline#change_case_save(1)<bar>set opfunc=readline#change_case_word<cr>g@l
+nno  <silent><unique>  <m-u>  :<c-u>call readline#m_u()<cr>
 
 " M-d        kill-word {{{3
 
