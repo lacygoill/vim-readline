@@ -57,8 +57,8 @@ let g:autoloaded_readline = 1
 "
 "         :inorea al la
 "
-"           ┌ text in buffer
-"         ┌─┤
+"         ┌ text in buffer
+"         ├─┐
 "         val|
 "            ^
 "            cursor
@@ -69,9 +69,9 @@ let g:autoloaded_readline = 1
 " MWE:
 "     :inorea al la
 "     :ino <c-x>d  <bs><bs><bs>v<c-g>ual
-"                               └────┤
-"                                    └ this is where our custom function
-"                                      was breaking the undo sequence
+"                               ├────┘
+"                               └ this is where our custom function
+"                                 was breaking the undo sequence
 "
 "     val C-x d SPC
 "     vla ✘~
@@ -145,11 +145,11 @@ let g:autoloaded_readline = 1
 "             The solution is to insert them at the beginning of the typeahead buffer,
 "             by giving the 'i' flag to feedkeys(…). The 3rd step then becomes:
 "
-"                                 ┌ expansion of `abc`
-"                  ┌──────────────┤
+"                  ┌ expansion of `abc`
+"                  ├──────────────┐
 "               3. d BS C-g u d e f
-"                    └────────┤
-"                             └ inserted by our custom function when `InsertCharPre` occurs
+"                    ├────────┘
+"                    └ inserted by our custom function when `InsertCharPre` occurs
             "}}}
 
 "             But we won't try to exclude it:
@@ -361,7 +361,7 @@ fu! readline#backward_delete_char(mode) abort "{{{2
 endfu
 
 fu! readline#backward_kill_word(mode) abort "{{{2
-    let isk_save = &l:isk
+    let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
         "            ┌ word before cursor{{{
@@ -384,7 +384,7 @@ fu! readline#backward_kill_word(mode) abort "{{{2
     catch
         return lg#catch_error()
     finally
-        let &l:isk = isk_save
+        call setbufvar(bufnr, '&isk', isk_save)
     endtry
     return ''
 endfu
@@ -419,14 +419,14 @@ fu! s:break_undo_before_deletions(mode) abort "{{{2
 endfu
 " Purpose:{{{
 "
-"         - A is a text we insert
-"         - B is a text we insert after A
-"         - C is a text we insert to replace B after deleting the latter
+"    - A is a text we insert
+"    - B is a text we insert after A
+"    - C is a text we insert to replace B after deleting the latter
 "
 " Without any custom “granular undo“, we can only visit:
 "
-"         - ∅
-"         - AC
+"    - ∅
+"    - AC
 "
 " This function presses `C-g  u` the first time we delete  a multi-char text, in
 " any given sequence of multi-char deletions.
@@ -443,7 +443,7 @@ endfu
 
 fu! readline#change_case_word(type, ...) abort "{{{2
     "                               ^ mode
-    let isk_save = &l:isk
+    let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let mode = get(a:, '1', 'n')
         let [line, pos] = s:setup_and_get_info(mode, 1, 1, 1)
@@ -472,7 +472,7 @@ fu! readline#change_case_word(type, ...) abort "{{{2
     catch
         return lg#catch_error()
     finally
-        let &l:isk = isk_save
+        call setbufvar(bufnr, '&isk', isk_save)
     endtry
 
     return ''
@@ -567,7 +567,7 @@ fu! readline#kill_line(mode) abort "{{{2
 endfu
 
 fu! readline#kill_word(mode) abort "{{{2
-    let isk_save = &l:isk
+    let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
         "            ┌ from the beginning of the word containing the cursor{{{
@@ -591,7 +591,7 @@ fu! readline#kill_word(mode) abort "{{{2
     catch
         return lg#catch_error()
     finally
-        let &l:isk = isk_save
+        call setbufvar(bufnr, '&isk', isk_save)
     endtry
     return ''
 endfu
@@ -604,7 +604,7 @@ fu! readline#move_by_words(mode, ...) abort "{{{2
 "    - composing characters  ( ́)
 "}}}
 
-    let isk_save = &l:isk
+    let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let [mode, is_fwd, capitalize] = a:0
             \ ? [a:mode, a:1, a:2]
@@ -696,7 +696,7 @@ fu! readline#move_by_words(mode, ...) abort "{{{2
     catch
         return lg#catch_error()
     finally
-        let &l:isk = isk_save
+        call setbufvar(bufnr, '&isk', isk_save)
     endtry
     return ''
 endfu
@@ -825,7 +825,7 @@ endfu
 fu! readline#transpose_words(type, ...) abort "{{{2
     "                              ^
     "                              mode
-    let isk_save = &l:isk
+    let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let mode = get(a:, '1', 'n')
         let [line, pos] = s:setup_and_get_info(mode, 1, 1, 1)
@@ -899,7 +899,7 @@ fu! readline#transpose_words(type, ...) abort "{{{2
     catch
         return lg#catch_error()
     finally
-        let &l:isk = isk_save
+        call setbufvar(bufnr, '&isk', isk_save)
     endtry
     return ''
 endfu
@@ -970,10 +970,10 @@ let s:undolist_c = []
 
 " When we kill with:
 "
-"         - M-d: the text is appended  to the top of the kill ring
-"         - C-w: the text is prepended "
-"         - C-u: the text is prepended "
-"         - C-k: the text is appended  "
+"    - M-d: the text is appended  to the top of the kill ring
+"    - C-w: the text is prepended "
+"    - C-u: the text is prepended "
+"    - C-k: the text is appended  "
 "
 " Exceptions:
 " C-k + C-u  →  C-u (only the text killed by C-u goes into the top of the kill ring)

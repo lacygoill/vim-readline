@@ -465,7 +465,7 @@ endif
 "
 " We do the same thing for other keysyms following the pattern `M-{char}`.
 "}}}
-"  ┌─ no need to teach anything for nvim or gVim (they already know)
+"  ┌ no need to teach anything for nvim or gVim (they already know)
 "  │
 if has('nvim') || has('gui_running')
     finish
