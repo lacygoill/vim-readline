@@ -78,7 +78,7 @@ let g:loaded_readline = 1
 " Use equivalence class in a search command
 " }}}
 
-" AUTOCMD {{{1
+" Autocmds {{{1
 
 unlet! s:did_shoot
 au CmdlineEnter,InsertEnter * ++once
@@ -97,14 +97,14 @@ augroup operate_and_get_next
     au CmdlineEnter : call timer_start(0, {-> readline#operate_and_get_next#remember('on_leave')})
 augroup END
 
-" MAPPINGS {{{1
+" Mappings {{{1
 " Try to always preserve breaking undo sequence.{{{
 "
 " Most of these mappings take care of not breaking undo sequence (C-g U).
 " It means we can repeat an edition with the dot command, even if we use them.
 " If you add another mapping, try to not break undo sequence. Thanks.
 "}}}
-" CTRL {{{2
+" Ctrl {{{2
 " C-@        set-mark {{{3
 
 " If you don't use `C-@` in the insert mode mapping, disable the key.{{{
@@ -167,12 +167,12 @@ ino  <expr><unique>  <c-a>  readline#beginning_of_line('i')
 ino  <c-x><c-a>  <c-a>
 
 " restore default c_C-a
-" dump all candidates on the command-line
+" dump all matches on the command-line
 cno  <unique>  <c-x><c-a>  <c-a>
 
 " also, create custom C-x C-d
-" capture all candidates in the unnamed register
-cno  <expr>  <c-x><c-d>  '<c-a>'.timer_start(0, {-> setreg('"', getcmdline(), 'l') + feedkeys('<c-c>', 'in') })[-1]
+" capture all matches in the unnamed register
+cno  <expr>  <c-x><c-d>  '<c-a>'..timer_start(0, {-> setreg('"', getcmdline(), 'l') + feedkeys('<c-c>', 'in') })[-1]
 
 " C-b        backward-char {{{3
 
@@ -292,7 +292,7 @@ ino  <expr><unique>  <c-x><c-x>  readline#exchange_point_and_mark('i')
 ino  <expr><unique>  <c-y>  readline#yank('i', 0)
 cno  <expr><unique>  <c-y>  readline#yank('c', 0)
 " }}}2
-" META {{{2
+" Meta {{{2
 " M-b/f      forward-word    backward-word {{{3
 
 " We can't use this:
@@ -305,8 +305,8 @@ cno  <expr><unique>  <c-y>  readline#yank('c', 0)
 
 "                                              ┌  close wildmenu
 "                                              │
-cno  <expr><unique>  <m-b> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 0, 0)
-cno  <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '').readline#move_by_words('c', 1, 0)
+cno  <expr><unique>  <m-b> (wildmenumode() ? '<space><c-h>' : '')..readline#move_by_words('c', 0, 0)
+cno  <expr><unique>  <m-f> (wildmenumode() ? '<space><c-h>' : '')..readline#move_by_words('c', 1, 0)
 
 ino  <expr><unique>  <m-b>  readline#move_by_words('i', 0, 0)
 ino  <expr><unique>  <m-f>  readline#move_by_words('i', 1, 0)
@@ -358,8 +358,8 @@ xno  <silent><unique>  <m-i>  :<c-u>sil keepj keepp
 
 " M-u M-o    change-case-word {{{3
 
-cno          <unique>  <m-o>  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'c')<cr>
-ino  <silent><unique>  <m-o>  <c-r>=readline#change_case_save(0).readline#change_case_word('', 'i')<cr>
+cno          <unique>  <m-o>  <c-r>=readline#change_case_save(0)..readline#change_case_word('', 'c')<cr>
+ino  <silent><unique>  <m-o>  <c-r>=readline#change_case_save(0)..readline#change_case_word('', 'i')<cr>
 xno  <silent><unique>  <m-o>  :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
 nno  <silent><unique>  <m-o>  :<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l
 "                                                                             ^{{{
@@ -367,8 +367,8 @@ nno  <silent><unique>  <m-o>  :<c-u>call readline#change_case_save(0)<bar>set op
 " It would break the repetition of the edit with the dot command.
 "}}}
 
-cno          <unique>  <m-u>  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'c')<cr>
-ino  <silent><unique>  <m-u>  <c-r>=readline#change_case_save(1).readline#change_case_word('', 'i')<cr>
+cno          <unique>  <m-u>  <c-r>=readline#change_case_save(1)..readline#change_case_word('', 'c')<cr>
+ino  <silent><unique>  <m-u>  <c-r>=readline#change_case_save(1)..readline#change_case_word('', 'i')<cr>
 xno          <unique>  <m-u>  U
 nno  <silent><unique>  <m-u>  :<c-u>call readline#m_u()<cr>
 
@@ -436,7 +436,7 @@ if has('nvim')
     ino  <expr><unique>  <m-y>  readline#yank('i', 1)
 endif
 " }}}1
-" OPTIONS {{{1
+" Options {{{1
 
 if !has('nvim')
     " don't use `c-w` as a prefix to execute commands manipulating the window in
@@ -445,7 +445,7 @@ if !has('nvim')
     set termwinkey=<c-g>
 endif
 
-" KEYSYMS {{{1
+" Keysyms {{{1
 " Why do we need to set `<M-b>` &friends?{{{
 "
 " On my machine, Vim doesn't know what are the right keycodes produced by
@@ -505,12 +505,12 @@ fu! s:do_not_break_macro_replay() abort "{{{3
         \ |     sil! let &ut = s:original_ut
         \ | endif
 
-    return '@'.char
+    return '@'..char
 endfu
 
 fu! s:enable_keysyms_on_command_line() abort "{{{3
     call s:set_keysyms(1)
-    " Do NOT return `:` immediately.
+    " Do *not* return `:` immediately.
     " The previous function call sets some special options, and for some reason,
     " setting these prevents us from displaying a message with `:echo`.
     call timer_start(0, {-> feedkeys(':', 'in')})
@@ -565,7 +565,7 @@ augroup set_keysyms
 augroup END
 
 fu! s:toggle_keysyms_in_terminal() abort "{{{3
-    nno  <buffer><expr><nowait>  :  <sid>enable_keysyms_on_command_line()
+    nno <buffer><expr><nowait> : <sid>enable_keysyms_on_command_line()
 
     " Warning: don't change the name of the augroup{{{
     " without doing the same in:
@@ -593,9 +593,9 @@ fu! s:toggle_meta_keys() abort "{{{3
     "     :set <M-a>=     | echo "hello\nworld"    ✔
     "}}}
     redraw
-    echom '[Fix Macro] Meta keys '.(is_unset ? 'Enabled' : 'Disabled')
+    echom '[Fix Macro] Meta keys '..(is_unset ? 'Enabled' : 'Disabled')
 endfu
-
+"}}}2
 " command {{{2
 " This command can be useful to temporarily disable meta keys before replaying a
 " macro.
