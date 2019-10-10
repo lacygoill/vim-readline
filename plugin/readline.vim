@@ -94,7 +94,7 @@ augroup operate_and_get_next
     " To avoid remembering commands which  we haven't executed manually like the
     " ones in mappings.
     "}}}
-    au CmdlineEnter : call timer_start(0, {-> readline#operate_and_get_next#remember('on_leave')})
+    au CmdlineEnter : call timer_start(0, {_ -> readline#operate_and_get_next#remember('on_leave')})
 augroup END
 
 " Mappings {{{1
@@ -172,7 +172,7 @@ cno  <unique>  <c-x><c-a>  <c-a>
 
 " also, create custom C-x C-d
 " capture all matches in the unnamed register
-cno  <expr>  <c-x><c-d>  '<c-a>'..timer_start(0, {-> setreg('"', getcmdline(), 'l') + feedkeys('<c-c>', 'in') })[-1]
+cno  <expr>  <c-x><c-d>  '<c-a>'..timer_start(0, {_ -> setreg('"', getcmdline(), 'l') + feedkeys('<c-c>', 'in') })[-1]
 
 " C-b        backward-char {{{3
 
@@ -513,7 +513,7 @@ fu! s:enable_keysyms_on_command_line() abort "{{{3
     " Do *not* return `:` immediately.
     " The previous function call sets some special options, and for some reason,
     " setting these prevents us from displaying a message with `:echo`.
-    call timer_start(0, {-> feedkeys(':', 'in')})
+    call timer_start(0, {_ -> feedkeys(':', 'in')})
     return ''
 endfu
 
