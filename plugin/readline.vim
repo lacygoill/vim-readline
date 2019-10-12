@@ -402,13 +402,13 @@ ino  <expr><unique>  <m-d>  readline#kill_word('i')
 "     cno                 <plug>(readline-down)         <down>
 "     cno  <expr>         <plug>(readline-restore-wcm)  <sid>restore_wcm()
 "
-"     fu! s:readline_down() abort
+"     fu s:readline_down() abort
 "         let s:wcm_save = &wcm
 "         let &wcm = &wc
 "         return "\<plug>(readline-down)\<plug>(readline-restore-wcm)"
 "     endfu
 "
-"     fu! s:restore_wcm() abort
+"     fu s:restore_wcm() abort
 "         let &wcm = get(s:, 'wcm_save', 9)
 "         return ''
 "     endfu
@@ -474,7 +474,7 @@ endif
 let s:original_ut = &ut
 
 " functions {{{2
-fu! s:do_not_break_macro_replay() abort "{{{3
+fu s:do_not_break_macro_replay() abort "{{{3
     " ask which register we want to replay
     let char = nr2char(getchar(),1)
     " Don't toggle keysyms if we want to reexecute last Ex command.
@@ -508,7 +508,7 @@ fu! s:do_not_break_macro_replay() abort "{{{3
     return '@'..char
 endfu
 
-fu! s:enable_keysyms_on_command_line() abort "{{{3
+fu s:enable_keysyms_on_command_line() abort "{{{3
     call s:set_keysyms(1)
     " Do *not* return `:` immediately.
     " The previous function call sets some special options, and for some reason,
@@ -517,7 +517,7 @@ fu! s:enable_keysyms_on_command_line() abort "{{{3
     return ''
 endfu
 
-fu! s:set_keysyms(enable) abort "{{{3
+fu s:set_keysyms(enable) abort "{{{3
     if a:enable
         exe "set <m-a>=\ea"
         exe "set <m-b>=\eb"
@@ -564,7 +564,7 @@ augroup set_keysyms
     au VimEnter,TermChanged * sil! call s:set_keysyms(1)
 augroup END
 
-fu! s:toggle_keysyms_in_terminal() abort "{{{3
+fu s:toggle_keysyms_in_terminal() abort "{{{3
     nno <buffer><expr><nowait> : <sid>enable_keysyms_on_command_line()
 
     " Warning: don't change the name of the augroup{{{
@@ -579,7 +579,7 @@ fu! s:toggle_keysyms_in_terminal() abort "{{{3
     augroup END
 endfu
 
-fu! s:toggle_meta_keys() abort "{{{3
+fu s:toggle_meta_keys() abort "{{{3
     let is_unset = execute('set <M-p>', 'silent!') is# "\n"
 
     call s:set_keysyms(is_unset)
@@ -599,7 +599,7 @@ endfu
 " command {{{2
 " This command can be useful to temporarily disable meta keys before replaying a
 " macro.
-com! -bar ToggleMetaKeys call s:toggle_meta_keys()
+com -bar ToggleMetaKeys call s:toggle_meta_keys()
 
 " autocommand {{{2
 augroup handle_keysyms

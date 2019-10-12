@@ -5,7 +5,7 @@ let g:autoloaded_readline#operate_and_get_next = 1
 
 let s:HISTORY_MAX_SIZE = 10
 
-fu! readline#operate_and_get_next#main() abort "{{{1
+fu readline#operate_and_get_next#main() abort "{{{1
     let cmdline = getcmdline()
     let history = get(s:, 'cmdline_history', [])
     let s:pos_in_history = (index(history, cmdline) + 1) % len(history)
@@ -16,7 +16,7 @@ fu! readline#operate_and_get_next#main() abort "{{{1
     return "\<cr>:"..seq
 endfu
 
-fu! readline#operate_and_get_next#remember(when) abort "{{{1
+fu readline#operate_and_get_next#remember(when) abort "{{{1
     if mode() isnot# 'c'
         return
     endif

@@ -95,7 +95,7 @@ let g:autoloaded_readline = 1
 "      augroup END
 
 " Function {{{3
-"      fu! s:break_undo_after_deletions(char) abort {{{4
+"      fu s:break_undo_after_deletions(char) abort {{{4
 "          if s:deleting
 "             To exclude  the first  inserted character from  the undo  sequence, we
 "             should call `feedkeys()` like this:
@@ -201,7 +201,7 @@ let g:autoloaded_readline = 1
 "                         au InsertCharPre * call Func()
 "                     augroup END
 "
-"                     fu! Func() abort
+"                     fu Func() abort
 "                         if v:char is# 'a'
 "                             " ✔
 "                             " let v:char = 'x'
@@ -304,7 +304,7 @@ augroup my_granular_undo
 augroup END
 
 " Functions {{{1
-fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
+fu s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
     if s:concat_next_kill
         let s:kill_ring_{a:mode}[-1] = a:after
                                    \ ?     s:kill_ring_{a:mode}[-1]..a:text
@@ -328,7 +328,7 @@ fu! s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
     call s:set_concat_next_kill(a:mode, a:this_kill_is_big)
 endfu
 
-fu! readline#add_to_undolist() abort "{{{2
+fu readline#add_to_undolist() abort "{{{2
     augroup add_to_undolist
         au!
         au User add_to_undolist_c call s:add_to_undolist('c', getcmdline(), getcmdpos())
@@ -336,7 +336,7 @@ fu! readline#add_to_undolist() abort "{{{2
     augroup END
 endfu
 
-fu! s:add_to_undolist(mode, line, pos) abort "{{{2
+fu s:add_to_undolist(mode, line, pos) abort "{{{2
     let undo_len = len(s:undolist_{a:mode})
     if undo_len > 100
         " limit the size of the undolist to 100 entries
@@ -346,7 +346,7 @@ fu! s:add_to_undolist(mode, line, pos) abort "{{{2
                                 \ strchars(matchstr(a:line, '.*\%'..a:pos..'c'), 1)]]
 endfu
 
-fu! readline#backward_char(mode) abort "{{{2
+fu readline#backward_char(mode) abort "{{{2
     let s:concat_next_kill = 0
 
     " SPC + C-h = close wildmenu
@@ -355,12 +355,12 @@ fu! readline#backward_char(mode) abort "{{{2
        \ :     (wildmenumode() ? "\<space>\<c-h>" : '').."\<left>"
 endfu
 
-fu! readline#backward_delete_char(mode) abort "{{{2
+fu readline#backward_delete_char(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 0)
     return "\<c-h>"
 endfu
 
-fu! readline#backward_kill_word(mode) abort "{{{2
+fu readline#backward_kill_word(mode) abort "{{{2
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
@@ -389,7 +389,7 @@ fu! readline#backward_kill_word(mode) abort "{{{2
     return ''
 endfu
 
-fu! readline#beginning_of_line(mode) abort "{{{2
+fu readline#beginning_of_line(mode) abort "{{{2
     let s:concat_next_kill = 0
     return a:mode is# 'c'
        \ ?     "\<home>"
@@ -398,7 +398,7 @@ fu! readline#beginning_of_line(mode) abort "{{{2
        \ :     repeat("\<c-g>U\<right>", strchars(matchstr(getline('.'), '\%'..col('.')..'c\s*\ze\S'), 1))
 endfu
 
-fu! s:break_undo_before_deletions(mode) abort "{{{2
+fu s:break_undo_before_deletions(mode) abort "{{{2
     if a:mode is# 'c' || s:deleting
         return ''
     else
@@ -436,13 +436,13 @@ endfu
 " because it leads to too many issues.
 "}}}
 
-fu! readline#change_case_save(upcase) abort "{{{2
+fu readline#change_case_save(upcase) abort "{{{2
     let s:change_case_up = a:upcase
     return ''
 endfu
 
-fu! readline#change_case_word(type, ...) abort "{{{2
-    "                               ^ mode
+fu readline#change_case_word(type, ...) abort "{{{2
+    "                              ^ mode
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let mode = get(a:, '1', 'n')
@@ -478,7 +478,7 @@ fu! readline#change_case_word(type, ...) abort "{{{2
     return ''
 endfu
 
-fu! readline#delete_char(mode) abort "{{{2
+fu readline#delete_char(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
 
     if a:mode is# 'c'
@@ -502,10 +502,10 @@ fu! readline#delete_char(mode) abort "{{{2
         return ''
     endif
 
-    " If the popup menu is visible, scroll a page down.
-    " If no menu, and we're BEFORE the end of the line,   delete next character.
-    " "                     AT the end of the line,       delete the newline.
-    let seq = pumvisible()
+    "    - if the pum is visible, and there are enough matches to scroll a page down, scroll
+    "    - otherwise, if we're *before* the end of the line, delete next character
+    "    - "                   *at* the end of the line,     delete the newline
+    let seq = pumvisible() && len(complete_info(['items']).items) > s:FAST_SCROLL_IN_PUM
         \ ?     repeat("\<c-n>", s:FAST_SCROLL_IN_PUM)
         \ : col('.') <= strlen(getline('.'))
         \ ?     "\<del>"
@@ -514,7 +514,7 @@ fu! readline#delete_char(mode) abort "{{{2
     return ''
 endfu
 
-fu! readline#edit_and_execute_command() abort "{{{2
+fu readline#edit_and_execute_command() abort "{{{2
     let s:cedit_save = &cedit
     let &cedit = "\<c-x>"
     call feedkeys(&cedit, 'in')
@@ -523,12 +523,12 @@ fu! readline#edit_and_execute_command() abort "{{{2
     return ''
 endfu
 
-fu! readline#end_of_line() abort "{{{2
+fu readline#end_of_line() abort "{{{2
     let s:concat_next_kill = 0
     return repeat("\<c-g>U\<right>", col('$') - col('.'))
 endfu
 
-fu! readline#exchange_point_and_mark(mode) abort "{{{2
+fu readline#exchange_point_and_mark(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 0, 0, 0)
     let new_pos = s:mark_{a:mode}
 
@@ -545,7 +545,7 @@ fu! readline#exchange_point_and_mark(mode) abort "{{{2
        \ :     repeat(motion, abs(new_pos - old_pos))
 endfu
 
-fu! readline#forward_char(mode) abort "{{{2
+fu readline#forward_char(mode) abort "{{{2
     let s:concat_next_kill = 0
     return a:mode is# 'c'
        \ ?    (wildmenumode() ? "\<space>\<c-h>" : '').."\<right>"
@@ -556,7 +556,7 @@ fu! readline#forward_char(mode) abort "{{{2
     " indentation if we're at the end (default)
 endfu
 
-fu! readline#kill_line(mode) abort "{{{2
+fu readline#kill_line(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 0)
 
     let killed_text = matchstr(line, '.*\%'..pos..'c\zs.*')
@@ -566,7 +566,7 @@ fu! readline#kill_line(mode) abort "{{{2
         \ ..repeat("\<del>", strchars(killed_text, 1))
 endfu
 
-fu! readline#kill_word(mode) abort "{{{2
+fu readline#kill_word(mode) abort "{{{2
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
@@ -596,7 +596,7 @@ fu! readline#kill_word(mode) abort "{{{2
     return ''
 endfu
 
-fu! readline#move_by_words(mode, ...) abort "{{{2
+fu readline#move_by_words(mode, ...) abort "{{{2
 " Implementing this function was tricky, it has to handle:{{{
 "
 "    - multi-byte characters (éàî)
@@ -701,7 +701,7 @@ fu! readline#move_by_words(mode, ...) abort "{{{2
     return ''
 endfu
 
-fu! readline#m_u() abort "{{{2
+fu readline#m_u() abort "{{{2
     " if a preview window is present in the tab page, scroll half a page up
     if index(map(range(1, winnr('$')), {_,v -> getwinvar(v, '&pvw')}), 1) >= 0
         call window#scroll_preview('c-u')
@@ -713,7 +713,7 @@ fu! readline#m_u() abort "{{{2
     endif
 endfu
 
-fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
+fu s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     let s:concat_next_kill  = a:this_kill_is_big && s:last_kill_was_big ? 0 : 1
     let s:last_kill_was_big = a:this_kill_is_big
 
@@ -749,7 +749,7 @@ fu! s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
         \ | endif
 endfu
 
-fu! s:set_isk() abort "{{{2
+fu s:set_isk() abort "{{{2
     " Why re-setting 'isk'?{{{
     "
     " readline doesn't consider `-`, `#`, `_` as part of a word,
@@ -773,14 +773,14 @@ fu! s:set_isk() abort "{{{2
     setl isk=@,48-57,192-255
 endfu
 
-fu! readline#set_mark(mode) abort "{{{2
+fu readline#set_mark(mode) abort "{{{2
     let s:mark_{a:mode} = a:mode is# 'i'
                       \ ?     strchars(matchstr(getline('.'), '.*\%'..col('.')..'c'), 1)
                       \ :     strchars(matchstr(getcmdline(), '.*\%'..getcmdpos()..'c'), 1)
     return ''
 endfu
 
-fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
+fu s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
     let [line, pos] = a:mode is# 'c'
                   \ ?     [getcmdline(), getcmdpos()]
                   \ :     [getline('.'), col('.')]
@@ -801,7 +801,7 @@ fu! s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{
     return [line, pos]
 endfu
 
-fu! readline#transpose_chars(mode) abort "{{{2
+fu readline#transpose_chars(mode) abort "{{{2
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
     if pos > strlen(line)
         " We use `matchstr()` because of potential multi-byte characters.
@@ -822,9 +822,9 @@ fu! readline#transpose_chars(mode) abort "{{{2
     endif
 endfu
 
-fu! readline#transpose_words(type, ...) abort "{{{2
-    "                              ^
-    "                              mode
+fu readline#transpose_words(type, ...) abort "{{{2
+    "                             ^
+    "                             mode
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     try
         let mode = get(a:, '1', 'n')
@@ -904,7 +904,7 @@ fu! readline#transpose_words(type, ...) abort "{{{2
     return ''
 endfu
 
-fu! readline#undo(mode) abort "{{{2
+fu readline#undo(mode) abort "{{{2
     if empty(s:undolist_{a:mode})
         return ''
     endif
@@ -918,8 +918,8 @@ fu! readline#undo(mode) abort "{{{2
     endif
 endfu
 
-fu! readline#unix_line_discard(mode) abort "{{{2
-    if pumvisible()
+fu readline#unix_line_discard(mode) abort "{{{2
+    if pumvisible() && len(complete_info(['items']).items) > s:FAST_SCROLL_IN_PUM
         return repeat("\<c-p>", s:FAST_SCROLL_IN_PUM)
     endif
 
@@ -938,7 +938,7 @@ fu! readline#unix_line_discard(mode) abort "{{{2
     return s:break_undo_before_deletions(a:mode).."\<c-u>"
 endfu
 
-fu! readline#yank(mode, pop) abort "{{{2
+fu readline#yank(mode, pop) abort "{{{2
     if pumvisible()
         return "\<c-y>"
     endif
@@ -958,7 +958,7 @@ endfu
 
 let s:deleting = 0
 
-let s:FAST_SCROLL_IN_PUM = 5
+const s:FAST_SCROLL_IN_PUM = 5
 
 let s:mark_i = 0
 let s:mark_c = 0
