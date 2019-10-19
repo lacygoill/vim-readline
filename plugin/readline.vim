@@ -259,16 +259,16 @@ ino <expr><unique> <c-w> readline#backward_kill_word('i')
 "
 " I think this option accepts only 1 key.
 " If you give it 2 keys, it will only consider the 1st one.
-" So, here's what will  happen if you press C-x:
+" So, here's what will happen if you press `C-x`:
 "
-"   - Vim waits for more keys to be typed because we have mappings beginning with C-x
-"   - we press C-g
-"   - assuming C-x C-g is not mapped to anything Vim will open the command-line window ✘
+"   - Vim waits for more keys to be typed because we have mappings beginning with `C-x`
+"   - we press `C-g`
+"   - assuming `C-x C-g` is not mapped to anything Vim will open the command-line window ✘
 "
 "     Not because `&cedit = "\<c-x>\<c-g>"` (which  is not the case anyway), but
-"     because the 1st key in '&cedit' matches the previous key we pressed.
+"     because the 1st key in `&cedit` matches the previous key we pressed.
 "
-"     This is wrong, Vim should open the command-line window ONLY when we press C-x C-e.
+"     This is wrong, Vim should open the command-line window *only* when we press `C-x C-e`.
 "}}}
 cno <expr><unique> <c-x><c-e> readline#edit_and_execute_command()
 
@@ -365,7 +365,7 @@ cno         <unique> <m-o> <c-r>=readline#change_case_save(0)..readline#change_c
 ino <silent><unique> <m-o> <c-r>=readline#change_case_save(0)..readline#change_case_word('', 'i')<cr>
 xno <silent><unique> <m-o> :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
 nno <silent><unique> <m-o> :<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<bar>norm! g@l<cr>
-" Don't write replace `g@l` with `g@_`.{{{
+" Don't replace `g@l` with `g@_`.{{{
 "
 " It would break the repetition of the edit with the dot command.
 "}}}
