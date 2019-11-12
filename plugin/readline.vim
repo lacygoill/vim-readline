@@ -162,18 +162,6 @@ ino <silent><unique> <c-_> <c-r>=readline#undo('i')<cr>
 cno <expr><unique> <c-a> readline#beginning_of_line('c')
 ino <expr><unique> <c-a> readline#beginning_of_line('i')
 
-" restore default i_C-a
-" insert previously inserted text
-ino <c-x><c-a> <c-a>
-
-" restore default c_C-a
-" dump all matches on the command-line
-cno <unique> <c-x><c-a> <c-a>
-
-" also, create custom C-x C-d
-" capture all matches in the unnamed register
-cno <expr> <c-x><c-d> '<c-a>'..timer_start(0, {_ -> setreg('"', getcmdline(), 'l') + feedkeys('<c-c>', 'in') })[-1]
-
 " C-b        backward-char {{{3
 
 cno <expr><unique> <c-b> readline#backward_char('c')
@@ -222,7 +210,7 @@ ino <expr><unique> <c-k><c-k> readline#kill_line('i')
 " C-o        operate-and-get-next {{{3
 
 " Also called `accept-line-and-down-history` by zle.
-cno <expr> <c-o> readline#operate_and_get_next#main()
+cno <expr><unique> <c-o> readline#operate_and_get_next#main()
 
 " C-t        transpose-chars {{{3
 
@@ -656,7 +644,7 @@ augroup END
 "
 " Note that Neovim doesn't suffer from this issue.
 "}}}
-nmap <expr> @ <sid>do_not_break_macro_replay()
+nmap <expr><unique> @ <sid>do_not_break_macro_replay()
 
 " Do NOT use `<nowait>`.
 " If we hit `@?`, the previous mapping must not be used. It wouldn't work.
