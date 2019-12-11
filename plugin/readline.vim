@@ -40,9 +40,9 @@ let g:loaded_readline = 1
 " A mapping using a meta key prevents the insertion of some special characters
 " for example:
 "
-"         1. ino <m-b> …
-"         2. i_â
-"         moves cursor one word backward~
+"     1. ino <m-b> ...
+"     2. i_â
+"     moves cursor one word backward~
 "
 " Why?
 " Because, for  some reason,  Vim doesn't make the difference between `Esc b` and `â`.
@@ -423,7 +423,7 @@ if !has('nvim')
     cno <expr><unique> <m-y> readline#yank('c', 1)
     ino <expr><unique> <m-y> readline#yank('i', 1)
 endif
-
+"}}}1
 " Options {{{1
 
 if !has('nvim')
@@ -481,7 +481,7 @@ fu s:do_not_break_macro_replay() abort "{{{3
     " ... instead, you must do this:
     "
     "     norm @q
-"}}}
+    "}}}
     call s:set_keysyms(0)
 
     set updatetime=5
