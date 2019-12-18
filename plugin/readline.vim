@@ -82,9 +82,9 @@ let g:loaded_readline = 1
 
 augroup install_add_to_undolist
     au!
-    au CmdlineEnter,InsertEnter * sil! call readline#add_to_undolist()
-    \ | exe 'au! install_add_to_undolist'
-    \ | aug! install_add_to_undolist
+    au CmdlineEnter,InsertEnter *
+        \   exe 'au! install_add_to_undolist'
+        \ | call readline#add_to_undolist()
 augroup END
 
 augroup operate_and_get_next
@@ -487,9 +487,10 @@ fu s:do_not_break_macro_replay() abort "{{{3
     set updatetime=5
     augroup do_not_break_macro_replay_restore_updatetime
         au!
-        au CursorHold,CursorHoldI * sil! call s:set_keysyms(1)
-        \ | sil! let &ut = s:original_ut
-        \ | au! do_not_break_macro_replay_restore_updatetime
+        au CursorHold,CursorHoldI *
+            \   exe 'au! do_not_break_macro_replay_restore_updatetime'
+            \ | call s:set_keysyms(1)
+            \ | let &ut = s:original_ut
     augroup END
 
     return '@'..char

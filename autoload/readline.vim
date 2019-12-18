@@ -542,8 +542,7 @@ fu readline#edit_and_execute_command() abort "{{{2
     let s:cedit_save = &cedit
     let &cedit = "\<c-x>"
     call feedkeys(&cedit, 'in')
-    au CmdWinEnter * ++once sil! let &cedit = s:cedit_save
-        \ | unlet! s:cedit_save
+    au CmdWinEnter * ++once let &cedit = s:cedit_save | unlet! s:cedit_save
     return ''
 endfu
 
@@ -978,7 +977,7 @@ fu s:break_undo_before_deletions(mode) abort "{{{2
         " the next time we insert a character, or leave insert mode.
         augroup readline_reset_deleting
             au!
-            au InsertLeave,InsertCharPre * sil! let s:deleting = 0 | au! readline_reset_deleting
+            au InsertLeave,InsertCharPre * exe 'au! readline_reset_deleting' | let s:deleting = 0
         augroup END
         return "\<c-g>u"
     endif
@@ -1032,8 +1031,9 @@ fu s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     " after a 1st one.
     augroup readline_reset_concat_next_kill
         au!
-        au InsertCharPre,InsertEnter,InsertLeave * sil! let s:concat_next_kill = 0
-        \ | au! readline_reset_concat_next_kill
+        au InsertCharPre,InsertEnter,InsertLeave *
+            \   exe 'au! readline_reset_concat_next_kill'
+            \ | let s:concat_next_kill = 0
     augroup END
 endfu
 

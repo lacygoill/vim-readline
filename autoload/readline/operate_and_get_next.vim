@@ -21,7 +21,7 @@ fu readline#operate_and_get_next#remember(when) abort "{{{1
         return
     endif
     if a:when is# 'on_leave'
-        au CmdlineLeave : ++once sil! call readline#operate_and_get_next#remember('now')
+        au CmdlineLeave : ++once call readline#operate_and_get_next#remember('now')
     else
         let cmdline = getcmdline()
         let history = get(s:, 'cmdline_history', [])
