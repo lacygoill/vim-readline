@@ -26,26 +26,26 @@ let g:autoloaded_readline = 1
 " some  text. It was  useful,  for example,  to  recover the  state  (2) in  the
 " following edition:
 "
-"                        cursor
-"                        v
-"         (1) hello world|
+"                    cursor
+"                    v
+"     (1) hello world|
 "
-"                 C-w
+"             C-w
 "
-"         (2) hello |
+"     (2) hello |
 "
-"                 i people
+"             i people
 "
-"         (3) hello people|
+"     (3) hello people|
 
 " Why don't we use it anymore? {{{2
 "
 " Because:
 "
-"    - either you  break the undo sequence  just BEFORE the next  insertion of a
+"    - either you  break the undo sequence  just *before* the next  insertion of a
 "    character, after a sequence of deletion
 "
-"    - or you break it just AFTER
+"    - or you break it just *after*
 "
 " If you break it just before, then  when you insert a register after a sequence
 " of deletions,  the last  character of  the register  is changed  (deleted then
@@ -55,23 +55,24 @@ let g:autoloaded_readline = 1
 " middle of a word you type.
 " MWE:
 "
-"         :inorea al la
+"     :inorea al la
 "
-"         ┌ text in buffer
-"         ├─┐
-"         val|
-"            ^
-"            cursor
+"     ┌ text in buffer
+"     ├─┐
+"     val|
+"        ^
+"        cursor
 "
-"         C-w val SPC
-"             → vla ✘
+"     C-w val SPC
+"         → vla ✘
 "
 " MWE:
+"
 "     :inorea al la
-"     :ino <c-x>d  <bs><bs><bs>v<c-g>ual
-"                               ├────┘
-"                               └ this is where our custom function
-"                                 was breaking the undo sequence
+"     :ino <c-x>d <bs><bs><bs>v<c-g>ual
+"                              ├────┘
+"                              └ this is where our custom function
+"                                was breaking the undo sequence
 "
 "     val C-x d SPC
 "     vla ✘~
@@ -79,140 +80,140 @@ let g:autoloaded_readline = 1
 " What dit the code look like? {{{2
 " Autocmd {{{3
 "
-"      augroup my_granular_undo
-"          ...
+"     augroup my_granular_undo
+"         ...
 "
-"          We could  probably have replaced  these 2 permanent  autocommands with
-"          one-shot equivalent.
+"         We could  probably have replaced  these 2 permanent  autocommands with
+"         one-shot equivalent.
 "
-"          au InsertLeave      * let s:deleting = 0
-"          au InsertCharPre    * call s:break_undo_after_deletions(v:char)
-"                                                                  ├────┘
-"                                                                  │
-"          not  needed if  you  break  the undo  sequence  just  AFTER the  next
-"          insertion of a character, after  a sequence of deletions (only needed
-"          if you do it just BEFORE)
-"      augroup END
+"         au InsertLeave      * let s:deleting = 0
+"         au InsertCharPre    * call s:break_undo_after_deletions(v:char)
+"                                                                 ├────┘
+"                                                                 │
+"         not  needed if  you  break  the undo  sequence  just  AFTER the  next
+"         insertion of a character, after  a sequence of deletions (only needed
+"         if you do it just BEFORE)
+"     augroup END
 
 " Function {{{3
-"      fu s:break_undo_after_deletions(char) abort {{{4
-"          if s:deleting
-"             To exclude  the first  inserted character from  the undo  sequence, we
-"             should call `feedkeys()` like this:
+"     fu s:break_undo_after_deletions(char) abort {{{4
+"         if s:deleting
+"            To exclude  the first  inserted character from  the undo  sequence, we
+"            should call `feedkeys()` like this:
 "
-"                     call feedkeys("\<bs>\<c-g>u".v:char, 'in')
-"             Why "\<bs>" ?{{{
+"                    call feedkeys("\<bs>\<c-g>u".v:char, 'in')
+"            Why "\<bs>" ?{{{
 "
-"             It  seems that  when InsertCharPre  occurs, v:char  is already  in the
-"             typeahead buffer. We  can change its  value but not insert  sth before
-"             it.   We need  to break  undo sequence  BEFORE `v:char`,  so that  the
-"             latter is part of the next edition.
-"             Thus, we delete it (BS), break undo (C-g u), then reinsert it (v:char).
-            "}}}
-"             Why pass the 'i' flag to feedkeys(…)?{{{
+"            It  seems that  when InsertCharPre  occurs, v:char  is already  in the
+"            typeahead buffer. We  can change its  value but not insert  sth before
+"            it.   We need  to break  undo sequence  BEFORE `v:char`,  so that  the
+"            latter is part of the next edition.
+"            Thus, we delete it (BS), break undo (C-g u), then reinsert it (v:char).
+           "}}}
+"            Why pass the 'i' flag to feedkeys(…)?{{{
 "
-"             Suppose we don't give 'i', and we have this mapping:
-"                                           ino abc def
+"            Suppose we don't give 'i', and we have this mapping:
+"                                          ino abc def
 "
-"             Then we write:                hello foo
-"             We delete foo with C-w:       hello
-"             If we type abc, we'll get:    hello ded
+"            Then we write:                hello foo
+"            We delete foo with C-w:       hello
+"            If we type abc, we'll get:    hello ded
 "
-"             Why ded and not def?
+"            Why ded and not def?
 "
-"               1. a b c                 keys which are typed initially
+"              1. a b c                 keys which are typed initially
 "
-"               2. d e f                 expansion due to mapping
+"              2. d e f                 expansion due to mapping
 "
-"                                                - the expansion occurs as soon as we type `c`
+"                                               - the expansion occurs as soon as we type `c`
 "
-"                                                - 3 InsertCharPre events occurs right after `d`
-"                                                  is written inside the typeahead buffer
+"                                               - 3 InsertCharPre events occurs right after `d`
+"                                                 is written inside the typeahead buffer
 "
-"                                                - this function will be called only for the 1st one,
-"                                                  because after its 1st invocation, `s:deleting` will
-"                                                  be reset to 0
+"                                               - this function will be called only for the 1st one,
+"                                                 because after its 1st invocation, `s:deleting` will
+"                                                 be reset to 0
 "
-"                                                - when it's called, v:char will be `d`,
-"                                                  the 1st character to be inserted
+"                                               - when it's called, v:char will be `d`,
+"                                                 the 1st character to be inserted
 "
-"               3. d e f BS C-g u d      the 4 last keys are written by `feedkeys()`
-"                                        AT THE END of the typeahead buffer
+"              3. d e f BS C-g u d      the 4 last keys are written by `feedkeys()`
+"                                       AT THE END of the typeahead buffer
 "
-"               4. d e d                 ✘
+"              4. d e d                 ✘
 "
-"             The 4 last keys were added too late.
-"             The solution is to insert them at the beginning of the typeahead buffer,
-"             by giving the 'i' flag to feedkeys(…). The 3rd step then becomes:
+"            The 4 last keys were added too late.
+"            The solution is to insert them at the beginning of the typeahead buffer,
+"            by giving the 'i' flag to feedkeys(…). The 3rd step then becomes:
 "
-"                  ┌ expansion of `abc`
-"                  ├──────────────┐
-"               3. d BS C-g u d e f
-"                    ├────────┘
-"                    └ inserted by our custom function when `InsertCharPre` occurs
-            "}}}
+"                 ┌ expansion of `abc`
+"                 ├──────────────┐
+"              3. d BS C-g u d e f
+"                   ├────────┘
+"                   └ inserted by our custom function when `InsertCharPre` occurs
+           "}}}
 
-"             But we won't try to exclude it:
+"            But we won't try to exclude it:
 "
-"              call feedkeys("\<c-g>u", 'int')
-"             Why?{{{
+"             call feedkeys("\<c-g>u", 'int')
+"            Why?{{{
 "
-"             To be  sure that the register  we put from insert  mode will never
-"             mutate.
-            "}}}
-"             When could it mutate?{{{
+"            To be  sure that the register  we put from insert  mode will never
+"            mutate.
+           "}}}
+"            When could it mutate?{{{
 "
-"             If you delete  some text, with `C-w` for example,  then put a register
-"             whose contents is 'hello', you will insert 'hellh':
+"            If you delete  some text, with `C-w` for example,  then put a register
+"            whose contents is 'hello', you will insert 'hellh':
 "
-"                     C-w C-r "
-"                     hellh~
-"                         ^✘
-            "}}}
-"             Why does it happen?{{{
+"                    C-w C-r "
+"                    hellh~
+"                        ^✘
+           "}}}
+"            Why does it happen?{{{
 "
-"             If you copy the text 'abc' in the unnamed register, then put it:
+"            If you copy the text 'abc' in the unnamed register, then put it:
 "
-"                     C-r "
+"                    C-r "
 "
-"             … it triggers 3 InsertCharPre:
+"            … it triggers 3 InsertCharPre:
 "
-"                     - v:char = 'a'
-"                     - v:char = 'b'
-"                     - v:char = 'c'
+"                    - v:char = 'a'
+"                    - v:char = 'b'
+"                    - v:char = 'c'
 "
-"             When the 1st one is triggered, and `feedkeys()` is invoked to add some
-"             keys in the typeahead buffer, they are inserted AFTER `bc`.
-"             This seems to indicate that when  you put a register, all its contents
-"             is  immediately written  in  the  typeahead buffer. The  InsertCharPre
-"             events are fired AFTERWARDS for each inserted character.
+"            When the 1st one is triggered, and `feedkeys()` is invoked to add some
+"            keys in the typeahead buffer, they are inserted AFTER `bc`.
+"            This seems to indicate that when  you put a register, all its contents
+"            is  immediately written  in  the  typeahead buffer. The  InsertCharPre
+"            events are fired AFTERWARDS for each inserted character.
 "
-"             We  can  still   reliably  change  any  inserted   key,  by  resetting
-"             `v:char`. The issue is specific to feedkeys().
-"             Unfortunately,  we have  to  use feedkeys(),  because  we can't  write
-"             special characters  in `v:char`,  like `BS` and  `C-g`; they  would be
-"             inserted literally.
+"            We  can  still   reliably  change  any  inserted   key,  by  resetting
+"            `v:char`. The issue is specific to feedkeys().
+"            Unfortunately,  we have  to  use feedkeys(),  because  we can't  write
+"            special characters  in `v:char`,  like `BS` and  `C-g`; they  would be
+"            inserted literally.
 "
-"             MWE:
-"             the goal being to replace any `a` with `x`:
+"            MWE:
+"            the goal being to replace any `a` with `x`:
 "
-"                     augroup replace_a_with_x
-"                         au!
-"                         au InsertCharPre * call Func()
-"                     augroup END
+"                    augroup replace_a_with_x
+"                        au!
+"                        au InsertCharPre * call Func()
+"                    augroup END
 "
-"                     fu Func() abort
-"                         if v:char is# 'a'
-"                             " ✔
-"                             " let v:char = 'x'
-"                             " ✘ fails when putting a register containing `abc`
-"                             " call feedkeys("\<bs>x", 'in')
-"                         endif
-"                     endfu
-            "}}}
-"              let s:deleting = 0
-"          endif
-"      endfu
+"                    fu Func() abort
+"                        if v:char is# 'a'
+"                            " ✔
+"                            " let v:char = 'x'
+"                            " ✘ fails when putting a register containing `abc`
+"                            " call feedkeys("\<bs>x", 'in')
+"                        endif
+"                    endfu
+           "}}}
+"             let s:deleting = 0
+"         endif
+"     endfu
 " }}}3
 " Initialization {{{3
 "
@@ -425,13 +426,13 @@ endfu
 
 fu s:backward_kill_word(mode) abort
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
-    "            ┌ word before cursor{{{
-    "            │
-    "            │  ┌ there may be some non-word text between the word and the cursor
-    "            │  │
-    "            │  │            ┌ the cursor
-    "            ├┐ ├───────────┐├─────────┐}}}
-    let pat = '\v\k*%(%(\k@!.)+)=%'..pos..'c'
+    "          ┌ word before cursor{{{
+    "          │
+    "          │  ┌ there may be some non-word text between the word and the cursor
+    "          │  │
+    "          │  │                   ┌ the cursor
+    "          ├─┐├──────────────────┐├──────────┐}}}
+    let pat = '\k*\%(\%(\k\@!.\)\+\)\=\%'..pos..'c'
 
     let killed_text = matchstr(line, pat)
     call s:add_to_kill_ring(a:mode, killed_text, 0, 0)
@@ -478,8 +479,8 @@ endfu
 
 fu s:change_case_word(mode) abort
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 1)
-    let pat    = '\v\k*%'..pos..'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
-    let word   = matchstr(line, pat)
+    let pat = '\k*\%'..pos..'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
+    let word = matchstr(line, pat)
     let length = strchars(word, 1)
 
     if a:mode is# 'c'
@@ -607,16 +608,16 @@ endfu
 
 fu s:kill_word(mode) abort
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
-    "            ┌ from the beginning of the word containing the cursor{{{
-    "            │ until the cursor
-    "            │ if the cursor is outside of a word, the pattern
-    "            │ still matches, because we use `*`, not `+`
-    "            │
-    "            ├────────────┐}}}
-    let pat = '\v\k*%'..pos..'c\zs%(\k+|.{-}<\k+>|%(\k@!.)+)'
-    "                               ├─┘ ├───────┘ ├───────┘{{{
-    "                               │   │         └ or all the non-word text we're in
-    "                               │   └ or the next word if we're outside of a word
+    "          ┌ from the beginning of the word containing the cursor{{{
+    "          │ until the cursor
+    "          │ if the cursor is outside of a word, the pattern
+    "          │ still matches, because we use `*`, not `+`
+    "          │
+    "          ├─────────────┐}}}
+    let pat = '\k*\%'..pos..'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)+\)'
+    "                               ├──┘  ├───────────┘  ├──────────┘{{{
+    "                               │     │              └ or all the non-word text we're in
+    "                               │     └ or the next word if we're outside of a word
     "                               └ the rest of the word after the cursor
     "}}}
 
@@ -673,15 +674,15 @@ fu s:move_by_words(mode, ...) abort
         " all characters from the beginning of the line until the last
         " character of the nearest NEXT word (current one if we're in a word,
         " or somewhere AFTER otherwise)
-        let pat = '\v.*%'..pos..'c%(.{-1,}>\ze|.*)'
-        "                                      │
-        "     if there's no word where we are, ┘
+        let pat = '.*\%'..pos..'c\%(.\{-1,}\>\ze\|.*\)'
+        "                                         │
+        "        if there's no word where we are, ┘
         " nor after us, then go on until the end of the line
     else
         " all characters from the beginning of the line until the first
         " character of the nearest PREVIOUS word (current one if we're in a
         " word, or somewhere BEFORE otherwise)
-        let pat = '\v.*\ze<.{-1,}%'..pos..'c'
+        let pat = '.*\ze\<.\{-1,}\%'..pos..'c'
     endif
     let str = matchstr(line, pat)
     let new_pos = len(str)
@@ -716,8 +717,8 @@ fu s:move_by_words(mode, ...) abort
     "}}}
     if capitalize
         let new_line = substitute(line,
-        \                         '\v%'..pos..'c.{-}\zs(\k)(.{-})%'..(new_pos+1)..'c',
-        \                         '\u\1\L\2', '')
+            \ '\%'..pos..'c.\{-}\zs\(\k\)\(.\{-}\)\%'..(new_pos+1)..'c',
+            \ '\u\1\L\2', '')
         if mode is# 'c'
             let seq = "\<c-e>\<c-u>"..new_line.."\<c-b>"..repeat("\<right>", new_pos_char)
             call feedkeys(seq, 'in')
@@ -797,7 +798,7 @@ fu s:transpose_words(mode) abort
     "          ^
     "          cursor
     "}}}
-    let pat = '(<\k+>)(%(\k@!.)+)(<\k+>)'
+    let pat = '\(\<\k\+\>\)\(\%(\k\@!.\)\+\)\(\<\k\+\>\)'
 
     " What's this concat (\&) for?{{{
     "
@@ -810,7 +811,7 @@ fu s:transpose_words(mode) abort
     "
     " ... there should be no transposition (to mimic readline)
     "}}}
-    let not_on_first = '\v%(<\k*%'..pos..'c\k+>)@!&'
+    let not_on_first = '\%(\<\k*\%'..pos..'c\k\+\>\)\@!\&'
 
     " The cursor must not be before the 2 words:{{{
     "
@@ -818,7 +819,7 @@ fu s:transpose_words(mode) abort
     "               ├─────┘
     "               └ don't transpose those 2
     "}}}
-    let not_before = '%(%'..pos..'c.*)@<!'
+    let not_before = '\%(\%'..pos..'c.*\)\@<!'
 
     " The cursor must not be after the 2 words,{{{
     " unless it is  inside a sequence of non-words characters  at the end of
@@ -835,7 +836,7 @@ fu s:transpose_words(mode) abort
     "            ├──────┘
     "            └ the cursor may be anywhere in here
     "}}}
-    let not_after = '%(%(.*%'..pos..'c)@!|%(%(\k@!.)*$)@=)'
+    let not_after = '\%(\%(.*\%'..pos..'c\)\@!\|\%(\%(\k\@!.\)*$\)\@=\)'
 
     " final pattern
     let pat = not_on_first..not_before..pat..not_after

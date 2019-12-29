@@ -345,7 +345,7 @@ ino <silent><unique> <m-i> <c-r>=readline#move_by_words('i', 1, 1)<cr>
 
 nno <silent><unique> <m-i> :<c-u>set opfunc=readline#move_by_words<bar>norm! g@l<cr>
 xno <silent><unique> <m-i> :<c-u>sil keepj keepp
-\                          '<,'>s/\v%V.{-}\zs(\k)(\k*%V\k?)/\u\1\L\2/ge<cr>
+\                          '<,'>s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>
 
 " M-u M-o    change-case-word {{{3
 
@@ -549,7 +549,7 @@ endfu
 
 augroup set_keysyms
     au!
-    au VimEnter,TermChanged * sil! call s:set_keysyms(1)
+    au VimEnter,TermChanged * call s:set_keysyms(1)
 augroup END
 
 fu s:toggle_keysyms_in_terminal() abort "{{{3
