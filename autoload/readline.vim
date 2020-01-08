@@ -892,7 +892,7 @@ fu readline#unix_line_discard(mode) abort "{{{2
         let old_line = matchstr(line, '.*\%'..pos..'c')
         fu! s:add_deleted_text_to_kill_ring() abort closure
             let new_line = matchstr(getline('.'), '.*\%'..col('.')..'c')
-            call s:add_to_kill_ring('i', substitute(old_line, new_line, '', ''), 0, 1)
+            call s:add_to_kill_ring('i', substitute(old_line, '\V'..escape(new_line, '\'), '', ''), 0, 1)
         endfu
         au TextChangedI * ++once call s:add_deleted_text_to_kill_ring()
     endif
