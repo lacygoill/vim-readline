@@ -674,14 +674,14 @@ fu s:move_by_words(mode, ...) abort
         " all characters from the beginning of the line until the last
         " character of the nearest NEXT word (current one if we're in a word,
         " or somewhere AFTER otherwise)
-        let pat = '.*\%'..pos..'c\%(.\{-1,}\>\ze\|.*\)'
-        "                                         │
-        "        if there's no word where we are, ┘
+        let pat = '.*\%'..pos..'c\%(.\{-1,}\>\|.*\)'
+        "                                      │
+        "     if there's no word where we are, ┘
         " nor after us, then go on until the end of the line
     else
         " all characters from the beginning of the line until the first
-        " character of the nearest PREVIOUS word (current one if we're in a
-        " word, or somewhere BEFORE otherwise)
+        " character of the nearest *previous* word (current one if we're in a
+        " word, or somewhere *before* otherwise)
         let pat = '.*\ze\<.\{-1,}\%'..pos..'c'
     endif
     let str = matchstr(line, pat)
@@ -841,8 +841,8 @@ fu s:transpose_words(mode) abort
     " final pattern
     let pat = not_on_first..not_before..pat..not_after
 
-    let new_pos  = match(line, pat..'\zs')
-    let rep      = '\3\2\1'
+    let new_pos = strchars(matchstr(line, '.*\%('..pat..'\)'), 1)
+    let rep = '\3\2\1'
     let new_line = substitute(line, pat, rep, '')
 
     if a:mode is# 'c'
