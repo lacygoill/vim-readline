@@ -608,13 +608,12 @@ endfu
 
 fu s:kill_word(mode) abort
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
-    "          ┌ from the beginning of the word containing the cursor{{{
-    "          │ until the cursor
+    "          ┌ from the cursor until the end of the current word;{{{
     "          │ if the cursor is outside of a word, the pattern
     "          │ still matches, because we use `*`, not `+`
     "          │
     "          ├─────────────┐}}}
-    let pat = '\k*\%'..pos..'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)+\)'
+    let pat = '\k*\%'..pos..'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
     "                               ├──┘  ├───────────┘  ├──────────┘{{{
     "                               │     │              └ or all the non-word text we're in
     "                               │     └ or the next word if we're outside of a word
