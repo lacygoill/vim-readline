@@ -427,10 +427,22 @@ endif
 " Options {{{1
 
 if !has('nvim')
-    " don't use `c-w` as a prefix to execute commands manipulating the window in
-    " which a  terminal buffer  is displayed; `c-w`  should delete  the previous
-    " word; use `c-g` instead
-    set termwinkey=<c-g>
+    " What does `'termwinkey'` do?{{{
+    "
+    " It controls which key can be pressed to issue a command to Vim rather than
+    " the foreground shell process in the terminal.
+    "}}}
+    " Why do yo change its value?{{{
+    "
+    " By default, its value is `<c-w>`; so  you can press `C-w :` to enter Vim's
+    " command-line; but I don't like that `c-w` should delete the previous word.
+    "}}}
+    " Warning: do *not* use `C-g`{{{
+    "
+    " If you do, when  we want to use one of our zsh  snippets, we would need to
+    " press `C-g` 4 times instead of twice.
+    "}}}
+    set termwinkey=<c-s>
 endif
 
 " Keysyms {{{1
