@@ -586,6 +586,15 @@ fu readline#kill_line(mode) abort "{{{2
     let killed_text = matchstr(line, '.*\%'..pos..'c\zs.*')
     call s:add_to_kill_ring(a:mode, killed_text, 1, 1)
 
+    " Warning: it may take a long time on a mega long soft-wrapped line if `'so'` is different than 0{{{
+    "
+    " MWE:
+    "
+    "     $ vim -Nu NONE \
+    "     +'setl wrap so=3|ino <expr> <c-k><c-k> repeat("<del>", 11000)' \
+    "     +"%d|pu =repeat(['0123456789'], 1000)|%j|0pu=''|exe 'norm! j'|startinsert" /tmp/file
+    "     " press C-k C-k: the line is deleted only after 2 or 3 seconds
+    "}}}
     return s:break_undo_before_deletions(a:mode)
         \ ..repeat("\<del>", strchars(killed_text, 1))
 endfu
@@ -865,7 +874,15 @@ fu readline#undo(mode) abort "{{{2
         if a:mode is# 'c'
             call feedkeys("\<c-b>"..repeat("\<right>", old_pos), 'in')
         else
-            exe 'norm! '..(old_pos+1)..'|'
+            let ve_save = &ve
+            try
+                " necessary if the old position is after the last character on the line;
+                " otherwise the cursor would be positioned just before the last character
+                set ve+=onemore
+                exe 'norm! '..(old_pos+1)..'|'
+            finally
+                let &ve = ve_save
+            endtry
         endif
     endfu
     if a:mode is# 'c'

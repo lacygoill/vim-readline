@@ -204,7 +204,7 @@ cno <unique> <c-x>k <c-k>
 " digraph is more frequent than killing a line.
 "
 " But doing so, we lose the possibility to delete everything after the cursor.
-" To restore this functionality, we map it to C-k C-k.
+" To restore this functionality, we map it to `C-k C-k`.
 ino <expr><unique> <c-k><c-k> readline#kill_line('i')
 
 " C-o        operate-and-get-next {{{3
