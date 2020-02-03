@@ -473,7 +473,7 @@ endif
 
 let s:original_ut = &ut
 
-" functions {{{2
+" Functions {{{2
 fu s:do_not_break_macro_replay() abort "{{{3
     " ask which register we want to replay
     let char = nr2char(getchar(),1)
@@ -596,19 +596,22 @@ fu s:toggle_meta_keys() abort "{{{3
     echom '[Fix Macro] Meta keys '..(is_unset ? 'Enabled' : 'Disabled')
 endfu
 "}}}2
-" command {{{2
-" This command can be useful to temporarily disable meta keys before replaying a
-" macro.
+" Commands {{{2
+
+" This command can be useful to temporarily disable meta keys before replaying a macro.
 com -bar ToggleMetaKeys call s:toggle_meta_keys()
 
-" autocommand {{{2
+" Autocommands {{{2
+
 augroup handle_keysyms
     au!
-    au TerminalOpen * call s:set_keysyms(0)
-                  \ | call s:toggle_keysyms_in_terminal()
+    au TerminalOpen * if &bt is# 'terminal'
+        \ |     call s:set_keysyms(0)
+        \ |     call s:toggle_keysyms_in_terminal()
+        \ | endif
 augroup END
 
-" mapping {{{2
+" Mappings {{{2
 
 " Issue: Why the next mapping?{{{
 "
