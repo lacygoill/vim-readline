@@ -605,10 +605,7 @@ com -bar ToggleMetaKeys call s:toggle_meta_keys()
 
 augroup handle_keysyms
     au!
-    au TerminalOpen * if &bt is# 'terminal'
-        \ |     call s:set_keysyms(0)
-        \ |     call s:toggle_keysyms_in_terminal()
-        \ | endif
+    au TerminalWinOpen * call s:set_keysyms(0) | call s:toggle_keysyms_in_terminal()
 augroup END
 
 " Mappings {{{2
