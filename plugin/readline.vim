@@ -113,9 +113,9 @@ augroup END
 " leaves insert mode.
 " Usually, in a  terminal C-SPC produces C-@. So, when we  hit C-SPC by accident
 " (which occurs frequently), we insert the last inserted text.
-" We don't want that, so we previously, in `vimrc`, we disabled the mapping:
+" We don't want that, so previously we disabled the mapping in our vimrc:
 "
-"     ino <c-@>     <nop>
+"     ino <c-@> <nop>
 
 " There's no need for that anymore, since we use `C-@` for setting a mark, which
 " is harmless: it doesn't insert / remove any text in the buffer.
