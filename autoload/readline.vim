@@ -310,7 +310,7 @@ augroup my_granular_undo
     "
     " Maybe get rid of `<c-r>=` too (whenever possible)...
     " Rationale: entering a command-line (no matter the type: `=`, `:`, `/`, ...)
-    " can  have undesirable  side-effects  because it  fires `CmdlineEnter`  and
+    " can  have undesirable  side effects  because it  fires `CmdlineEnter`  and
     " `CmdlineLeave`, it makes you lose the visual selection, etc...
     "}}}
     au CmdlineLeave [^=>] let s:concat_next_kill = 0
@@ -369,8 +369,7 @@ fu s:add_to_undolist(mode, line, pos) abort
         " limit the size of the undolist to 100 entries
         call remove(s:undolist_{a:mode}, 0, undo_len - 101)
     endif
-    let s:undolist_{a:mode} += [[a:line,
-                                \ strchars(matchstr(a:line, '.*\%'..a:pos..'c'), 1)]]
+    let s:undolist_{a:mode} += [[a:line, strchars(matchstr(a:line, '.*\%'..a:pos..'c'), 1)]]
 endfu
 
 fu readline#backward_char(mode) abort "{{{2
@@ -879,7 +878,10 @@ fu readline#undo(mode) abort "{{{2
                 " necessary if the old position is after the last character on the line;
                 " otherwise the cursor would be positioned just before the last character
                 set ve+=onemore
+                " necessary if the line is wrapped
+                let wrap_is_on = &l:wrap | setl nowrap
                 exe 'norm! '..(old_pos+1)..'|'
+                if wrap_is_on | setl wrap | endif
             finally
                 let &ve = ve_save
             endtry
