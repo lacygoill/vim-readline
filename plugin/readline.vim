@@ -574,8 +574,8 @@ fu s:toggle_keysyms_in_terminal() abort "{{{3
     "}}}
     augroup toggle_keysyms_in_terminal
         au! * <buffer>
-        au CursorMoved <buffer> call s:set_keysyms(0)
-        au BufLeave    <buffer> call s:set_keysyms(1)
+        au! User TermEnter call s:set_keysyms(0)
+        au BufLeave <buffer> call s:set_keysyms(1)
     augroup END
 endfu
 
