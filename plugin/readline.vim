@@ -404,7 +404,7 @@ ino <expr><unique> <m-d> readline#kill_word('i')
 "         return ''
 "     endfu
 "}}}
-cno <expr><unique> <m-n> feedkeys("\<down>", 't')[-1]
+cno <expr><unique> <m-n> feedkeys('<down>', 't')[-1]
 
 " history-search-backward
 " history-search-forward
