@@ -415,7 +415,7 @@ fu readline#backward_kill_word(mode) abort "{{{2
         try
             return s:backward_kill_word(a:mode)
         catch
-            return lg#catch_error()
+            return lg#catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -468,7 +468,7 @@ fu readline#change_case_word(type, ...) abort "{{{2
         try
             return s:change_case_word(mode)
         catch
-            return lg#catch_error()
+            return lg#catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -606,7 +606,7 @@ fu readline#kill_word(mode) abort "{{{2
         try
             return s:kill_word(a:mode)
         catch
-            return lg#catch_error()
+            return lg#catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -652,7 +652,7 @@ fu readline#move_by_words(mode, ...) abort "{{{2
         " if you try to throw the exception manually (echo v:exception, echo
         " v:throwpoint), nothing will be displayed, so don't bother
         catch
-            return lg#catch_error()
+            return lg#catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -785,7 +785,7 @@ fu readline#transpose_words(type, ...) abort "{{{2
         try
             return s:transpose_words(mode)
         catch
-            return lg#catch_error()
+            return lg#catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
