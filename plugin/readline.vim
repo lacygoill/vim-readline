@@ -519,6 +519,7 @@ endfu
 
 fu s:set_keysyms(enable) abort "{{{3
     if a:enable
+        exe "set <m-s-g>=\eG"
         exe "set <m-a>=\ea"
         exe "set <m-b>=\eb"
         exe "set <m-d>=\ed"
@@ -534,10 +535,12 @@ fu s:set_keysyms(enable) abort "{{{3
         exe "set <m-n>=\en"
         exe "set <m-o>=\eo"
         exe "set <m-p>=\ep"
+        exe "set <m-r>=\er"
         exe "set <m-t>=\et"
         exe "set <m-u>=\eu"
         exe "set <m-y>=\ey"
     else
+        exe "set <m-s-g>="
         exe "set <m-a>="
         exe "set <m-b>="
         exe "set <m-d>="
@@ -553,6 +556,7 @@ fu s:set_keysyms(enable) abort "{{{3
         exe "set <m-n>="
         exe "set <m-o>="
         exe "set <m-p>="
+        exe "set <m-r>="
         exe "set <m-t>="
         exe "set <m-u>="
         exe "set <m-y>="
@@ -615,7 +619,7 @@ augroup END
 " Every time we set and use a meta key as the {lhs} of an insert-mode mapping,
 " a macro containing a sequence of key presses such as:
 "
-"         Esc + {char used in a meta mapping}
+"     Esc + {char used in a meta mapping}
 "
 " … produces unexpected results when it's replayed.
 " See here for more info: https://github.com/tpope/vim-rsi/issues/13
