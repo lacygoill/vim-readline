@@ -18,27 +18,29 @@ let g:autoloaded_readline = 1
 " while on the command-line, like `M-d` and `C-w`.
 "}}}
 
-" Old Code: {{{1
-" What was its purpose? {{{2
+" Could we change Vim's undo granularity automatically (via autocmds)?{{{
 "
-" It was a complicated mechanism to break  the undo sequence after a sequence of
-" deletions, so  that we could  recover the state  of the buffer  after deleting
-" some  text. It was  useful,  for example,  to  recover the  state  (2) in  the
-" following edition:
+" Yes, see this: https://vi.stackexchange.com/a/2377/17449
+"}}}
+"   What would it allow me to do?{{{
 "
-"                    cursor
-"                    v
-"     (1) hello world|
+" You could recover the state of the buffer after deleting some text.
+" For example, you could recover the state (2) in the following edition:
 "
-"             C-w
+"     " state (1)
+"     hello world|
+"                ^
+"                cursor
+"     " press: C-w
 "
-"     (2) hello |
+"     " state (2)
+"     hello |
+"     " press: p e o p l e
 "
-"             i people
-"
-"     (3) hello people|
-
-" Why don't we use it anymore? {{{2
+"     " state (3)
+"     hello people|
+"}}}
+"   Why don't you use this code?{{{
 "
 " Because:
 "
@@ -49,181 +51,60 @@ let g:autoloaded_readline = 1
 "
 " If you break it just before, then  when you insert a register after a sequence
 " of deletions,  the last  character of  the register  is changed  (deleted then
-" replaced with the 1st).
+" replaced with the 1st):
 "
-" If you break it just after, then  a custom abbreviation may be expanded in the
-" middle of a word you type.
-" MWE:
-"
-"     :inorea al la
-"
-"     ┌ text in buffer
-"     ├─┐
-"     val|
-"        ^
-"        cursor
-"
-"     C-w val SPC
-"         → vla ✘
-"
-" MWE:
-"
-"     :inorea al la
-"     :ino <c-x>d <bs><bs><bs>v<c-g>ual
-"                              ├────┘
-"                              └ this is where our custom function
-"                                was breaking the undo sequence
-"
-"     val C-x d SPC
-"     vla ✘~
-
-" What dit the code look like? {{{2
-" Autocmd {{{3
-"
-"     augroup my_granular_undo
-"         ...
-"
-"         We could  probably have replaced  these 2 permanent  autocommands with
-"         one-shot equivalent.
-"
-"         au InsertLeave      * let s:deleting = 0
-"         au InsertCharPre    * call s:break_undo_after_deletions(v:char)
-"                                                                 ├────┘
-"                                                                 │
-"         not  needed if  you  break  the undo  sequence  just  AFTER the  next
-"         insertion of a character, after  a sequence of deletions (only needed
-"         if you do it just BEFORE)
-"     augroup END
-
-" Function {{{3
-"     fu s:break_undo_after_deletions(char) abort {{{4
-"         if s:deleting
-"            To exclude  the first  inserted character from  the undo  sequence, we
-"            should call `feedkeys()` like this:
-"
-"                    call feedkeys("\<bs>\<c-g>u".v:char, 'in')
-"            Why "\<bs>" ?{{{
-"
-"            It  seems that  when InsertCharPre  occurs, v:char  is already  in the
-"            typeahead buffer. We  can change its  value but not insert  sth before
-"            it.   We need  to break  undo sequence  BEFORE `v:char`,  so that  the
-"            latter is part of the next edition.
-"            Thus, we delete it (BS), break undo (C-g u), then reinsert it (v:char).
-           "}}}
-"            Why pass the 'i' flag to feedkeys(…)?{{{
-"
-"            Suppose we don't give 'i', and we have this mapping:
-"                                          ino abc def
-"
-"            Then we write:                hello foo
-"            We delete foo with C-w:       hello
-"            If we type abc, we'll get:    hello ded
-"
-"            Why ded and not def?
-"
-"              1. a b c                 keys which are typed initially
-"
-"              2. d e f                 expansion due to mapping
-"
-"                                               - the expansion occurs as soon as we type `c`
-"
-"                                               - 3 InsertCharPre events occurs right after `d`
-"                                                 is written inside the typeahead buffer
-"
-"                                               - this function will be called only for the 1st one,
-"                                                 because after its 1st invocation, `s:deleting` will
-"                                                 be reset to 0
-"
-"                                               - when it's called, v:char will be `d`,
-"                                                 the 1st character to be inserted
-"
-"              3. d e f BS C-g u d      the 4 last keys are written by `feedkeys()`
-"                                       AT THE END of the typeahead buffer
-"
-"              4. d e d                 ✘
-"
-"            The 4 last keys were added too late.
-"            The solution is to insert them at the beginning of the typeahead buffer,
-"            by giving the 'i' flag to feedkeys(…). The 3rd step then becomes:
-"
-"                 ┌ expansion of `abc`
-"                 ├──────────────┐
-"              3. d BS C-g u d e f
-"                   ├────────┘
-"                   └ inserted by our custom function when `InsertCharPre` occurs
-           "}}}
-
-"            But we won't try to exclude it:
-"
-"             call feedkeys("\<c-g>u", 'int')
-"            Why?{{{
-"
-"            To be  sure that the register  we put from insert  mode will never
-"            mutate.
-           "}}}
-"            When could it mutate?{{{
-"
-"            If you delete  some text, with `C-w` for example,  then put a register
-"            whose contents is 'hello', you will insert 'hellh':
-"
-"                    C-w C-r "
-"                    hellh~
-"                        ^✘
-           "}}}
-"            Why does it happen?{{{
-"
-"            If you copy the text 'abc' in the unnamed register, then put it:
-"
-"                    C-r "
-"
-"            … it triggers 3 InsertCharPre:
-"
-"                    - v:char = 'a'
-"                    - v:char = 'b'
-"                    - v:char = 'c'
-"
-"            When the 1st one is triggered, and `feedkeys()` is invoked to add some
-"            keys in the typeahead buffer, they are inserted AFTER `bc`.
-"            This seems to indicate that when  you put a register, all its contents
-"            is  immediately written  in  the  typeahead buffer. The  InsertCharPre
-"            events are fired AFTERWARDS for each inserted character.
-"
-"            We  can  still   reliably  change  any  inserted   key,  by  resetting
-"            `v:char`. The issue is specific to feedkeys().
-"            Unfortunately,  we have  to  use feedkeys(),  because  we can't  write
-"            special characters  in `v:char`,  like `BS` and  `C-g`; they  would be
-"            inserted literally.
-"
-"            MWE:
-"            the goal being to replace any `a` with `x`:
-"
-"                    augroup replace_a_with_x
-"                        au!
-"                        au InsertCharPre * call Func()
-"                    augroup END
-"
-"                    fu Func() abort
-"                        if v:char is# 'a'
-"                            " ✔
-"                            " let v:char = 'x'
-"                            " ✘ fails when putting a register containing `abc`
-"                            " call feedkeys("\<bs>x", 'in')
-"                        endif
-"                    endfu
-           "}}}
+"     vim -Nu NONE -S <(cat <<'EOF'
+"         let @a = 'abc'
+"         set backspace=start
+"         let s:deleting = 0
+"         au InsertLeave * let s:deleting = 0
+"         au InsertCharPre * call s:break_undo_after_deletions()
+"         fu s:break_undo_after_deletions()
+"             if !s:deleting | return | endif
+"             call feedkeys("\<bs>\<c-g>u"..v:char, 'in')
 "             let s:deleting = 0
-"         endif
-"     endfu
-" }}}3
-" Initialization {{{3
+"         endfu
+"         ino <expr> <c-w> C_w()
+"         fu C_w()
+"             let s:deleting = 1
+"             return "\<c-w>"
+"         endfu
+"     EOF
+"     )
+"     " press: i C-w
+"     " press: C-r a
+"     " 'aba' is inserted instead of 'abc' ✘
 "
-" The autocmd will  be installed after the  1st time we use one  of our mapping.
-" So, the 1st  time we enter insert  mode, and press a custom  mapping, it won't
-" have been  installed, and `s:deleting` won't  have been set yet.   But for our
-" functions to work, it must exist no matter what.
+" And if you break it just after,  then a custom abbreviation may be expanded in
+" the middle of a word you type:
 "
-"      let s:deleting = 0
-" }}}1
+"     vim -Nu NONE -S <(cat <<'EOF'
+"         set backspace=start
+"         inorea al la
+"         let s:deleting = 0
+"         au InsertLeave * let s:deleting = 0
+"         au InsertCharPre * call s:break_undo_after_deletions()
+"         fu s:break_undo_after_deletions()
+"             if !s:deleting | return | endif
+"             call feedkeys("\<c-g>u", 'in')
+"             let s:deleting = 0
+"         endfu
+"         ino <expr> <c-w> C_w()
+"         fu C_w()
+"             let s:deleting = 1
+"             return "\<c-w>"
+"         endfu
+"     EOF
+"     )
+"     " press: i C-w
+"     " press: v a l SPC
+"     " 'al' is replaced with 'la' ✘
+"     " this happens because `c-g u` has been executed after `v` and before `al`
+"
+" In any case, no  matter what you do, Vim's behavior  when editing text becomes
+" less predictable.  I don't like that.
+"}}}
+
 " Init {{{1
 
 augroup my_granular_undo
