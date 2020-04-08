@@ -6,8 +6,7 @@ let g:loaded_readline = 1
 " TODO:     Try to remove the `<expr>` argument in all the mappings.{{{
 "
 " Because of the  latter, we sometimes have to  invoke `execute('redraw')` which
-" is ugly.
-" We also have to invoke timers because of it.
+" is ugly.  We also have to invoke timers because of it.
 "
 " Note that  if you  remove `<expr>`, you  will have to  use `<c-r>=`  in insert
 " mode, and probably have to invoke `feedkeys()` from command-line mode.
@@ -22,18 +21,6 @@ let g:loaded_readline = 1
 " `man zshzle`
 " https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 " https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
-"}}}
-" FIXME:    M-a inserts â in terminal gVim {{{
-"
-" Same thing for other M-…
-" If you start Vim without any initialization, it doesn't work at all.
-" It should work, like it does in Vim's terminal.
-"
-" Why does gVim insert  `â`, when we start it with our  vimrc, instead of doing
-" nothing like it does by default?
-" Because we give the value 'M' to 'guioptions', which removes the 'm' flag.
-"
-" https://github.com/vim/vim/issues/2397
 "}}}
 " FIXME:    Can't insert [áâäåæçéíîïðôõù]  {{{
 "
@@ -77,6 +64,40 @@ let g:loaded_readline = 1
 "
 " Use equivalence class in a search command
 " }}}
+
+" Fix readline commands in a terminal buffer.{{{
+"
+" In gVim's terminal, `M-a` inserts `â`.
+"
+" Same thing for other `M-...` chords.
+" If you start Vim without any initialization, nothing is inserted (because then
+" `'go'` contains the `m` flag), but the readline command still doesn't work; it
+" should work, like it does in Vim's terminal.
+"
+" https://github.com/vim/vim/issues/2397
+"
+" ---
+"
+" The  same issue  affects  a terminal  buffer  when `$TERM`  is  `xterm` (or  a
+" derivative), which happens when we start Vim from xterm outside Tmux.
+"
+" I think this is due to `:h modifyOtherKeys`.
+" We could fix the issue by clearing `t_TI` and `t_TE`, but that would break `:h modifyOtherKeys`.
+" We don't really rely on the latter now, but we could in the future.
+"
+" ---
+"
+" We fix the  issue by sending the  right escape sequences to the  shell when we
+" press the meta key.
+"}}}
+if &t_TI =~# "\e[>4;2m" || has('gui_running')
+    fu s:fix_terminal_readline() abort
+        for a_key in map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), 'nr2char(v:val)')
+            exe 'tno <m-'..a_key..'> <esc>'..a_key
+        endfor
+    endfu
+    call s:fix_terminal_readline()
+endif
 
 " Autocmds {{{1
 
