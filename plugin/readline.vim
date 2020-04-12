@@ -92,8 +92,8 @@ let g:loaded_readline = 1
 "}}}
 if &t_TI =~# "\e[>4;2m" || has('gui_running')
     fu s:fix_terminal_readline() abort
-        for a_key in map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), 'nr2char(v:val)')
-            exe 'tno <m-'..a_key..'> <esc>'..a_key
+        for key in map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), 'nr2char(v:val)')
+            exe 'tno <m-'..key..'> <esc>'..key
         endfor
     endfu
     call s:fix_terminal_readline()
