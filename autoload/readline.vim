@@ -18,7 +18,7 @@ let g:autoloaded_readline = 1
 " while on the command-line, like `M-d` and `C-w`.
 "}}}
 
-" Could we change Vim's undo granularity automatically (via autocmds)?{{{
+" Could I change Vim's undo granularity automatically (via autocmds)?{{{
 "
 " Yes, see this: https://vi.stackexchange.com/a/2377/17449
 "}}}
@@ -185,7 +185,7 @@ augroup my_granular_undo
     "     cno <silent><unique> <c-d> <cmd>call readline#delete_char('c')<cr>
     "     ino <silent><unique> <c-d> <cmd>call readline#delete_char('i')<cr>
     "
-    " Also, once  `<cmd>` is available,  look everywhere for timers  or `<expr>`
+    " Also,   once  `<cmd>`   is   available,  look   everywhere  for   `<expr>`
     " mappings. You  may eliminate  them thanks  to `<cmd>`,  and avoid  all the
     " pitfalls they introduce.
     "
@@ -250,7 +250,11 @@ fu s:add_to_undolist(mode, line, pos) abort
         " limit the size of the undolist to 100 entries
         call remove(s:undolist_{a:mode}, 0, undo_len - 101)
     endif
-    let s:undolist_{a:mode} += [[a:line, strchars(matchstr(a:line, '.*\%'..a:pos..'c'), 1)]]
+    if a:mode is# 'c'
+        let s:undolist_c += [[a:line, strchars(matchstr(a:line, '.*\%'..a:pos..'c'), 1)]]
+    else
+        let s:undolist_i += [[a:line, a:pos]]
+    endif
 endfu
 
 fu readline#backward_char(mode) abort "{{{2
@@ -573,7 +577,7 @@ fu s:move_by_words(mode, ...) abort
         let pat = '.*\ze\<.\{-1,}\%'..pos..'c'
     endif
     let str = matchstr(line, pat)
-    let new_pos = len(str)
+    let new_pos = strlen(str)
 
     let new_pos_char = strchars(str, 1)
     " pos_char     = nr of characters before cursor in its current position
@@ -754,18 +758,7 @@ fu readline#undo(mode) abort "{{{2
         if a:mode is# 'c'
             call feedkeys("\<c-b>"..repeat("\<right>", old_pos), 'in')
         else
-            let ve_save = &ve
-            try
-                " necessary if the old position is after the last character on the line;
-                " otherwise the cursor would be positioned just before the last character
-                set ve+=onemore
-                " necessary if the line is wrapped
-                let wrap_is_on = &l:wrap | setl nowrap
-                exe 'norm! '..(old_pos+1)..'|'
-                if wrap_is_on | setl wrap | endif
-            finally
-                let &ve = ve_save
-            endtry
+            call cursor('.', old_pos)
         endif
     endfu
     if a:mode is# 'c'
@@ -921,12 +914,12 @@ fu s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
         return
     endif
 
-    " If we delete a multi-char text, then  move the cursor OR insert some text,
-    " then re-delete  a multi-char text,  the 2  multi-char texts should  NOT be
-    " concatenated.
+    " If we  delete a  multi-char text,  then move the  cursor *or*  insert some
+    " text,  then re-delete  a multi-char  text, the  2 multi-char  texts should
+    " *not* be concatenated.
     "
     " FIXME:
-    " We should make the autocmd listen  to CursorMovedI, but it would, wrongly,
+    " We should make the autocmd listen  to `CursorMovedI`, but it would, wrongly,
     " reset `s:concat_next_kill`  when we  delete a  2nd multi-char  text right
     " after a 1st one.
     augroup readline_reset_concat_next_kill

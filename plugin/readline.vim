@@ -3,15 +3,7 @@ if exists('g:loaded_readline')
 endif
 let g:loaded_readline = 1
 
-" TODO:     Try to remove the `<expr>` argument in all the mappings.{{{
-"
-" Because of the  latter, we sometimes have to  invoke `execute('redraw')` which
-" is ugly.  We also have to invoke timers because of it.
-"
-" Note that  if you  remove `<expr>`, you  will have to  use `<c-r>=`  in insert
-" mode, and probably have to invoke `feedkeys()` from command-line mode.
-"}}}
-" TODO:     Try to implement these:{{{
+" TODO: Try to implement these:{{{
 "
 "    - kill-region (zle)                ???
 "    - quote-region (zle)               M-"
@@ -22,81 +14,37 @@ let g:loaded_readline = 1
 " https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 " https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
-" FIXME:    Can't insert [áâäåæçéíîïðôõù]  {{{
+" FIXME: Can't insert some accented charactes (e.g. `â`). {{{
 "
-" A mapping using a meta key prevents the insertion of some special characters
-" for example:
-"
-"     1. ino <m-b> ...
-"     2. i_â
-"     moves cursor one word backward~
-"
-" Why?
-" Because, for  some reason,  Vim doesn't make the difference between `Esc b` and `â`.
-" So, when we press `i_â`, Vim thinks we've pressed `M-b`.
-"
-" `set <m-b>=`  doesn't fix  this issue,  because the pb  simply comes  from the
-" existence of the `<m-b>` mapping.
-
-" For the same reason, `ù` triggers the `M-y` mapping.  So, when you press `ù`
-" in insert mode, instead of inserting `ù`, you will invoke `yank()`.
-"
-" ---
-"
-" Solutions:
-"
-" Use literal insertion:
-"
-"     C-v ^ a
-"     â~
-"
-" Use digraph:
-"
-"     C-k a a
-"     â~
-"
-" Use replace mode:
-"
-"     r ^ a
-"     â~
-"
-" Use abbreviation
-"
-" Use equivalence class in a search command
+" Read  our  notes about  mappings  to  better  understand  the issue  and  find
+" workarounds.  Bear in mind that no workaround is perfect.
 " }}}
 
 " Fix readline commands in a terminal buffer.{{{
 "
-" In gVim's terminal, `M-a` inserts `â`.
-"
-" Same thing for other `M-...` chords.
-" If you start Vim without any initialization, nothing is inserted (because then
-" `'go'` contains the `m` flag), but the readline command still doesn't work; it
-" should work, like it does in Vim's terminal.
+" When you press `M-b`, the terminal writes `Esc` + `b` in the typeahead buffer.
+" And since  we're going to run  `:set <M-b>=^[b`, Vim translates  this sequence
+" into `<M-b>` which is identical to `â` (`:echo "\<m-b>"`).
+" So, Vim sends `â` to the shell running in the terminal buffer instead of `Esc` + `b`.
+" This breaks all  readline commands; to fix this, we  use Terminal-Job mappings
+" to make  Vim relay the  correct sequences to the  shell (the ones  it received
+" from the terminal, unchanged).
 "
 " https://github.com/vim/vim/issues/2397
 "
 " ---
 "
-" The  same issue  affects  a terminal  buffer  when `$TERM`  is  `xterm` (or  a
-" derivative), which happens when we start Vim from xterm outside Tmux.
+" The issue affects gVim, but not Nvim.
+" The issue affects Vim iff one of these statements is true:
 "
-" I think this is due to `:h modifyOtherKeys`.
-" We could fix the issue by clearing `t_TI` and `t_TE`, but that would break `:h modifyOtherKeys`.
-" We don't really rely on the latter now, but we could in the future.
-"
-" ---
-"
-" We fix the  issue by sending the  right escape sequences to the  shell when we
-" press the meta key.
+"    - you run `:set <M-b>=^[b`
+"    - you use `:h modifyOtherKeys`
 "}}}
-if &t_TI =~# "\e[>4;2m" || has('gui_running')
-    fu s:fix_terminal_readline() abort
-        for key in map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), 'nr2char(v:val)')
-            exe 'tno <m-'..key..'> <esc>'..key
-        endfor
-    endfu
-    call s:fix_terminal_readline()
+if !has('nvim')
+    for s:key in map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), 'nr2char(v:val)')
+        exe 'tno <m-'..s:key..'> <esc>'..s:key
+    endfor
+    unlet! s:key
 endif
 
 " Autocmds {{{1
@@ -446,111 +394,36 @@ if !has('nvim')
 endif
 "}}}1
 " Keysyms {{{1
-" Why do we need to set `<M-b>` &friends?{{{
-"
-" On my machine, Vim doesn't know what are the right keycodes produced by
-" certains keysyms such as `M-b`.
-" It probably knows something, but it's wrong.
-" For example, it thinks that the keysym `M-b` is produced by `â`.
-" Which is confirmed if we just write this mapping:
-"
-"     ino <M-b> hello
-"
-" ... then try to insert `â`. It will insert `hello`.
-" But Vim doesn't really know what's `M-b`,  because if we press `M-b` in insert
-" mode, it doesn't insert `hello`, it just escapes to normal mode then go back a
-" word.
-" We need to teach it the correct keycodes which are produced by `M-b`.
-" To find the keycodes, insert the keysym literally (ex: `C-v M-b`).
-"
-" We do the same thing for other keysyms following the pattern `M-{char}`.
-"}}}
-"  ┌ no need to teach anything for Nvim or gVim (they already "know")
-"  │
-if has('nvim') || has('gui_running')
+
+if has('nvim') || has('gui_running') || &t_TI =~# "\e[>4;2m"
     finish
 endif
 
-" Functions {{{2
-fu s:enable_keysyms_on_command_line() abort "{{{3
-    call s:set_keysyms(1)
-    " Do *not* return `:` immediately.
-    " The previous function call sets some special options, and for some reason,
-    " setting these prevents us from displaying a message with `:echo`.
-    call timer_start(0, {-> feedkeys(':', 'in')})
-    return ''
-endfu
-
-fu s:set_keysyms(enable) abort "{{{3
-    if a:enable
-        exe "set <m-s-g>=\eG"
-        exe "set <m-a>=\ea"
-        exe "set <m-b>=\eb"
-        exe "set <m-d>=\ed"
-        exe "set <m-e>=\ee"
-        exe "set <m-f>=\ef"
-        exe "set <m-g>=\eg"
-        exe "set <m-h>=\eh"
-        exe "set <m-i>=\ei"
-        exe "set <m-j>=\ej"
-        exe "set <m-k>=\ek"
-        exe "set <m-l>=\el"
-        exe "set <m-m>=\em"
-        exe "set <m-n>=\en"
-        exe "set <m-o>=\eo"
-        exe "set <m-p>=\ep"
-        exe "set <m-r>=\er"
-        exe "set <m-t>=\et"
-        exe "set <m-u>=\eu"
-        exe "set <m-y>=\ey"
-    else
-        exe "set <m-s-g>="
-        exe "set <m-a>="
-        exe "set <m-b>="
-        exe "set <m-d>="
-        exe "set <m-e>="
-        exe "set <m-f>="
-        exe "set <m-g>="
-        exe "set <m-h>="
-        exe "set <m-i>="
-        exe "set <m-j>="
-        exe "set <m-k>="
-        exe "set <m-l>="
-        exe "set <m-m>="
-        exe "set <m-n>="
-        exe "set <m-o>="
-        exe "set <m-p>="
-        exe "set <m-r>="
-        exe "set <m-t>="
-        exe "set <m-u>="
-        exe "set <m-y>="
-    endif
+fu s:set_keysyms() abort
+    exe "set <m-s-g>=\eG"
+    exe "set <m-a>=\ea"
+    exe "set <m-b>=\eb"
+    exe "set <m-d>=\ed"
+    exe "set <m-e>=\ee"
+    exe "set <m-f>=\ef"
+    exe "set <m-g>=\eg"
+    exe "set <m-h>=\eh"
+    exe "set <m-i>=\ei"
+    exe "set <m-j>=\ej"
+    exe "set <m-k>=\ek"
+    exe "set <m-l>=\el"
+    exe "set <m-m>=\em"
+    exe "set <m-n>=\en"
+    exe "set <m-o>=\eo"
+    exe "set <m-p>=\ep"
+    exe "set <m-r>=\er"
+    exe "set <m-t>=\et"
+    exe "set <m-u>=\eu"
+    exe "set <m-y>=\ey"
 endfu
 
 augroup set_keysyms
     au!
-    au VimEnter,TermChanged * call s:set_keysyms(1)
-augroup END
-
-fu s:toggle_keysyms_in_terminal() abort "{{{3
-    nno <buffer><expr><nowait> : <sid>enable_keysyms_on_command_line()
-
-    " Warning: don't change the name of the augroup{{{
-    " without doing the same in:
-    "
-    "     ~/.vim/plugged/vim-window/autoload/window.vim
-    "}}}
-    augroup toggle_keysyms_in_terminal
-        au! * <buffer>
-        au! User TermEnter call s:set_keysyms(0)
-        au BufLeave <buffer> call s:set_keysyms(1)
-    augroup END
-endfu
-"}}}2
-" Autocommands {{{2
-
-augroup handle_keysyms
-    au!
-    au TerminalWinOpen * call s:set_keysyms(0) | call s:toggle_keysyms_in_terminal()
+    au VimEnter,TermChanged * call s:set_keysyms()
 augroup END
 
