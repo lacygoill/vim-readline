@@ -14,7 +14,7 @@ let g:loaded_readline = 1
 " https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 " https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
-" FIXME: In gVim, can't insert some accented charactes (e.g. `â`). {{{
+" FIXME: In gVim, can't insert some accented characters (e.g. `â`). {{{
 "
 " Read  our  notes about  mappings  to  better  understand  the issue  and  find
 " workarounds.  Bear in mind that no workaround is perfect.
@@ -69,32 +69,33 @@ augroup END
 " Mappings {{{1
 " Try to always preserve breaking undo sequence.{{{
 "
-" Most of these mappings take care of not breaking undo sequence (`C-g U`).
+" Most of these mappings take care of not breaking the undo sequence (`C-g U`).
 " It means we can repeat an edition with the redo command, even if we use them.
-" If you add another mapping, try to not break undo sequence. Thanks.
+" If you add another mapping, try to not break the undo sequence. Thanks.
 "}}}
 " Ctrl {{{2
 " C-@        set-mark {{{3
 
 " If you don't use `C-@` in the insert mode mapping, disable the key.{{{
 "
-" By default,  in insert mode,  C-@ (:h ^@) inserts  the last inserted  text and
+" By default, in insert mode, `C-@` (`:h ^@`) inserts the last inserted text and
 " leaves insert mode.
-" Usually, in a  terminal C-SPC produces C-@. So, when we  hit C-SPC by accident
-" (which occurs frequently), we insert the last inserted text.
+" Usually, in  a terminal `C-SPC`  produces `C-@`.  So,  when we hit  `C-SPC` by
+" accident (which occurs frequently), we insert the last inserted text.
 " We don't want that, so previously we disabled the mapping in our vimrc:
 "
 "     ino <c-@> <nop>
-
+"
 " There's no need for that anymore, since we use `C-@` for setting a mark, which
 " is harmless: it doesn't insert / remove any text in the buffer.
 " But if for some reason, you choose another key, or remove the mapping entirely,
 " make sure to disable these keys again.
 "}}}
-cno <expr><unique> <c-@> readline#set_mark('c')
-ino <expr><unique> <c-@> readline#set_mark('i')
+noremap! <expr><unique> <c-@> readline#set_mark()
 " For some reason, there's no conflict between this mapping and `i_C-j` in vimrc.{{{
+"
 " Even though `C-j` produces `C-@` (C-v C-j → c-@).
+"
 " MWE:
 "
 "     ino  <c-j>  foo
@@ -104,9 +105,9 @@ ino <expr><unique> <c-@> readline#set_mark('i')
 "     press C-@ "               →  bar
 "
 " Summary:
-" C-j  C-SPC  C-@  all seem to produce the same keycode C-@ when inserted literally.
-" But in practice, the only conflict which we must take into consideration is between
-" C-j/C-SPC and C-@.
+" `C-j`, `C-SPC`, `C-@` all seem to produce the same keycode `C-@` when inserted literally.
+" But in  practice, the only conflict  which we must take  into consideration is
+" between `C-j`/`C-SPC` and `C-@`.
 "}}}
 
 " C-_        undo {{{3
@@ -123,18 +124,16 @@ ino <expr><unique> <c-@> readline#set_mark('i')
 " Besides, using `<expr>` would make the code of `readline#undo()` a little more
 " complicated.
 "}}}
-cno         <unique> <c-_> <c-\>e readline#undo('c')<cr>
-ino <silent><unique> <c-_> <c-r>=readline#undo('i')<cr>
+cno         <unique> <c-_> <c-\>e readline#undo()<cr>
+ino <silent><unique> <c-_> <c-r>=readline#undo()<cr>
 
 " C-a        beginning-of-line {{{3
 
-cno <expr><unique> <c-a> readline#beginning_of_line('c')
-ino <expr><unique> <c-a> readline#beginning_of_line('i')
+noremap! <expr><unique> <c-a> readline#beginning_of_line()
 
 " C-b        backward-char {{{3
 
-cno <expr><unique> <c-b> readline#backward_char('c')
-ino <expr><unique> <c-b> readline#backward_char('i')
+noremap! <expr><unique> <c-b> readline#backward_char()
 
 " C-d        delete-char {{{3
 
@@ -143,8 +142,7 @@ ino <expr><unique> <c-b> readline#backward_char('i')
 " You would need to invoke feedkeys from a timer because `:redraw` has no effect
 " during a textlock and this doesn't work well in Neovim.
 "}}}
-cno <silent><unique> <c-d> <c-r>=readline#delete_char('c')<cr>
-ino <silent><unique> <c-d> <c-r>=readline#delete_char('i')<cr>
+noremap! <silent><unique> <c-d> <c-r>=readline#delete_char()<cr>
 
 " C-e        end-of-line {{{3
 
@@ -153,17 +151,15 @@ ino <expr><unique> <c-e> readline#end_of_line()
 " C-f        forward-char {{{3
 
 let &cedit = ''
-cno <expr><unique> <c-f> readline#forward_char('c')
-ino <expr><unique> <c-f> readline#forward_char('i')
+noremap! <expr><unique> <c-f> readline#forward_char()
 
 " C-h        backward-delete-char {{{3
 
-cno <expr><unique> <c-h> readline#backward_delete_char('c')
-ino <expr><unique> <c-h> readline#backward_delete_char('i')
+noremap! <expr><unique> <c-h> readline#backward_delete_char()
 
 " C-k        kill-line {{{3
 
-cno <expr><unique> <c-k> readline#kill_line('c')
+cno <expr><unique> <c-k> readline#kill_line()
 
 " We need to restore the insertion of digraph functionality on the command-line.
 cno <unique> <c-x>k <c-k>
@@ -183,18 +179,15 @@ cno <expr><unique> <c-o> readline#operate_and_get_next#main()
 
 " C-t        transpose-chars {{{3
 
-cno <expr><unique> <c-t> readline#transpose_chars('c')
-ino <expr><unique> <c-t> readline#transpose_chars('i')
+noremap! <expr><unique> <c-t> readline#transpose_chars()
 
 " C-u        unix-line-discard {{{3
 
-cno <expr><unique> <c-u> readline#unix_line_discard('c')
-ino <expr><unique> <c-u> readline#unix_line_discard('i')
+noremap! <expr><unique> <c-u> readline#unix_line_discard()
 
 " C-w        backward-kill-word {{{3
 
-cno <expr><unique> <c-w> readline#backward_kill_word('c')
-ino <expr><unique> <c-w> readline#backward_kill_word('i')
+noremap! <expr><unique> <c-w> readline#backward_kill_word()
 
 " C-x C-e    edit-and-execute-command {{{3
 
@@ -232,8 +225,7 @@ cno <expr><unique> <c-x><c-e> readline#edit_and_execute_command()
 " C-x C-x    exchange-point-and-mark {{{3
 
 " See also: https://gist.github.com/lacygoill/c8ccf30dfac6393f737e3fa4efccdf9d
-cno <expr><unique> <c-x><c-x> readline#exchange_point_and_mark('c')
-ino <expr><unique> <c-x><c-x> readline#exchange_point_and_mark('i')
+noremap! <expr><unique> <c-x><c-x> readline#exchange_point_and_mark()
 
 " C-y        yank {{{3
 
@@ -244,12 +236,11 @@ ino <expr><unique> <c-x><c-x> readline#exchange_point_and_mark('i')
 "    - C-k
 "    - C-u
 "
-" ... we should be able to paste it with C-y, like in readline.
+" ... we should be able to paste it with `C-y`, like in readline.
 
 " Nvim does not support `SafeState` yet
 if !has('nvim')
-    ino <expr><unique> <c-y> readline#yank('i', 0)
-    cno <expr><unique> <c-y> readline#yank('c', 0)
+    noremap! <expr><unique> <c-y> readline#yank(0)
 endif
 " }}}2
 " Meta {{{2
@@ -265,11 +256,11 @@ endif
 
 "                                               ┌  close wildmenu
 "                                               │
-sil! call lg#map#meta('b', '(wildmenumode() ? "<space><c-h>" : "")..readline#move_by_words("c", 0, 0)', 'c', 'eu')
-sil! call lg#map#meta('f', '(wildmenumode() ? "<space><c-h>" : "")..readline#move_by_words("c", 1, 0)', 'c', 'eu')
+sil! call lg#map#meta('b', '(wildmenumode() ? "<space><c-h>" : "")..readline#move_by_words(0, 0)', 'c', 'eu')
+sil! call lg#map#meta('f', '(wildmenumode() ? "<space><c-h>" : "")..readline#move_by_words(1, 0)', 'c', 'eu')
 
-sil! call lg#map#meta('b', 'readline#move_by_words("i", 0, 0)', 'i', 'eu')
-sil! call lg#map#meta('f', 'readline#move_by_words("i", 1, 0)', 'i', 'eu')
+sil! call lg#map#meta('b', 'readline#move_by_words(0, 0)', 'i', 'eu')
+sil! call lg#map#meta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
 
 " M-i        capitalize-word {{{3
 
@@ -309,16 +300,16 @@ sil! call lg#map#meta('f', 'readline#move_by_words("i", 1, 0)', 'i', 'eu')
 "}}}
 "     xno <m-u> <nop>
 
-sil! call lg#map#meta('i', '<c-r>=readline#move_by_words("c", 1, 1)<cr>', 'c', 'u')
-sil! call lg#map#meta('i', '<c-r>=readline#move_by_words("i", 1, 1)<cr>', 'i', 'su')
+sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'c', 'u')
+sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
 
 sil! call lg#map#meta('i', ':<c-u>set opfunc=readline#move_by_words<bar>norm! g@l<cr>', 'n', 'su')
 sil! call lg#map#meta('i', ':<c-u>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'su')
 
 " M-u M-o    change-case-word {{{3
 
-sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word("", "c")<cr>', 'c', 'u')
-sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word("", "i")<cr>', 'i', 'su')
+sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word()<cr>', 'c', 'u')
+sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word()<cr>', 'i', 'su')
 sil! call lg#map#meta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'su')
 
 sil! call lg#map#meta('o', ':<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<bar>norm! g@l<cr>', 'n', 'su')
@@ -327,8 +318,8 @@ sil! call lg#map#meta('o', ':<c-u>call readline#change_case_save(0)<bar>set opfu
 " It would break the repetition of the edit with the redo command.
 "}}}
 
-sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word("", "c")<cr>', 'c', 'u')
-sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word("", "i")<cr>', 'i', 'su')
+sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word()<cr>', 'c', 'u')
+sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word()<cr>', 'i', 'su')
 sil! call lg#map#meta('u', 'U', 'x', 'u')
 sil! call lg#map#meta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
 
@@ -337,8 +328,7 @@ sil! call lg#map#meta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
 " Delete until the beginning of the next word.
 " In bash, M-d does the same, and is bound to the function kill-word.
 
-sil! call lg#map#meta('d', 'readline#kill_word("c")', 'c', 'eu')
-sil! call lg#map#meta('d', 'readline#kill_word("i")', 'i', 'eu')
+sil! call lg#map#meta('d', 'readline#kill_word()', '!', 'eu')
 
 " M-n/p      down up {{{3
 
@@ -381,15 +371,14 @@ sil! call lg#map#meta('p', '<up>', 'c', 'u')
 
 " M-t        transpose-words {{{3
 
-sil! call lg#map#meta('t', '<c-r>=readline#transpose_words("", "c")<cr>', 'c', 'u')
-sil! call lg#map#meta('t', '<c-r>=readline#transpose_words("", "i")<cr>', 'i', 'su')
+sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'c', 'u')
+sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'i', 'su')
 sil! call lg#map#meta('t', ':<c-u>set opfunc=readline#transpose_words<bar>norm! g@l<cr>', 'n', 'su')
 
 " M-y        yank-pop {{{3
 
 " Nvim does not support `SafeState` yet
 if !has('nvim')
-    sil! call lg#map#meta('y', 'readline#yank("c", 1)', 'c', 'eu')
-    sil! call lg#map#meta('y', 'readline#yank("i", 1)', 'i', 'eu')
+    sil! call lg#map#meta('y', 'readline#yank(1)', '!', 'eu')
 endif
 

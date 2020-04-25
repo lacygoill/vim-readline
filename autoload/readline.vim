@@ -257,21 +257,22 @@ fu s:add_to_undolist(mode, line, pos) abort
     endif
 endfu
 
-fu readline#backward_char(mode) abort "{{{2
+fu readline#backward_char() abort "{{{2
     let s:concat_next_kill = 0
 
     " SPC + C-h = close wildmenu
-    return a:mode is# 'i'
+    return mode() is# 'i'
        \ ?     "\<c-g>U\<left>"
        \ :     (wildmenumode() ? "\<space>\<c-h>" : '').."\<left>"
 endfu
 
-fu readline#backward_delete_char(mode) abort "{{{2
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 0)
+fu readline#backward_delete_char() abort "{{{2
+    let [line, pos] = s:setup_and_get_info(mode(), 1, 0, 0)
     return "\<c-h>"
 endfu
 
-fu readline#backward_kill_word(mode) abort "{{{2
+fu readline#backward_kill_word() abort "{{{2
+    let mode = mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
 
     " All functions using a `try` conditional causes an issue when we hit a breakpoint while debugging an issue.{{{
@@ -295,10 +296,10 @@ fu readline#backward_kill_word(mode) abort "{{{2
     " IOW this issue will have almost no effect in practice.
     "}}}
     if getcmdtype() is# '>'
-        return s:backward_kill_word(a:mode)
+        return s:backward_kill_word(mode)
     else
         try
-            return s:backward_kill_word(a:mode)
+            return s:backward_kill_word(mode)
         catch
             return lg#catch()
         finally
@@ -329,9 +330,9 @@ fu s:backward_kill_word(mode) abort
         \           strchars(killed_text, 1))
 endfu
 
-fu readline#beginning_of_line(mode) abort "{{{2
+fu readline#beginning_of_line() abort "{{{2
     let s:concat_next_kill = 0
-    return a:mode is# 'c'
+    return mode() is# 'c'
        \ ?     "\<home>"
        \ : col('.') >= match(getline('.'), '\S') + 1
        \ ?     repeat("\<c-g>U\<left>", strchars(matchstr(getline('.'), '\S.*\%'..col('.')..'c'), 1))
@@ -343,10 +344,11 @@ fu readline#change_case_save(upcase) abort "{{{2
     return ''
 endfu
 
-fu readline#change_case_word(type, ...) abort "{{{2
-    "                              ^ mode
+fu readline#change_case_word(...) abort "{{{2
+"                            ^^^
+"                            type passed from opfunc
+    let mode = mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
-    let mode = get(a:, '1', 'n')
     if getcmdtype() is# '>'
         return s:change_case_word(mode)
     else
@@ -387,10 +389,11 @@ fu s:change_case_word(mode) abort
     return ''
 endfu
 
-fu readline#delete_char(mode) abort "{{{2
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
+fu readline#delete_char() abort "{{{2
+    let mode = mode()
+    let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
 
-    if a:mode is# 'c'
+    if mode is# 'c'
         " If the cursor is  at the end of the command-line, we  want C-d to keep
         " its normal behavior  which is to list names that  match the pattern in
         " front of the cursor.  However, if it's  before the end, we want C-d to
@@ -436,26 +439,27 @@ fu readline#end_of_line() abort "{{{2
     return repeat("\<c-g>U\<right>", col('$') - col('.'))
 endfu
 
-fu readline#exchange_point_and_mark(mode) abort "{{{2
-    let [line, pos] = s:setup_and_get_info(a:mode, 0, 0, 0)
-    let new_pos = s:mark_{a:mode}
+fu readline#exchange_point_and_mark() abort "{{{2
+    let mode = mode()
+    let [line, pos] = s:setup_and_get_info(mode, 0, 0, 0)
+    let new_pos = s:mark_{mode}
 
-    if a:mode is# 'i'
+    if mode is# 'i'
         let old_pos = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
         let motion = new_pos > old_pos
                  \ ?     "\<c-g>U\<right>"
                  \ :     "\<c-g>U\<left>"
     endif
 
-    let s:mark_{a:mode} = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
-    return a:mode is# 'c'
+    let s:mark_{mode} = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
+    return mode is# 'c'
        \ ?     "\<c-b>"..repeat("\<right>", new_pos)
        \ :     repeat(motion, abs(new_pos - old_pos))
 endfu
 
-fu readline#forward_char(mode) abort "{{{2
+fu readline#forward_char() abort "{{{2
     let s:concat_next_kill = 0
-    return a:mode is# 'c'
+    return mode() is# 'c'
        \ ?    (wildmenumode() ? "\<space>\<c-h>" : '').."\<right>"
        \ : col('.') > strlen(getline('.'))
        \ ?     ''
@@ -464,11 +468,12 @@ fu readline#forward_char(mode) abort "{{{2
     " indentation if we're at the end (default)
 endfu
 
-fu readline#kill_line(mode) abort "{{{2
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 0)
+fu readline#kill_line() abort "{{{2
+    let mode = mode()
+    let [line, pos] = s:setup_and_get_info(mode, 1, 0, 0)
 
     let killed_text = matchstr(line, '.*\%'..pos..'c\zs.*')
-    call s:add_to_kill_ring(a:mode, killed_text, 1, 1)
+    call s:add_to_kill_ring(mode, killed_text, 1, 1)
 
     " Warning: it may take a long time on a mega long soft-wrapped line if `'so'` is different than 0{{{
     "
@@ -479,17 +484,18 @@ fu readline#kill_line(mode) abort "{{{2
     "     +"%d|pu =repeat(['0123456789'], 1000)|%j|0pu=''|exe 'norm! j'|startinsert" /tmp/file
     "     " press C-k C-k: the line is deleted only after 2 or 3 seconds
     "}}}
-    return s:break_undo_before_deletions(a:mode)
+    return s:break_undo_before_deletions(mode)
         \ ..repeat("\<del>", strchars(killed_text, 1))
 endfu
 
-fu readline#kill_word(mode) abort "{{{2
+fu readline#kill_word() abort "{{{2
+    let mode = mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
-        return s:kill_word(a:mode)
+        return s:kill_word(mode)
     else
         try
-            return s:kill_word(a:mode)
+            return s:kill_word(mode)
         catch
             return lg#catch()
         finally
@@ -519,7 +525,7 @@ fu s:kill_word(mode) abort
     return s:break_undo_before_deletions(a:mode)..repeat("\<del>", strchars(killed_text, 1))
 endfu
 
-fu readline#move_by_words(mode, ...) abort "{{{2
+fu readline#move_by_words(...) abort "{{{2
 " Implementing this function was tricky, it has to handle:{{{
 "
 "    - multi-byte characters (éàî)
@@ -527,12 +533,13 @@ fu readline#move_by_words(mode, ...) abort "{{{2
 "    - composing characters  ( ́)
 "}}}
 
+    let mode = mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
-        return call('s:move_by_words', [a:mode] + a:000)
+        return call('s:move_by_words', [mode] + a:000)
     else
         try
-            return call('s:move_by_words', [a:mode] + a:000)
+            return call('s:move_by_words', [mode] + a:000)
         " the `catch` clause prevents errors from being echoed
         " if you try to throw the exception manually (echo v:exception, echo
         " v:throwpoint), nothing will be displayed, so don't bother
@@ -631,26 +638,28 @@ fu s:move_by_words(mode, ...) abort
         \ : feedkeys(seq, 'in')[-1]
 endfu
 
-fu readline#set_mark(mode) abort "{{{2
-    let s:mark_{a:mode} = a:mode is# 'i'
-                      \ ?     strchars(matchstr(getline('.'), '.*\%'..col('.')..'c'), 1)
-                      \ :     strchars(matchstr(getcmdline(), '.*\%'..getcmdpos()..'c'), 1)
+fu readline#set_mark() abort "{{{2
+    let mode = mode()
+    let s:mark_{mode} = mode is# 'i'
+        \ ?     strchars(matchstr(getline('.'), '.*\%'..col('.')..'c'), 1)
+        \ :     strchars(matchstr(getcmdline(), '.*\%'..getcmdpos()..'c'), 1)
     return ''
 endfu
 
-fu readline#transpose_chars(mode) abort "{{{2
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
+fu readline#transpose_chars() abort "{{{2
+    let mode = mode()
+    let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
     if pos > strlen(line)
         " We use `matchstr()` because of potential multi-byte characters.
         " Test on this:
         "
         "     âêîôû
-        return a:mode is# 'i'
+        return mode is# 'i'
            \ ?     "\<c-g>U\<left>\<bs>\<c-g>U\<right>"..matchstr(line, '.\ze.\%'..pos..'c')
            \ :     "\<left>\<bs>\<right>"..matchstr(line, '.\ze.\%'..pos..'c')
 
     elseif pos > 1
-        return a:mode is# 'i'
+        return mode is# 'i'
            \ ?     "\<bs>\<c-g>U\<right>"..matchstr(line, '.\%'..pos..'c')
            \ :     "\<bs>\<right>"..matchstr(line, '.\%'..pos..'c')
 
@@ -659,11 +668,11 @@ fu readline#transpose_chars(mode) abort "{{{2
     endif
 endfu
 
-fu readline#transpose_words(type, ...) abort "{{{2
-    "                             ^
-    "                             mode
+fu readline#transpose_words(...) abort "{{{2
+"                           ^^^
+"                           type passed from opfunc
+    let mode = mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
-    let mode = get(a:, '1', 'n')
     if getcmdtype() is# '>'
         return s:transpose_words(mode)
     else
@@ -749,19 +758,20 @@ fu s:transpose_words(mode) abort
     return ''
 endfu
 
-fu readline#undo(mode) abort "{{{2
-    if empty(s:undolist_{a:mode})
+fu readline#undo() abort "{{{2
+    let mode = mode()
+    if empty(s:undolist_{mode})
         return ''
     endif
-    let [old_line, old_pos] = remove(s:undolist_{a:mode}, -1)
+    let [old_line, old_pos] = remove(s:undolist_{mode}, -1)
     fu! s:undo_restore_cursor() closure
-        if a:mode is# 'c'
+        if mode is# 'c'
             call feedkeys("\<c-b>"..repeat("\<right>", old_pos), 'in')
         else
             call cursor('.', old_pos)
         endif
     endfu
-    if a:mode is# 'c'
+    if mode is# 'c'
         au CmdlineChanged * ++once call s:undo_restore_cursor()
         return old_line
     else
@@ -771,15 +781,16 @@ fu readline#undo(mode) abort "{{{2
     return ''
 endfu
 
-fu readline#unix_line_discard(mode) abort "{{{2
+fu readline#unix_line_discard() abort "{{{2
+    let mode = mode()
     if pumvisible() && len(complete_info(['items']).items) > s:FAST_SCROLL_IN_PUM
         return repeat("\<c-p>", s:FAST_SCROLL_IN_PUM)
     endif
 
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 0)
+    let [line, pos] = s:setup_and_get_info(mode, 1, 0, 0)
 
-    if a:mode is# 'c'
-        call s:add_to_kill_ring(a:mode, matchstr(line, '.*\%'..pos..'c'), 0, 1)
+    if mode is# 'c'
+        call s:add_to_kill_ring(mode, matchstr(line, '.*\%'..pos..'c'), 0, 1)
     else
         let old_line = matchstr(line, '.*\%'..pos..'c')
         fu! s:add_deleted_text_to_kill_ring() abort closure
@@ -788,28 +799,29 @@ fu readline#unix_line_discard(mode) abort "{{{2
         endfu
         au TextChangedI * ++once call s:add_deleted_text_to_kill_ring()
     endif
-    return s:break_undo_before_deletions(a:mode).."\<c-u>"
+    return s:break_undo_before_deletions(mode).."\<c-u>"
 endfu
 
-fu readline#yank(mode, pop) abort "{{{2
+fu readline#yank(pop) abort "{{{2
+    let mode = mode()
     if pumvisible() | return "\<c-y>" | endif
-    if a:pop && (! s:cm_y || len(s:kill_ring_{a:mode}) < 2) | return '' | endif
+    if a:pop && (! s:cm_y || len(s:kill_ring_{mode}) < 2) | return '' | endif
 
     " set flag telling that `C-y` or `M-y` has just been pressed
     let s:cm_y = 1
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 0)
+    let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
     if a:pop
-        let length = strchars(s:kill_ring_{a:mode}[-1], 1)
-        call insert(s:kill_ring_{a:mode}, remove(s:kill_ring_{a:mode}, -1), 0)
+        let length = strchars(s:kill_ring_{mode}[-1], 1)
+        call insert(s:kill_ring_{mode}, remove(s:kill_ring_{mode}, -1), 0)
     endif
     if exists('#reset_cm_y')
         au! reset_cm_y
         aug! reset_cm_y
     endif
     au SafeState * ++once call s:reset_cm_y()
-    let @- = s:kill_ring_{a:mode}[-1]
+    let @- = s:kill_ring_{mode}[-1]
     return (a:pop
-    \       ?    repeat((a:mode is# 'i' ? "\<c-g>U" : '').."\<left>\<del>", length)
+    \       ?    repeat((mode is# 'i' ? "\<c-g>U" : '').."\<left>\<del>", length)
     \       :    '')
     \       .."\<c-r>-"
 endfu
