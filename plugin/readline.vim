@@ -14,7 +14,7 @@ let g:loaded_readline = 1
 " https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 " https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
-" FIXME: Can't insert some accented charactes (e.g. `â`). {{{
+" FIXME: In gVim, can't insert some accented charactes (e.g. `â`). {{{
 "
 " Read  our  notes about  mappings  to  better  understand  the issue  and  find
 " workarounds.  Bear in mind that no workaround is perfect.
@@ -70,7 +70,7 @@ augroup END
 " Try to always preserve breaking undo sequence.{{{
 "
 " Most of these mappings take care of not breaking undo sequence (`C-g U`).
-" It means we can repeat an edition with the dot command, even if we use them.
+" It means we can repeat an edition with the redo command, even if we use them.
 " If you add another mapping, try to not break undo sequence. Thanks.
 "}}}
 " Ctrl {{{2
@@ -263,13 +263,13 @@ endif
 " Because it seems to consider `-` as part of a word.
 " `M-b`, `M-f` would move too far compared to readline.
 
-"                                            ┌  close wildmenu
-"                                            │
-cno <expr><unique> <m-b> (wildmenumode() ? '<space><c-h>' : '')..readline#move_by_words('c', 0, 0)
-cno <expr><unique> <m-f> (wildmenumode() ? '<space><c-h>' : '')..readline#move_by_words('c', 1, 0)
+"                                               ┌  close wildmenu
+"                                               │
+sil! call lg#map#meta('b', '(wildmenumode() ? "<space><c-h>" : "")..readline#move_by_words("c", 0, 0)', 'c', 'eu')
+sil! call lg#map#meta('f', '(wildmenumode() ? "<space><c-h>" : "")..readline#move_by_words("c", 1, 0)', 'c', 'eu')
 
-ino <expr><unique> <m-b> readline#move_by_words('i', 0, 0)
-ino <expr><unique> <m-f> readline#move_by_words('i', 1, 0)
+sil! call lg#map#meta('b', 'readline#move_by_words("i", 0, 0)', 'i', 'eu')
+sil! call lg#map#meta('f', 'readline#move_by_words("i", 1, 0)', 'i', 'eu')
 
 " M-i        capitalize-word {{{3
 
@@ -309,36 +309,36 @@ ino <expr><unique> <m-f> readline#move_by_words('i', 1, 0)
 "}}}
 "     xno <m-u> <nop>
 
-cno         <unique> <m-i> <c-r>=readline#move_by_words('c', 1, 1)<cr>
-ino <silent><unique> <m-i> <c-r>=readline#move_by_words('i', 1, 1)<cr>
+sil! call lg#map#meta('i', '<c-r>=readline#move_by_words("c", 1, 1)<cr>', 'c', 'u')
+sil! call lg#map#meta('i', '<c-r>=readline#move_by_words("i", 1, 1)<cr>', 'i', 'su')
 
-nno <silent><unique> <m-i> :<c-u>set opfunc=readline#move_by_words<bar>norm! g@l<cr>
-xno <silent><unique> <m-i> :<c-u>sil keepj keepp
-\                          '<,'>s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>
+sil! call lg#map#meta('i', ':<c-u>set opfunc=readline#move_by_words<bar>norm! g@l<cr>', 'n', 'su')
+sil! call lg#map#meta('i', ':<c-u>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'su')
 
 " M-u M-o    change-case-word {{{3
 
-cno         <unique> <m-o> <c-r>=readline#change_case_save(0)..readline#change_case_word('', 'c')<cr>
-ino <silent><unique> <m-o> <c-r>=readline#change_case_save(0)..readline#change_case_word('', 'i')<cr>
-xno <silent><unique> <m-o> :<c-u>sil keepj keepp '<,'>s/\%V[A-Z]/\l&/ge<cr>
-nno <silent><unique> <m-o> :<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<bar>norm! g@l<cr>
+sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word("", "c")<cr>', 'c', 'u')
+sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word("", "i")<cr>', 'i', 'su')
+sil! call lg#map#meta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'su')
+
+sil! call lg#map#meta('o', ':<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<bar>norm! g@l<cr>', 'n', 'su')
 " Don't replace `g@l` with `g@_`.{{{
 "
-" It would break the repetition of the edit with the dot command.
+" It would break the repetition of the edit with the redo command.
 "}}}
 
-cno         <unique> <m-u> <c-r>=readline#change_case_save(1)..readline#change_case_word('', 'c')<cr>
-ino <silent><unique> <m-u> <c-r>=readline#change_case_save(1)..readline#change_case_word('', 'i')<cr>
-xno         <unique> <m-u> U
-nno <silent><unique> <m-u> :<c-u>call readline#m_u#main()<cr>
+sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word("", "c")<cr>', 'c', 'u')
+sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word("", "i")<cr>', 'i', 'su')
+sil! call lg#map#meta('u', 'U', 'x', 'u')
+sil! call lg#map#meta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
 
 " M-d        kill-word {{{3
 
 " Delete until the beginning of the next word.
 " In bash, M-d does the same, and is bound to the function kill-word.
 
-cno <expr><unique> <m-d> readline#kill_word('c')
-ino <expr><unique> <m-d> readline#kill_word('i')
+sil! call lg#map#meta('d', 'readline#kill_word("c")', 'c', 'eu')
+sil! call lg#map#meta('d', 'readline#kill_word("i")', 'i', 'eu')
 
 " M-n/p      down up {{{3
 
@@ -373,57 +373,23 @@ ino <expr><unique> <m-d> readline#kill_word('i')
 "         return ''
 "     endfu
 "}}}
-cno <expr><unique> <m-n> feedkeys('<down>', 't')[-1]
+sil! call lg#map#meta('n', 'feedkeys("<down>", "t")[-1]', 'c', 'eu')
 
 " history-search-backward
 " history-search-forward
-cno <unique> <m-p> <up>
+sil! call lg#map#meta('p', '<up>', 'c', 'u')
 
 " M-t        transpose-words {{{3
 
-cno         <unique> <m-t> <c-r>=readline#transpose_words('', 'c')<cr>
-ino <silent><unique> <m-t> <c-r>=readline#transpose_words('', 'i')<cr>
-nno <silent><unique> <m-t> :<c-u>set opfunc=readline#transpose_words<bar>norm! g@l<cr>
+sil! call lg#map#meta('t', '<c-r>=readline#transpose_words("", "c")<cr>', 'c', 'u')
+sil! call lg#map#meta('t', '<c-r>=readline#transpose_words("", "i")<cr>', 'i', 'su')
+sil! call lg#map#meta('t', ':<c-u>set opfunc=readline#transpose_words<bar>norm! g@l<cr>', 'n', 'su')
 
 " M-y        yank-pop {{{3
 
 " Nvim does not support `SafeState` yet
 if !has('nvim')
-    cno <expr><unique> <m-y> readline#yank('c', 1)
-    ino <expr><unique> <m-y> readline#yank('i', 1)
+    sil! call lg#map#meta('y', 'readline#yank("c", 1)', 'c', 'eu')
+    sil! call lg#map#meta('y', 'readline#yank("i", 1)', 'i', 'eu')
 endif
-"}}}1
-" Keysyms {{{1
-
-if has('nvim') || has('gui_running') || &t_TI =~# "\e[>4;2m"
-    finish
-endif
-
-fu s:set_keysyms() abort
-    exe "set <m-s-g>=\eG"
-    exe "set <m-a>=\ea"
-    exe "set <m-b>=\eb"
-    exe "set <m-d>=\ed"
-    exe "set <m-e>=\ee"
-    exe "set <m-f>=\ef"
-    exe "set <m-g>=\eg"
-    exe "set <m-h>=\eh"
-    exe "set <m-i>=\ei"
-    exe "set <m-j>=\ej"
-    exe "set <m-k>=\ek"
-    exe "set <m-l>=\el"
-    exe "set <m-m>=\em"
-    exe "set <m-n>=\en"
-    exe "set <m-o>=\eo"
-    exe "set <m-p>=\ep"
-    exe "set <m-r>=\er"
-    exe "set <m-t>=\et"
-    exe "set <m-u>=\eu"
-    exe "set <m-y>=\ey"
-endfu
-
-augroup set_keysyms
-    au!
-    au VimEnter,TermChanged * call s:set_keysyms()
-augroup END
 
