@@ -533,13 +533,12 @@ fu readline#move_by_words(...) abort "{{{2
 "    - composing characters  ( ́)
 "}}}
 
-    let mode = mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
-        return call('s:move_by_words', [mode] + a:000)
+        return call('s:move_by_words', a:000)
     else
         try
-            return call('s:move_by_words', [mode] + a:000)
+            return call('s:move_by_words', a:000)
         " the `catch` clause prevents errors from being echoed
         " if you try to throw the exception manually (echo v:exception, echo
         " v:throwpoint), nothing will be displayed, so don't bother
@@ -552,9 +551,9 @@ fu readline#move_by_words(...) abort "{{{2
     return ''
 endfu
 
-fu s:move_by_words(mode, ...) abort
-    let [mode, is_fwd, capitalize] = a:0
-        \ ? [a:mode, a:1, a:2]
+fu s:move_by_words(...) abort
+    let [mode, is_fwd, capitalize] = a:0 == 2
+        \ ? [mode(), a:1, a:2]
         \ : ['n', 1, 1]
     "         ^{{{
     " When  this  function will  be  invoked  from  normal mode,  the  first

@@ -170,7 +170,7 @@ cno <unique> <c-x>k <c-k>
 "
 " But doing so, we lose the possibility to delete everything after the cursor.
 " To restore this functionality, we map it to `C-k C-k`.
-ino <expr><unique> <c-k><c-k> readline#kill_line('i')
+ino <expr><unique> <c-k><c-k> readline#kill_line()
 
 " C-o        operate-and-get-next {{{3
 
@@ -303,7 +303,7 @@ sil! call lg#map#meta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
 sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'c', 'u')
 sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
 
-sil! call lg#map#meta('i', ':<c-u>set opfunc=readline#move_by_words<bar>norm! g@l<cr>', 'n', 'su')
+sil! call lg#map#meta('i', ':<c-u>set opfunc=readline#move_by_words<cr>g@l', 'n', 'su')
 sil! call lg#map#meta('i', ':<c-u>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'su')
 
 " M-u M-o    change-case-word {{{3
@@ -312,7 +312,7 @@ sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_
 sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word()<cr>', 'i', 'su')
 sil! call lg#map#meta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'su')
 
-sil! call lg#map#meta('o', ':<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<bar>norm! g@l<cr>', 'n', 'su')
+sil! call lg#map#meta('o', ':<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l', 'n', 'su')
 " Don't replace `g@l` with `g@_`.{{{
 "
 " It would break the repetition of the edit with the redo command.
@@ -373,7 +373,7 @@ sil! call lg#map#meta('p', '<up>', 'c', 'u')
 
 sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'c', 'u')
 sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'i', 'su')
-sil! call lg#map#meta('t', ':<c-u>set opfunc=readline#transpose_words<bar>norm! g@l<cr>', 'n', 'su')
+sil! call lg#map#meta('t', ':<c-u>set opfunc=readline#transpose_words<cr>g@l', 'n', 'su')
 
 " M-y        yank-pop {{{3
 
