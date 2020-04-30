@@ -14,15 +14,6 @@ let g:loaded_readline = 1
 " https://www.gnu.org/software/bash/manual/html_node/Bindable-Readline-Commands.html (best?)
 " https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
-" FIXME: In gVim, can't insert some accented characters (e.g. `â`). {{{
-"
-" Read  our  notes about  mappings  to  better  understand  the issue  and  find
-" workarounds.  Bear in mind that no workaround is perfect.
-"
-" ---
-"
-" Same issue in a terminal buffer.
-" }}}
 
 " Autocmds {{{1
 
