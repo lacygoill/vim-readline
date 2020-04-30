@@ -24,33 +24,6 @@ let g:loaded_readline = 1
 " Same issue in a terminal buffer.
 " }}}
 
-" Fix readline commands in a terminal buffer.{{{
-"
-" When you press `M-b`, the terminal writes `Esc` + `b` in the typeahead buffer.
-" And since  we're going to run  `:set <M-b>=^[b`, Vim translates  this sequence
-" into `<M-b>` which is identical to `â` (`:echo "\<m-b>"`).
-" So, Vim sends `â` to the shell running in the terminal buffer instead of `Esc` + `b`.
-" This breaks all  readline commands; to fix this, we  use Terminal-Job mappings
-" to make  Vim relay the  correct sequences to the  shell (the ones  it received
-" from the terminal, unchanged).
-"
-" https://github.com/vim/vim/issues/2397
-"
-" ---
-"
-" The issue affects gVim, but not Nvim.
-" The issue affects Vim iff one of these statements is true:
-"
-"    - you run `:set <M-b>=^[b`
-"    - you use `:h modifyOtherKeys`
-"}}}
-if !has('nvim')
-    for s:key in map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), 'nr2char(v:val)')
-        exe 'tno <m-'..s:key..'> <esc>'..s:key
-    endfor
-    unlet! s:key
-endif
-
 " Autocmds {{{1
 
 augroup install_add_to_undolist
