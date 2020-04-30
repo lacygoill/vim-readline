@@ -394,14 +394,12 @@ fu readline#delete_char() abort "{{{2
     let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
 
     if mode is# 'c'
-        " If the cursor is  at the end of the command-line, we  want C-d to keep
+        " If the cursor is at the end of the command-line, we want `C-d` to keep
         " its normal behavior  which is to list names that  match the pattern in
-        " front of the cursor.  However, if it's  before the end, we want C-d to
-        " delete the character after it.
+        " front of the  cursor.  However, if it's before the  end, we want `C-d`
+        " to delete the character after it.
 
-        if getcmdpos() <= strlen(getcmdline()) || getcmdtype() isnot# ':'
-            call feedkeys("\<del>", 'in')
-        else
+        if getcmdpos() > strlen(getcmdline()) && getcmdtype() =~# '[:>@=]'
             " Before pressing  `C-d`, we first  redraw to erase the  possible listed
             " completion suggestions. This makes consecutive listings more readable.
             " MWE:
@@ -410,6 +408,8 @@ fu readline#delete_char() abort "{{{2
             "       :h directory C-d
             redraw
             call feedkeys("\<c-d>", 'in')
+        else
+            call feedkeys("\<del>", 'in')
         endif
         return ''
     endif

@@ -18,6 +18,10 @@ let g:loaded_readline = 1
 "
 " Read  our  notes about  mappings  to  better  understand  the issue  and  find
 " workarounds.  Bear in mind that no workaround is perfect.
+"
+" ---
+"
+" Same issue in a terminal buffer.
 " }}}
 
 " Fix readline commands in a terminal buffer.{{{
@@ -315,7 +319,17 @@ sil! call lg#map#meta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 
 sil! call lg#map#meta('o', ':<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l', 'n', 'su')
 " Don't replace `g@l` with `g@_`.{{{
 "
-" It would break the repetition of the edit with the redo command.
+" It would break the repetition of an edit with the redo command.
+" This is because `g@_` resets the cursor position at the start of the line.
+" We don't want that; we want the cursor  to stay where it is when our opfunc is
+" invoked.  The  latter inspects  the cursor column  position via  `col('.')` in
+" `s:setup_and_get_info()`.
+"
+" ---
+"
+" Besides, `M-u` is a custom command, not an operator.
+" We only  use an  opfunc to  make the  command repeatable;  in such  cases, you
+" should always use `g@l`.
 "}}}
 
 sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word()<cr>', 'c', 'u')
@@ -330,43 +344,9 @@ sil! call lg#map#meta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
 
 sil! call lg#map#meta('d', 'readline#kill_word()', '!', 'eu')
 
-" M-n/p      down up {{{3
+" M-n/p      history-search-forward/backward {{{3
 
-" We can't simply write `<Down>` in the rhs.{{{
-"
-" It would make  Vim close the wildmenu,  and insert a literal  Tab character (a
-" Tab because the value of `'wc'` is 9).
-"
-" See:
-"
-" https://groups.google.com/d/msg/vim_dev/xf5TRb4uR4Y/djk2dq2poaQJ
-" http://stackoverflow.com/a/14849216
-"
-" ---
-"
-" Alternative:
-"
-" Temporarily reset `'wcm'`, to make sure that it has the same value as `'wc'`:
-"
-"     cmap <expr><unique> <m-n>                         <sid>readline_down()
-"     cno                 <plug>(readline-down)         <down>
-"     cno  <expr>         <plug>(readline-restore-wcm)  <sid>restore_wcm()
-"
-"     fu s:readline_down() abort
-"         let s:wcm_save = &wcm
-"         let &wcm = &wc
-"         return "\<plug>(readline-down)\<plug>(readline-restore-wcm)"
-"     endfu
-"
-"     fu s:restore_wcm() abort
-"         let &wcm = get(s:, 'wcm_save', 9)
-"         return ''
-"     endfu
-"}}}
-sil! call lg#map#meta('n', 'feedkeys("<down>", "t")[-1]', 'c', 'eu')
-
-" history-search-backward
-" history-search-forward
+sil! call lg#map#meta('n', '<down>', 'c', 'u')
 sil! call lg#map#meta('p', '<up>', 'c', 'u')
 
 " M-t        transpose-words {{{3
