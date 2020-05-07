@@ -38,7 +38,7 @@ augroup END
 " Try to always preserve breaking undo sequence.{{{
 "
 " Most of these mappings take care of not breaking the undo sequence (`C-g U`).
-" It means we can repeat an edition with the redo command, even if we use them.
+" It means we can repeat an edition with the dot command, even if we use them.
 " If you add another mapping, try to not break the undo sequence. Thanks.
 "}}}
 " Ctrl {{{2
@@ -283,7 +283,7 @@ sil! call lg#map#meta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 
 sil! call lg#map#meta('o', ':<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l', 'n', 'su')
 " Don't replace `g@l` with `g@_`.{{{
 "
-" It would break the repetition of an edit with the redo command.
+" It would break the repetition of an edit with the dot command.
 " This is because `g@_` resets the cursor position at the start of the line.
 " We don't want that; we want the cursor  to stay where it is when our opfunc is
 " invoked.  The  latter inspects  the cursor column  position via  `col('.')` in
