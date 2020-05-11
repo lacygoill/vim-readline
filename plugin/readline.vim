@@ -17,15 +17,13 @@ let g:loaded_readline = 1
 
 " Autocmds {{{1
 
-augroup install_add_to_undolist
-    au!
+augroup install_add_to_undolist | au!
     au CmdlineEnter,InsertEnter *
         \   exe 'au! install_add_to_undolist'
         \ | call readline#add_to_undolist()
 augroup END
 
-augroup operate_and_get_next
-    au!
+augroup operate_and_get_next | au!
     " Why a timer?{{{
     "
     " To avoid remembering commands which  we haven't executed manually like the

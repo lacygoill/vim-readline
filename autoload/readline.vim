@@ -107,8 +107,7 @@ let g:autoloaded_readline = 1
 
 " Init {{{1
 
-augroup my_granular_undo
-    au!
+augroup my_granular_undo | au!
     " Why resetting `s:concat_next_kill`?{{{
     "
     "     :one two
@@ -237,8 +236,7 @@ let s:cm_y = 0
 
 " Interface {{{1
 fu readline#add_to_undolist() abort "{{{2
-    augroup add_to_undolist
-        au!
+    augroup add_to_undolist | au!
         au User add_to_undolist_c call s:add_to_undolist('c', getcmdline(), getcmdpos())
         au User add_to_undolist_i call s:add_to_undolist('i', getline('.'), col('.'))
     augroup END
@@ -828,8 +826,7 @@ endfu
 fu s:reset_cm_y() abort
     " In the shell, as soon as you move the cursor, `M-y` doesn't do anything anymore.
     " We want the same behavior in Vim.
-    augroup reset_cm_y
-        au!
+    augroup reset_cm_y | au!
         " Do *not* use a long list of events (`CursorMovedI`, `CmdlineChanged`, ...).{{{
         "
         "     au CursorMovedI,CmdlineChanged,InsertLeave,CursorMoved *
@@ -879,8 +876,7 @@ fu s:break_undo_before_deletions(mode) abort "{{{2
         let s:deleting = 1
         " We'll re-enable the  breaking of the undo sequence  before a deletion,
         " the next time we insert a character, or leave insert mode.
-        augroup readline_reset_deleting
-            au!
+        augroup readline_reset_deleting | au!
             au InsertLeave,InsertCharPre * exe 'au! readline_reset_deleting' | let s:deleting = 0
         augroup END
         return "\<c-g>u"
@@ -933,8 +929,7 @@ fu s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     " We should make the autocmd listen  to `CursorMovedI`, but it would, wrongly,
     " reset `s:concat_next_kill`  when we  delete a  2nd multi-char  text right
     " after a 1st one.
-    augroup readline_reset_concat_next_kill
-        au!
+    augroup readline_reset_concat_next_kill | au!
         au InsertCharPre,InsertEnter,InsertLeave *
             \   exe 'au! readline_reset_concat_next_kill'
             \ | let s:concat_next_kill = 0
