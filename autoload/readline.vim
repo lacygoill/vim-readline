@@ -259,18 +259,18 @@ fu readline#backward_char() abort "{{{2
     let s:concat_next_kill = 0
 
     " SPC + C-h = close wildmenu
-    return mode() is# 'i'
+    return s:mode() is# 'i'
        \ ?     "\<c-g>U\<left>"
        \ :     (wildmenumode() ? "\<space>\<c-h>" : '').."\<left>"
 endfu
 
 fu readline#backward_delete_char() abort "{{{2
-    let [line, pos] = s:setup_and_get_info(mode(), 1, 0, 0)
+    let [line, pos] = s:setup_and_get_info(s:mode(), 1, 0, 0)
     return "\<c-h>"
 endfu
 
 fu readline#backward_kill_word() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
 
     " All functions using a `try` conditional causes an issue when we hit a breakpoint while debugging an issue.{{{
@@ -330,7 +330,7 @@ endfu
 
 fu readline#beginning_of_line() abort "{{{2
     let s:concat_next_kill = 0
-    return mode() is# 'c'
+    return s:mode() is# 'c'
        \ ?     "\<home>"
        \ : col('.') >= match(getline('.'), '\S') + 1
        \ ?     repeat("\<c-g>U\<left>", strchars(matchstr(getline('.'), '\S.*\%'..col('.')..'c'), 1))
@@ -345,7 +345,7 @@ endfu
 fu readline#change_case_word(...) abort "{{{2
 "                            ^^^
 "                            type passed from opfunc
-    let mode = mode()
+    let mode = s:mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
         return s:change_case_word(mode)
@@ -388,7 +388,7 @@ fu s:change_case_word(mode) abort
 endfu
 
 fu readline#delete_char() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
 
     if mode is# 'c'
@@ -438,7 +438,7 @@ fu readline#end_of_line() abort "{{{2
 endfu
 
 fu readline#exchange_point_and_mark() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     let [line, pos] = s:setup_and_get_info(mode, 0, 0, 0)
     let new_pos = s:mark_{mode}
 
@@ -457,7 +457,7 @@ endfu
 
 fu readline#forward_char() abort "{{{2
     let s:concat_next_kill = 0
-    return mode() is# 'c'
+    return s:mode() is# 'c'
        \ ?    (wildmenumode() ? "\<space>\<c-h>" : '').."\<right>"
        \ : col('.') > strlen(getline('.'))
        \ ?     ''
@@ -467,7 +467,7 @@ fu readline#forward_char() abort "{{{2
 endfu
 
 fu readline#kill_line() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     let [line, pos] = s:setup_and_get_info(mode, 1, 0, 0)
 
     let killed_text = matchstr(line, '.*\%'..pos..'c\zs.*')
@@ -487,7 +487,7 @@ fu readline#kill_line() abort "{{{2
 endfu
 
 fu readline#kill_word() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
         return s:kill_word(mode)
@@ -551,7 +551,7 @@ endfu
 
 fu s:move_by_words(...) abort
     let [mode, is_fwd, capitalize] = a:0 == 2
-        \ ? [mode(), a:1, a:2]
+        \ ? [s:mode(), a:1, a:2]
         \ : ['n', 1, 1]
     "         ^{{{
     " When  this  function will  be  invoked  from  normal mode,  the  first
@@ -636,7 +636,7 @@ fu s:move_by_words(...) abort
 endfu
 
 fu readline#set_mark() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     let s:mark_{mode} = mode is# 'i'
         \ ?     strchars(matchstr(getline('.'), '.*\%'..col('.')..'c'), 1)
         \ :     strchars(matchstr(getcmdline(), '.*\%'..getcmdpos()..'c'), 1)
@@ -644,7 +644,7 @@ fu readline#set_mark() abort "{{{2
 endfu
 
 fu readline#transpose_chars() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
     if pos > strlen(line)
         " We use `matchstr()` because of potential multi-byte characters.
@@ -668,7 +668,7 @@ endfu
 fu readline#transpose_words(...) abort "{{{2
 "                           ^^^
 "                           type passed from opfunc
-    let mode = mode()
+    let mode = s:mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
         return s:transpose_words(mode)
@@ -756,7 +756,7 @@ fu s:transpose_words(mode) abort
 endfu
 
 fu readline#undo() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     if empty(s:undolist_{mode})
         return ''
     endif
@@ -779,7 +779,7 @@ fu readline#undo() abort "{{{2
 endfu
 
 fu readline#unix_line_discard() abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     if pumvisible() && len(complete_info(['items']).items) > s:FAST_SCROLL_IN_PUM
         return repeat("\<c-p>", s:FAST_SCROLL_IN_PUM)
     endif
@@ -800,7 +800,7 @@ fu readline#unix_line_discard() abort "{{{2
 endfu
 
 fu readline#yank(pop) abort "{{{2
-    let mode = mode()
+    let mode = s:mode()
     if pumvisible() | return "\<c-y>" | endif
     if a:pop && (! s:cm_y || len(s:kill_ring_{mode}) < 2) | return '' | endif
 
@@ -900,6 +900,16 @@ endfu
 " of  deletions. It allowed  us to  visit A  (alone). We don't  use it  anymore,
 " because it leads to too many issues.
 "}}}
+
+fu s:mode() abort "{{{2
+    let mode = mode()
+    " if you enter the search command-line from visual mode, `mode()` wrongly returns `v`
+    " https://github.com/vim/vim/issues/6127#issuecomment-633119610
+    if mode =~# "^[vV\<c-v>]$"
+        return 'c'
+    endif
+    return mode
+endfu
 
 fu s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
     let s:concat_next_kill  = a:this_kill_is_big && s:last_kill_was_big ? 0 : 1
