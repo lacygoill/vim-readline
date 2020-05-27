@@ -4,7 +4,7 @@ fu readline#m_u#main() abort
         sil! call window#popup#scroll('c-u')
     else
         " otherwise, upcase the text up to the end of the current/next word
-        call readline#change_case_save(1)
+        call readline#change_case_setup(1)
         set opfunc=readline#change_case_word
         norm! g@l
     endif

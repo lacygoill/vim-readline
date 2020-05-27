@@ -269,33 +269,19 @@ sil! call lg#map#meta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
 sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'c', 'u')
 sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
 
-sil! call lg#map#meta('i', ':<c-u>set opfunc=readline#move_by_words<cr>g@l', 'n', 'su')
+sil! call lg#map#meta('i', 'readline#move_by_words()', 'n', 'eu')
 sil! call lg#map#meta('i', ':<c-u>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'su')
 
 " M-u M-o    change-case-word {{{3
 
-sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word()<cr>', 'c', 'u')
-sil! call lg#map#meta('o', '<c-r>=readline#change_case_save(0)..readline#change_case_word()<cr>', 'i', 'su')
+sil! call lg#map#meta('o', '<c-r>=readline#change_case_setup(0)..readline#change_case_word()<cr>', 'c', 'u')
+sil! call lg#map#meta('o', '<c-r>=readline#change_case_setup(0)..readline#change_case_word()<cr>', 'i', 'su')
 sil! call lg#map#meta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'su')
 
-sil! call lg#map#meta('o', ':<c-u>call readline#change_case_save(0)<bar>set opfunc=readline#change_case_word<cr>g@l', 'n', 'su')
-" Don't replace `g@l` with `g@_`.{{{
-"
-" It would break the repetition of an edit with the dot command.
-" This is because `g@_` resets the cursor position at the start of the line.
-" We don't want that; we want the cursor  to stay where it is when our opfunc is
-" invoked.  The  latter inspects  the cursor column  position via  `col('.')` in
-" `s:setup_and_get_info()`.
-"
-" ---
-"
-" Besides, `M-u` is a custom command, not an operator.
-" We only  use an  opfunc to  make the  command repeatable;  in such  cases, you
-" should always use `g@l`.
-"}}}
+sil! call lg#map#meta('o', 'readline#change_case_setup(0)', 'n', 'eu')
 
-sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word()<cr>', 'c', 'u')
-sil! call lg#map#meta('u', '<c-r>=readline#change_case_save(1)..readline#change_case_word()<cr>', 'i', 'su')
+sil! call lg#map#meta('u', '<c-r>=readline#change_case_setup(1)..readline#change_case_word()<cr>', 'c', 'u')
+sil! call lg#map#meta('u', '<c-r>=readline#change_case_setup(1)..readline#change_case_word()<cr>', 'i', 'su')
 sil! call lg#map#meta('u', 'U', 'x', 'u')
 sil! call lg#map#meta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
 
@@ -315,7 +301,7 @@ sil! call lg#map#meta('p', '<up>', 'c', 'u')
 
 sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'c', 'u')
 sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'i', 'su')
-sil! call lg#map#meta('t', ':<c-u>set opfunc=readline#transpose_words<cr>g@l', 'n', 'su')
+sil! call lg#map#meta('t', 'readline#transpose_words()', 'n', 'eu')
 
 " M-y        yank-pop {{{3
 

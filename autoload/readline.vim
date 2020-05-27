@@ -11,11 +11,12 @@ let g:autoloaded_readline = 1
 "     Ë͙͙̬̹͈͔̜́̽D̦̩̱͕͗̃͒̅̐I̞̟̣̫ͯ̀ͫ͑ͧT̞Ŏ͍̭̭̞͙̆̎̍R̺̟̼͈̟̓͆
 "
 " Press, `Del` while the cursor is at the beginning of the word, in a buffer; it
-" works.
-" Now, do the same on the command-line; you'll have to press the key `51` times!
-" `51` is the output of `strchars('Ë͙͙̬̹͈͔̜́̽D̦̩̱͕͗̃͒̅̐I̞̟̣̫ͯ̀ͫ͑ͧT̞Ŏ͍̭̭̞͙̆̎̍R̺̟̼͈̟̓͆')`, btw.
+" works.  Now,  do the same  on the command-line; you'll  have to press  the key
+" `51` times!  `51` is the output of `strchars('Ë͙͙̬̹͈͔̜́̽D̦̩̱͕͗̃͒̅̐I̞̟̣̫ͯ̀ͫ͑ͧT̞Ŏ͍̭̭̞͙̆̎̍R̺̟̼͈̟̓͆')`, btw.
 " Because of this, some readline functions  don't work with these types of text,
 " while on the command-line, like `M-d` and `C-w`.
+"
+" https://github.com/vim/vim/issues/6134
 "}}}
 
 " Could I change Vim's undo granularity automatically (via autocmds)?{{{
@@ -249,7 +250,7 @@ fu s:add_to_undolist(mode, line, pos) abort
         call remove(s:undolist_{a:mode}, 0, undo_len - 101)
     endif
     if a:mode is# 'c'
-        let s:undolist_c += [[a:line, strchars(matchstr(a:line, '.*\%'..a:pos..'c'))]]
+        let s:undolist_c += [[a:line, strchars(matchstr(a:line, '.*\%'..a:pos..'c'), 1)]]
     else
         let s:undolist_i += [[a:line, a:pos]]
     endif
@@ -325,7 +326,7 @@ fu s:backward_kill_word(mode) abort
     " Instead, feed `<Left><Del>`.
     return s:break_undo_before_deletions(a:mode)
         \  ..repeat((a:mode is# 'i' ? "\<c-g>U" : '').."\<left>\<del>",
-        \           strchars(killed_text, a:mode is# 'i'))
+        \           strchars(killed_text, 1))
 endfu
 
 fu readline#beginning_of_line() abort "{{{2
@@ -337,8 +338,12 @@ fu readline#beginning_of_line() abort "{{{2
        \ :     repeat("\<c-g>U\<right>", strchars(matchstr(getline('.'), '\%'..col('.')..'c\s*\ze\S'), 1))
 endfu
 
-fu readline#change_case_save(upcase) abort "{{{2
+fu readline#change_case_setup(upcase) abort "{{{2
     let s:change_case_up = a:upcase
+    if s:mode() is# 'n'
+        let &opfunc = 'readline#change_case_word'
+        return 'g@l'
+    endif
     return ''
 endfu
 
@@ -365,7 +370,7 @@ fu s:change_case_word(mode) abort
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 1)
     let pat = '\k*\%'..pos..'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
     let word = matchstr(line, pat)
-    let length = strchars(word, a:mode is# 'i')
+    let length = strchars(word, 1)
 
     if a:mode is# 'c'
         if pos > strlen(line)
@@ -450,7 +455,7 @@ fu readline#exchange_point_and_mark() abort "{{{2
                  \ :     "\<c-g>U\<left>"
     endif
 
-    let s:mark_{mode} = strchars(matchstr(line, '.*\%'..pos..'c'), mode is# 'i')
+    let s:mark_{mode} = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
     return mode is# 'c'
        \ ?     "\<c-b>"..repeat("\<right>", new_pos)
        \ :     repeat(motion, abs(new_pos - old_pos))
@@ -484,7 +489,7 @@ fu readline#kill_line() abort "{{{2
     "     " press C-k C-k: the line is deleted only after 2 or 3 seconds
     "}}}
     return s:break_undo_before_deletions(mode)
-        \ ..repeat("\<del>", strchars(killed_text, mode is# 'i'))
+        \ ..repeat("\<del>", strchars(killed_text, 1))
 endfu
 
 fu readline#kill_word() abort "{{{2
@@ -521,7 +526,7 @@ fu s:kill_word(mode) abort
     let killed_text = matchstr(line, pat)
     call s:add_to_kill_ring(a:mode, killed_text, 1, 0)
 
-    return s:break_undo_before_deletions(a:mode)..repeat("\<del>", strchars(killed_text, a:mode is# 'i'))
+    return s:break_undo_before_deletions(a:mode)..repeat("\<del>", strchars(killed_text, 1))
 endfu
 
 fu readline#move_by_words(...) abort "{{{2
@@ -531,7 +536,10 @@ fu readline#move_by_words(...) abort "{{{2
 "    - multi-cell characters (tab)
 "    - composing characters  ( ́)
 "}}}
-
+    if !a:0
+        let &opfunc = 'readline#move_by_words'
+        return 'g@l'
+    endif
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
         return call('s:move_by_words', a:000)
@@ -584,13 +592,13 @@ fu s:move_by_words(...) abort
     let str = matchstr(line, pat)
     let new_pos = strlen(str)
 
-    let new_pos_char = strchars(str, mode is# 'i')
+    let new_pos_char = strchars(str, 1)
     " pos_char     = nr of characters before cursor in its current position
     " new_pos_char = "                                         new     "
 
     " necessary to move correctly on a line such as:
     "          ́ foo  ́ bar
-    let pos_char = strchars(matchstr(line, '.*\%'..pos..'c'), mode is# 'i')
+    let pos_char = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
 
     let diff = pos_char - new_pos_char
     let building_motion = mode is# 'i'
@@ -638,7 +646,7 @@ fu readline#set_mark() abort "{{{2
     let mode = s:mode()
     let s:mark_{mode} = mode is# 'i'
         \ ?     strchars(matchstr(getline('.'), '.*\%'..col('.')..'c'), 1)
-        \ :     strchars(matchstr(getcmdline(), '.*\%'..getcmdpos()..'c'))
+        \ :     strchars(matchstr(getcmdline(), '.*\%'..getcmdpos()..'c'), 1)
     return ''
 endfu
 
@@ -665,9 +673,11 @@ fu readline#transpose_chars() abort "{{{2
 endfu
 
 fu readline#transpose_words(...) abort "{{{2
-"                           ^^^
-"                           type passed from opfunc
     let mode = s:mode()
+    if !a:0 && mode is# 'n'
+        let &opfunc = 'readline#transpose_words'
+        return 'g@l'
+    endif
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
         return s:transpose_words(mode)
@@ -738,7 +748,7 @@ fu s:transpose_words(mode) abort
     " final pattern
     let pat = not_on_first..not_before..pat..not_after
 
-    let new_pos = strchars(matchstr(line, '.*\%('..pat..'\)'), a:mode is# 'i')
+    let new_pos = strchars(matchstr(line, '.*\%('..pat..'\)'), 1)
     let rep = '\3\2\1'
     let new_line = substitute(line, pat, rep, '')
 
@@ -807,7 +817,7 @@ fu readline#yank(pop) abort "{{{2
     let s:cm_y = 1
     let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
     if a:pop
-        let length = strchars(s:kill_ring_{mode}[-1], mode is# 'i')
+        let length = strchars(s:kill_ring_{mode}[-1], 1)
         call insert(s:kill_ring_{mode}, remove(s:kill_ring_{mode}, -1), 0)
     endif
     if exists('#reset_cm_y')
