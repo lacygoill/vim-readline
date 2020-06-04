@@ -71,7 +71,7 @@ noremap! <expr><unique> <c-@> readline#set_mark()
 "     press C-@ "               →  bar
 "
 " Summary:
-" `C-j`, `C-SPC`, `C-@` all seem to produce the same keycode `C-@` when inserted literally.
+" `C-j`, `C-SPC`, `C-@` all seem to produce the same key code `C-@` when inserted literally.
 " But in  practice, the only conflict  which we must take  into consideration is
 " between `C-j`/`C-SPC` and `C-@`.
 "}}}
@@ -103,12 +103,13 @@ noremap! <expr><unique> <c-b> readline#backward_char()
 
 " C-d        delete-char {{{3
 
-" Do NOT use `<expr>` for these mappings!{{{
+" Do *not* use `<expr>` for these mappings!{{{
 "
 " You would need to invoke feedkeys from a timer because `:redraw` has no effect
 " during a textlock and this doesn't work well in Neovim.
 "}}}
-noremap! <silent><unique> <c-d> <c-r>=readline#delete_char()<cr>
+cno         <unique> <c-d> <c-\>e readline#delete_char()<cr>
+ino <silent><unique> <c-d> <c-r>=readline#delete_char()<cr>
 
 " C-e        end-of-line {{{3
 
@@ -266,7 +267,7 @@ sil! call lg#map#meta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
 "}}}
 "     xno <m-u> <nop>
 
-sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'c', 'u')
+sil! call lg#map#meta('i', '<c-\>e readline#move_by_words(1, 1)<cr>', 'c', 'u')
 sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
 
 sil! call lg#map#meta('i', 'readline#move_by_words()', 'n', 'eu')
@@ -274,13 +275,13 @@ sil! call lg#map#meta('i', ':<c-u>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k
 
 " M-u M-o    change-case-word {{{3
 
-sil! call lg#map#meta('o', '<c-r>=readline#change_case_setup(0)..readline#change_case_word()<cr>', 'c', 'u')
+sil! call lg#map#meta('o', '<c-\>e readline#change_case_setup(0)..readline#change_case_word()<cr>', 'c', 'u')
 sil! call lg#map#meta('o', '<c-r>=readline#change_case_setup(0)..readline#change_case_word()<cr>', 'i', 'su')
 sil! call lg#map#meta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'su')
 
 sil! call lg#map#meta('o', 'readline#change_case_setup(0)', 'n', 'eu')
 
-sil! call lg#map#meta('u', '<c-r>=readline#change_case_setup(1)..readline#change_case_word()<cr>', 'c', 'u')
+sil! call lg#map#meta('u', '<c-\>e readline#change_case_setup(1)..readline#change_case_word()<cr>', 'c', 'u')
 sil! call lg#map#meta('u', '<c-r>=readline#change_case_setup(1)..readline#change_case_word()<cr>', 'i', 'su')
 sil! call lg#map#meta('u', 'U', 'x', 'u')
 sil! call lg#map#meta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
@@ -299,7 +300,7 @@ sil! call lg#map#meta('p', '<up>', 'c', 'u')
 
 " M-t        transpose-words {{{3
 
-sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'c', 'u')
+sil! call lg#map#meta('t', '<c-\>e readline#transpose_words()<cr>', 'c', 'u')
 sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'i', 'su')
 sil! call lg#map#meta('t', 'readline#transpose_words()', 'n', 'eu')
 

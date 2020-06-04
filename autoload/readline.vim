@@ -180,7 +180,7 @@ augroup my_granular_undo | au!
     " https://github.com/vim/vim/issues/4784
     "
     " Once it's implemented, try to use  it in readline key bindings which enter
-    " the expression register. Example:
+    " the expression register.  Example:
     "
     "     cno <silent><unique> <c-d> <cmd>call readline#delete_char('c')<cr>
     "     ino <silent><unique> <c-d> <cmd>call readline#delete_char('i')<cr>
@@ -249,11 +249,7 @@ fu s:add_to_undolist(mode, line, pos) abort
         " limit the size of the undolist to 100 entries
         call remove(s:undolist_{a:mode}, 0, undo_len - 101)
     endif
-    if a:mode is# 'c'
-        let s:undolist_c += [[a:line, strchars(matchstr(a:line, '.*\%'..a:pos..'c'), 1)]]
-    else
-        let s:undolist_i += [[a:line, a:pos]]
-    endif
+    let s:undolist_{a:mode} += [[a:line, a:pos]]
 endfu
 
 fu readline#backward_char() abort "{{{2
@@ -370,22 +366,21 @@ fu s:change_case_word(mode) abort
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 1)
     let pat = '\k*\%'..pos..'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
     let word = matchstr(line, pat)
-    let length = strchars(word, 1)
 
     if a:mode is# 'c'
         if pos > strlen(line)
-            return ''
+            return line
         else
-            " we can't return `Del` (it would not have the desired effect in the
-            " context of `C-r =`), so we directly feed the keys to the typeahead
-            " buffer
-            call feedkeys(repeat("\<del>", length), 'in')
-            return s:change_case_up ? toupper(word) : tolower(word)
+            let new_cmdline = substitute(line, pat,
+                \ s:change_case_up ? '\U&' : '\L&', '')
+            call setcmdpos(pos + strlen(word))
+            return new_cmdline
         endif
     elseif a:mode is# 'i'
+        let length = strchars(word, 1)
         return repeat("\<del>", length)..(s:change_case_up ? toupper(word) : tolower(word))
     elseif a:mode is# 'n'
-        let new_line = substitute(line, pat, (s:change_case_up ? '\U' : '\L')..'\0', '')
+        let new_line = substitute(line, pat, (s:change_case_up ? '\U&' : '\L&'), '')
         let new_pos  = match(line, pat..'\zs') + 1
         call setline('.', new_line)
         call cursor('.', new_pos)
@@ -403,7 +398,7 @@ fu readline#delete_char() abort "{{{2
         " front of the  cursor.  However, if it's before the  end, we want `C-d`
         " to delete the character after it.
 
-        if getcmdpos() > strlen(getcmdline()) && getcmdtype() =~# '[:>@=]'
+        if getcmdpos() > strlen(line) && getcmdtype() =~# '[:>@=]'
             " Before pressing  `C-d`, we first  redraw to erase the  possible listed
             " completion suggestions. This makes consecutive listings more readable.
             " MWE:
@@ -415,7 +410,7 @@ fu readline#delete_char() abort "{{{2
         else
             call feedkeys("\<del>", 'in')
         endif
-        return ''
+        return line
     endif
 
     "    - if the pum is visible, and there are enough matches to scroll a page down, scroll
@@ -577,8 +572,8 @@ fu s:move_by_words(...) abort
     let [line, pos] = s:setup_and_get_info(mode, capitalize, 1, 1)
     if is_fwd
         " all characters from the beginning of the line until the last
-        " character of the nearest NEXT word (current one if we're in a word,
-        " or somewhere AFTER otherwise)
+        " character of the nearest *next* word (current one if we're in a word,
+        " or somewhere *after* otherwise)
         let pat = '.*\%'..pos..'c\%(.\{-1,}\>\|.*\)'
         "                                      │
         "     if there's no word where we are, ┘
@@ -591,19 +586,6 @@ fu s:move_by_words(...) abort
     endif
     let str = matchstr(line, pat)
     let new_pos = strlen(str)
-
-    let new_pos_char = strchars(str, 1)
-    " pos_char     = nr of characters before cursor in its current position
-    " new_pos_char = "                                         new     "
-
-    " necessary to move correctly on a line such as:
-    "          ́ foo  ́ bar
-    let pos_char = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
-
-    let diff = pos_char - new_pos_char
-    let building_motion = mode is# 'i'
-                      \ ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
-                      \ :     diff > 0 ? "\<left>" : "\<right>"
 
     " Here's how it works in readline:{{{
     "
@@ -623,13 +605,21 @@ fu s:move_by_words(...) abort
             \ '\%'..pos..'c.\{-}\zs\(\k\)\(.\{-}\)\%'..(new_pos+1)..'c',
             \ '\u\1\L\2', '')
         if mode is# 'c'
-            let seq = "\<c-e>\<c-u>"..new_line.."\<c-b>"..repeat("\<right>", new_pos_char)
-            call feedkeys(seq, 'in')
-            return ''
+            call setcmdpos(new_pos + 1)
+            return new_line
         else
             call setline('.', new_line)
         endif
     endif
+
+    let new_pos_char = strchars(str, 1)
+    " necessary to move correctly on a line such as:
+    "          ́ foo  ́ bar
+    let pos_char = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
+    let diff = pos_char - new_pos_char
+    let building_motion = mode is# 'i'
+                      \ ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
+                      \ :     diff > 0 ? "\<left>" : "\<right>"
 
     " Why `feedkeys()`?{{{
     "
@@ -748,18 +738,17 @@ fu s:transpose_words(mode) abort
     " final pattern
     let pat = not_on_first..not_before..pat..not_after
 
-    let new_pos = strchars(matchstr(line, '.*\%('..pat..'\)'), 1)
+    let text = matchstr(line, '.*\%('..pat..'\)')
+    let new_pos = strlen(text)
     let rep = '\3\2\1'
     let new_line = substitute(line, pat, rep, '')
 
     if a:mode is# 'c'
-        let seq = "\<c-e>\<c-u>"
-            \ ..new_line
-            \ .."\<c-b>"..repeat("\<right>", new_pos)
-        call feedkeys(seq, 'in')
+        call setcmdpos(new_pos + 1)
+        return new_line
     else
         call setline('.', new_line)
-        call cursor('.', new_pos+1)
+        call cursor('.', new_pos + 1)
     endif
     return ''
 endfu
@@ -772,7 +761,7 @@ fu readline#undo() abort "{{{2
     let [old_line, old_pos] = remove(s:undolist_{mode}, -1)
     fu! s:undo_restore_cursor() closure
         if mode is# 'c'
-            call feedkeys("\<c-b>"..repeat("\<right>", old_pos), 'in')
+            call setcmdpos(old_pos)
         else
             call cursor('.', old_pos)
         endif
