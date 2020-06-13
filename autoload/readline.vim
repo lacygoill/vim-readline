@@ -185,9 +185,9 @@ augroup my_granular_undo | au!
     "     cno <silent><unique> <c-d> <cmd>call readline#delete_char('c')<cr>
     "     ino <silent><unique> <c-d> <cmd>call readline#delete_char('i')<cr>
     "
-    " Also,   once  `<cmd>`   is   available,  look   everywhere  for   `<expr>`
-    " mappings. You  may eliminate  them thanks  to `<cmd>`,  and avoid  all the
-    " pitfalls they introduce.
+    " Also, once  `<cmd>` is available,  look everywhere for  `<expr>` mappings.
+    " You may eliminate them thanks to  `<cmd>`, and avoid all the pitfalls they
+    " introduce.
     "
     " Maybe get rid of `<c-r>=` too (whenever possible)...
     " Rationale: entering a command-line (no matter the type: `=`, `:`, `/`, ...)
@@ -905,6 +905,14 @@ fu s:mode() abort "{{{2
     " https://github.com/vim/vim/issues/6127#issuecomment-633119610
     if mode =~# "^[vV\<c-v>]$"
         return 'c'
+    " To suppress this error in `s:add_to_undolist()`:{{{
+    "
+    "     E121: Undefined variable: s:undolist_R~
+    "
+    " Happens when we press `R` in normal mode followed by `C-y`.
+    "}}}
+    elseif mode =~# 'R'
+        return 'i'
     endif
     return mode
 endfu

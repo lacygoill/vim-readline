@@ -80,14 +80,7 @@ noremap! <expr><unique> <c-@> readline#set_mark()
 
 " Why don't you use an `<expr>` mapping?{{{
 "
-" We can't use `<expr>` because of an issue with Nvim.
-" After pressing  the lhs, you would  need to insert an  additional character to
-" cause a redraw; otherwise, you would not see the new text.
-"
-" It's probably due to:
-" https://github.com/neovim/neovim/issues/9006
-"
-" Besides, using `<expr>` would make the code of `readline#undo()` a little more
+" Using  `<expr>`  would  make  the  code of  `readline#undo()`  a  little  more
 " complicated.
 "}}}
 cno         <unique> <c-_> <c-\>e readline#undo()<cr>
@@ -106,7 +99,7 @@ noremap! <expr><unique> <c-b> readline#backward_char()
 " Do *not* use `<expr>` for these mappings!{{{
 "
 " You would need to invoke feedkeys from a timer because `:redraw` has no effect
-" during a textlock and this doesn't work well in Neovim.
+" during a textlock.
 "}}}
 cno         <unique> <c-d> <c-\>e readline#delete_char()<cr>
 ino <silent><unique> <c-d> <c-r>=readline#delete_char()<cr>
@@ -205,10 +198,7 @@ noremap! <expr><unique> <c-x><c-x> readline#exchange_point_and_mark()
 "
 " ... we should be able to paste it with `C-y`, like in readline.
 
-" Nvim does not support `SafeState` yet
-if !has('nvim')
-    noremap! <expr><unique> <c-y> readline#yank(0)
-endif
+noremap! <expr><unique> <c-y> readline#yank(0)
 " }}}2
 " Meta {{{2
 " M-b/f      forward-word    backward-word {{{3
@@ -231,41 +221,12 @@ sil! call lg#map#meta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
 
 " M-i        capitalize-word {{{3
 
-" The next 3 mappings are commented, because we don't need them anymore.
-" But if  one day you modify  the lhs of the  mappings which change the  case of
-" words, and decide to  use `M-u` as a prefix (e.g. `M-u u`,  `M-u i`, `M-u o`),
-" make sure to uncomment them.
-" Necessary in Nvim.{{{
+" If you want to use `M-u` as a prefix, remember to `<nop>` it.{{{
 "
-" Otherwise, if you press `M-u`, followed by a "wrong" key, you'll get unexpected results.
-"
-" MWE:
-"
-"     $ nvim /tmp/file
-"     itest
-"     Esc
-"     M-u l
-"
-" `l` is "wrong" because we don't have any `M-u l` key binding, and Nvim removes the text.
-"}}}
 "     nno <m-u> <nop>
-" Same issue.{{{
-"
-" Besides, in Vim, if you press `M-u l`, Vim inserts a weird character:
-"
-"     õl
-"     ^
-"}}}
 "     noremap! <m-u> <nop>
-" Necessary in Nvim.{{{
-"
-" Without, if you press `M-u l` in visual mode, Nvim makes you quit visual mode,
-" and prints a message such as "5 lines changed".
-"
-" In Vim, `M-u l` in visual mode  simply widens the selection  one character to
-" the right.
-"}}}
 "     xno <m-u> <nop>
+"}}}
 
 sil! call lg#map#meta('i', '<c-\>e readline#move_by_words(1, 1)<cr>', 'c', 'u')
 sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
@@ -306,8 +267,5 @@ sil! call lg#map#meta('t', 'readline#transpose_words()', 'n', 'eu')
 
 " M-y        yank-pop {{{3
 
-" Nvim does not support `SafeState` yet
-if !has('nvim')
-    sil! call lg#map#meta('y', 'readline#yank(1)', '!', 'eu')
-endif
+sil! call lg#map#meta('y', 'readline#yank(1)', '!', 'eu')
 
