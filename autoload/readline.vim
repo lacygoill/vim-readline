@@ -903,7 +903,22 @@ fu s:mode() abort "{{{2
     let mode = mode()
     " if you enter the search command-line from visual mode, `mode()` wrongly returns `v`
     " https://github.com/vim/vim/issues/6127#issuecomment-633119610
-    if mode =~# "^[vV\<c-v>]$"
+    " Why do you compare `mode` to `t`?{{{
+    "
+    "     vim -Nu NONE -S <(cat <<'EOF'
+    "         breakadd func Func
+    "         fu Func()
+    "             call term_start(&shell, #{hidden: 1})->popup_create({})
+    "         endfu
+    "         call Func()
+    "     EOF
+    "     )
+    "
+    "     > n
+    "     > echo mode()
+    "     t~
+    "}}}
+    if mode =~# "^[vV\<c-v>t]$"
         return 'c'
     " To suppress this error in `s:add_to_undolist()`:{{{
     "
