@@ -344,7 +344,7 @@ fu readline#change_case_setup(upcase) abort "{{{2
 endfu
 
 fu readline#change_case_word(...) abort "{{{2
-"                            ^^^
+"                            ^-^
 "                            type passed from opfunc
     let mode = s:mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
