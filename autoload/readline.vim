@@ -54,7 +54,7 @@ let g:autoloaded_readline = 1
 " of deletions,  the last  character of  the register  is changed  (deleted then
 " replaced with the 1st):
 "
-"     vim -Nu NONE -S <(cat <<'EOF'
+"     $ vim -Nu NONE -S <(cat <<'EOF'
 "         let @a = 'abc'
 "         set backspace=start
 "         let s:deleting = 0
@@ -79,7 +79,7 @@ let g:autoloaded_readline = 1
 " And if you break it just after,  then a custom abbreviation may be expanded in
 " the middle of a word you type:
 "
-"     vim -Nu NONE -S <(cat <<'EOF'
+"     $ vim -Nu NONE -S <(cat <<'EOF'
 "         set backspace=start
 "         inorea al la
 "         let s:deleting = 0
@@ -905,7 +905,7 @@ fu s:mode() abort "{{{2
     " https://github.com/vim/vim/issues/6127#issuecomment-633119610
     " Why do you compare `mode` to `t`?{{{
     "
-    "     vim -Nu NONE -S <(cat <<'EOF'
+    "     $ vim -Nu NONE -S <(cat <<'EOF'
     "         breakadd func Func
     "         fu Func()
     "             call term_start(&shell, #{hidden: 1})->popup_create({})
