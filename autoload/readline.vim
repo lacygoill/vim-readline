@@ -893,7 +893,7 @@ endfu
 "
 " This function presses `C-g  u` the first time we delete  a multi-char text, in
 " any given sequence of multi-char deletions.
-" This allows us to visit AB.
+" This lets us visit AB.
 " In the past, we used some code, which broke the undo sequence after a sequence
 " of  deletions. It allowed  us to  visit A  (alone). We don't  use it  anymore,
 " because it leads to too many issues.
@@ -973,7 +973,7 @@ fu s:set_isk() abort "{{{2
     " readline doesn't consider `-`, `#`, `_` as part of a word,
     " contrary to Vim which may disagree for some of them.
     "
-    " Removing them from 'isk' allows us to operate on the following “words“:
+    " Removing them from 'isk' lets us operate on the following “words“:
     "
     "     foo-bar
     "     foo#bar
