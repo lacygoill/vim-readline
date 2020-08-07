@@ -15,6 +15,8 @@ let g:loaded_readline = 1
 " https://cnswww.cns.cwru.edu/php/chet/readline/readline.html
 "}}}
 
+import MapMeta from 'lg/map.vim'
+
 " Autocmds {{{1
 
 augroup install_add_to_undolist | au!
@@ -37,7 +39,7 @@ augroup END
 "
 " Most of these mappings take care of not breaking the undo sequence (`C-g U`).
 " It means we can repeat an edition with the dot command, even if we use them.
-" If you add another mapping, try to not break the undo sequence. Thanks.
+" If you add another mapping, try to not break the undo sequence.  Thanks.
 "}}}
 " Ctrl {{{2
 " C-@        set-mark {{{3
@@ -211,13 +213,13 @@ noremap! <expr><unique> <c-y> readline#yank(0)
 " Because it seems to consider `-` as part of a word.
 " `M-b`, `M-f` would move too far compared to readline.
 
-"                                               ┌  close wildmenu
-"                                               │
-sil! call lg#map#meta('b', '(wildmenumode() ? "<space><c-h>" : "")..readline#move_by_words(0, 0)', 'c', 'eu')
-sil! call lg#map#meta('f', '(wildmenumode() ? "<space><c-h>" : "")..readline#move_by_words(1, 0)', 'c', 'eu')
+"                                             ┌  close wildmenu
+"                                             │
+sil! call s:MapMeta('b', '(wildmenumode() ? "<space><c-h>" : "") .. readline#move_by_words(0, 0)', 'c', 'eu')
+sil! call s:MapMeta('f', '(wildmenumode() ? "<space><c-h>" : "") .. readline#move_by_words(1, 0)', 'c', 'eu')
 
-sil! call lg#map#meta('b', 'readline#move_by_words(0, 0)', 'i', 'eu')
-sil! call lg#map#meta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
+sil! call s:MapMeta('b', 'readline#move_by_words(0, 0)', 'i', 'eu')
+sil! call s:MapMeta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
 
 " M-i        capitalize-word {{{3
 
@@ -228,44 +230,44 @@ sil! call lg#map#meta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
 "     xno <m-u> <nop>
 "}}}
 
-sil! call lg#map#meta('i', '<c-\>e readline#move_by_words(1, 1)<cr>', 'c', 'u')
-sil! call lg#map#meta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
+sil! call s:MapMeta('i', '<c-\>e readline#move_by_words(1, 1)<cr>', 'c', 'u')
+sil! call s:MapMeta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
 
-sil! call lg#map#meta('i', 'readline#move_by_words()', 'n', 'eu')
-sil! call lg#map#meta('i', ':<c-u>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'su')
+sil! call s:MapMeta('i', 'readline#move_by_words()', 'n', 'eu')
+sil! call s:MapMeta('i', ':<c-u>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'su')
 
 " M-u M-o    change-case-word {{{3
 
-sil! call lg#map#meta('o', '<c-\>e readline#change_case_setup(0)..readline#change_case_word()<cr>', 'c', 'u')
-sil! call lg#map#meta('o', '<c-r>=readline#change_case_setup(0)..readline#change_case_word()<cr>', 'i', 'su')
-sil! call lg#map#meta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'su')
+sil! call s:MapMeta('o', '<c-\>e readline#change_case_setup(0) .. readline#change_case_word()<cr>', 'c', 'u')
+sil! call s:MapMeta('o', '<c-r>=readline#change_case_setup(0) .. readline#change_case_word()<cr>', 'i', 'su')
+sil! call s:MapMeta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'su')
 
-sil! call lg#map#meta('o', 'readline#change_case_setup(0)', 'n', 'eu')
+sil! call s:MapMeta('o', 'readline#change_case_setup(0)', 'n', 'eu')
 
-sil! call lg#map#meta('u', '<c-\>e readline#change_case_setup(1)..readline#change_case_word()<cr>', 'c', 'u')
-sil! call lg#map#meta('u', '<c-r>=readline#change_case_setup(1)..readline#change_case_word()<cr>', 'i', 'su')
-sil! call lg#map#meta('u', 'U', 'x', 'u')
-sil! call lg#map#meta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
+sil! call s:MapMeta('u', '<c-\>e readline#change_case_setup(1) .. readline#change_case_word()<cr>', 'c', 'u')
+sil! call s:MapMeta('u', '<c-r>=readline#change_case_setup(1) .. readline#change_case_word()<cr>', 'i', 'su')
+sil! call s:MapMeta('u', 'U', 'x', 'u')
+sil! call s:MapMeta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
 
 " M-d        kill-word {{{3
 
 " Delete until the beginning of the next word.
 " In bash, M-d does the same, and is bound to the function kill-word.
 
-sil! call lg#map#meta('d', 'readline#kill_word()', '!', 'eu')
+sil! call s:MapMeta('d', 'readline#kill_word()', '!', 'eu')
 
 " M-n/p      history-search-forward/backward {{{3
 
-sil! call lg#map#meta('n', '<down>', 'c', 'u')
-sil! call lg#map#meta('p', '<up>', 'c', 'u')
+sil! call s:MapMeta('n', '<down>', 'c', 'u')
+sil! call s:MapMeta('p', '<up>', 'c', 'u')
 
 " M-t        transpose-words {{{3
 
-sil! call lg#map#meta('t', '<c-\>e readline#transpose_words()<cr>', 'c', 'u')
-sil! call lg#map#meta('t', '<c-r>=readline#transpose_words()<cr>', 'i', 'su')
-sil! call lg#map#meta('t', 'readline#transpose_words()', 'n', 'eu')
+sil! call s:MapMeta('t', '<c-\>e readline#transpose_words()<cr>', 'c', 'u')
+sil! call s:MapMeta('t', '<c-r>=readline#transpose_words()<cr>', 'i', 'su')
+sil! call s:MapMeta('t', 'readline#transpose_words()', 'n', 'eu')
 
 " M-y        yank-pop {{{3
 
-sil! call lg#map#meta('y', 'readline#yank(1)', '!', 'eu')
+sil! call s:MapMeta('y', 'readline#yank(1)', '!', 'eu')
 

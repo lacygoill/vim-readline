@@ -13,7 +13,7 @@ fu readline#operate_and_get_next#main() abort "{{{1
         return ''
     endif
     let seq = history[s:pos_in_history]
-    return "\<cr>:"..seq
+    return "\<cr>:" .. seq
 endfu
 
 fu readline#operate_and_get_next#remember(when) abort "{{{1
@@ -25,7 +25,7 @@ fu readline#operate_and_get_next#remember(when) abort "{{{1
     else
         let cmdline = getcmdline()
         let history = get(s:, 'cmdline_history', [])
-        if cmdline is# ''
+        if cmdline == ''
             return
         endif
         let s:cmdline_history = history + [cmdline]

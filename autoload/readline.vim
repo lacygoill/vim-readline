@@ -62,7 +62,7 @@ let g:autoloaded_readline = 1
 "         au InsertCharPre * call s:break_undo_after_deletions()
 "         fu s:break_undo_after_deletions()
 "             if !s:deleting | return | endif
-"             call feedkeys("\<bs>\<c-g>u"..v:char, 'in')
+"             call feedkeys("\<bs>\<c-g>u" .. v:char, 'in')
 "             let s:deleting = 0
 "         endfu
 "         ino <expr> <c-w> C_w()
@@ -107,6 +107,8 @@ let g:autoloaded_readline = 1
 "}}}
 
 " Init {{{1
+
+import Catch from 'lg.vim'
 
 augroup my_granular_undo | au!
     " Why resetting `s:concat_next_kill`?{{{
@@ -257,8 +259,8 @@ fu readline#backward_char() abort "{{{2
 
     " SPC + C-h = close wildmenu
     return s:mode() is# 'i'
-       \ ?     "\<c-g>U\<left>"
-       \ :     (wildmenumode() ? "\<space>\<c-h>" : '').."\<left>"
+        \ ?     "\<c-g>U\<left>"
+        \ :     (wildmenumode() ? "\<space>\<c-h>" : '') .. "\<left>"
 endfu
 
 fu readline#backward_delete_char() abort "{{{2
@@ -296,7 +298,7 @@ fu readline#backward_kill_word() abort "{{{2
         try
             return s:backward_kill_word(mode)
         catch
-            return lg#catch()
+            return s:Catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -311,8 +313,8 @@ fu s:backward_kill_word(mode) abort
     "          │  ┌ there may be some non-word text between the word and the cursor
     "          │  │
     "          │  │                   ┌ the cursor
-    "          ├─┐├──────────────────┐├──────────┐}}}
-    let pat = '\k*\%(\%(\k\@!.\)\+\)\=\%'..pos..'c'
+    "          ├─┐├──────────────────┐├──────────────┐}}}
+    let pat = '\k*\%(\%(\k\@!.\)\+\)\=\%' .. pos .. 'c'
 
     let killed_text = matchstr(line, pat)
     call s:add_to_kill_ring(a:mode, killed_text, 0, 0)
@@ -321,17 +323,19 @@ fu s:backward_kill_word(mode) abort
     " It may happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
     " Instead, feed `<Left><Del>`.
     return s:break_undo_before_deletions(a:mode)
-        \  ..repeat((a:mode is# 'i' ? "\<c-g>U" : '').."\<left>\<del>",
+        \  .. repeat((a:mode is# 'i' ? "\<c-g>U" : '') .. "\<left>\<del>",
         \           strchars(killed_text, 1))
 endfu
 
 fu readline#beginning_of_line() abort "{{{2
     let s:concat_next_kill = 0
     return s:mode() is# 'c'
-       \ ?     "\<home>"
-       \ : col('.') >= match(getline('.'), '\S') + 1
-       \ ?     repeat("\<c-g>U\<left>", strchars(matchstr(getline('.'), '\S.*\%'..col('.')..'c'), 1))
-       \ :     repeat("\<c-g>U\<right>", strchars(matchstr(getline('.'), '\%'..col('.')..'c\s*\ze\S'), 1))
+        \ ?     "\<home>"
+        \ : col('.') >= getline('.')->match('\S') + 1
+        \ ?     repeat("\<c-g>U\<left>",
+        \         getline('.')->matchstr('\S.*\%' .. col('.') .. 'c')->strchars(1))
+        \ :     repeat("\<c-g>U\<right>",
+        \         getline('.')->matchstr('\%' .. col('.') .. 'c\s*\ze\S')->strchars(1))
 endfu
 
 fu readline#change_case_setup(upcase) abort "{{{2
@@ -354,7 +358,7 @@ fu readline#change_case_word(...) abort "{{{2
         try
             return s:change_case_word(mode)
         catch
-            return lg#catch()
+            return s:Catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -364,7 +368,7 @@ endfu
 
 fu s:change_case_word(mode) abort
     let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 1)
-    let pat = '\k*\%'..pos..'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
+    let pat = '\k*\%' .. pos .. 'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
     let word = matchstr(line, pat)
 
     if a:mode is# 'c'
@@ -378,10 +382,10 @@ fu s:change_case_word(mode) abort
         endif
     elseif a:mode is# 'i'
         let length = strchars(word, 1)
-        return repeat("\<del>", length)..(s:change_case_up ? toupper(word) : tolower(word))
+        return repeat("\<del>", length) .. (s:change_case_up ? toupper(word) : tolower(word))
     elseif a:mode is# 'n'
         let new_line = substitute(line, pat, (s:change_case_up ? '\U&' : '\L&'), '')
-        let new_pos  = match(line, pat..'\zs') + 1
+        let new_pos = match(line, pat .. '\zs') + 1
         call setline('.', new_line)
         call cursor('.', new_pos)
     endif
@@ -399,8 +403,9 @@ fu readline#delete_char() abort "{{{2
         " to delete the character after it.
 
         if getcmdpos() > strlen(line) && getcmdtype() =~# '[:>@=]'
-            " Before pressing  `C-d`, we first  redraw to erase the  possible listed
-            " completion suggestions. This makes consecutive listings more readable.
+            " Before  pressing `C-d`,  we  first redraw  to  erase the  possible
+            " listed  completion suggestions.   This makes  consecutive listings
+            " more readable.
             " MWE:
             "       :h dir       C-d
             "       :h dire      C-d
@@ -416,9 +421,9 @@ fu readline#delete_char() abort "{{{2
     "    - if the pum is visible, and there are enough matches to scroll a page down, scroll
     "    - otherwise, if we're *before* the end of the line, delete next character
     "    - "                   *at* the end of the line,     delete the newline
-    let seq = pumvisible() && len(complete_info(['items']).items) > s:FAST_SCROLL_IN_PUM
+    let seq = pumvisible() && complete_info(['items']).items->len() > s:FAST_SCROLL_IN_PUM
         \ ?     repeat("\<c-n>", s:FAST_SCROLL_IN_PUM)
-        \ : col('.') <= strlen(getline('.'))
+        \ : col('.') <= getline('.')->strlen()
         \ ?     "\<del>"
         \ :     "\<c-g>j\<home>\<bs>"
     call feedkeys(seq, 'in')
@@ -444,25 +449,25 @@ fu readline#exchange_point_and_mark() abort "{{{2
     let new_pos = s:mark_{mode}
 
     if mode is# 'i'
-        let old_pos = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
+        let old_pos = matchstr(line, '.*\%' .. pos .. 'c')->strchars(1)
         let motion = new_pos > old_pos
-                 \ ?     "\<c-g>U\<right>"
-                 \ :     "\<c-g>U\<left>"
+            \ ?     "\<c-g>U\<right>"
+            \ :     "\<c-g>U\<left>"
     endif
 
-    let s:mark_{mode} = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
+    let s:mark_{mode} = matchstr(line, '.*\%' .. pos .. 'c')->strchars(1)
     return mode is# 'c'
-       \ ?     "\<c-b>"..repeat("\<right>", new_pos)
-       \ :     repeat(motion, abs(new_pos - old_pos))
+        \ ?     "\<c-b>" .. repeat("\<right>", new_pos)
+        \ :     repeat(motion, abs(new_pos - old_pos))
 endfu
 
 fu readline#forward_char() abort "{{{2
     let s:concat_next_kill = 0
     return s:mode() is# 'c'
-       \ ?    (wildmenumode() ? "\<space>\<c-h>" : '').."\<right>"
-       \ : col('.') > strlen(getline('.'))
-       \ ?     ''
-       \ :     "\<c-g>U\<right>"
+        \ ?    (wildmenumode() ? "\<space>\<c-h>" : '') .. "\<right>"
+        \ : col('.') > getline('.')->strlen()
+        \ ?     ''
+        \ :     "\<c-g>U\<right>"
     " Go the right if we're in the middle of the line (custom), or fix the
     " indentation if we're at the end (default)
 endfu
@@ -471,7 +476,7 @@ fu readline#kill_line() abort "{{{2
     let mode = s:mode()
     let [line, pos] = s:setup_and_get_info(mode, 1, 0, 0)
 
-    let killed_text = matchstr(line, '.*\%'..pos..'c\zs.*')
+    let killed_text = matchstr(line, '.*\%' .. pos .. 'c\zs.*')
     call s:add_to_kill_ring(mode, killed_text, 1, 1)
 
     " Warning: it may take a long time on a mega long soft-wrapped line if `'so'` is different than 0{{{
@@ -484,7 +489,7 @@ fu readline#kill_line() abort "{{{2
     "     " press C-k C-k: the line is deleted only after 2 or 3 seconds
     "}}}
     return s:break_undo_before_deletions(mode)
-        \ ..repeat("\<del>", strchars(killed_text, 1))
+        \ .. repeat("\<del>", strchars(killed_text, 1))
 endfu
 
 fu readline#kill_word() abort "{{{2
@@ -496,7 +501,7 @@ fu readline#kill_word() abort "{{{2
         try
             return s:kill_word(mode)
         catch
-            return lg#catch()
+            return s:Catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -510,18 +515,18 @@ fu s:kill_word(mode) abort
     "          │ if the cursor is outside of a word, the pattern
     "          │ still matches, because we use `*`, not `+`
     "          │
-    "          ├─────────────┐}}}
-    let pat = '\k*\%'..pos..'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
-    "                               ├──┘  ├───────────┘  ├──────────┘{{{
-    "                               │     │              └ or all the non-word text we're in
-    "                               │     └ or the next word if we're outside of a word
-    "                               └ the rest of the word after the cursor
+    "          ├─────────────────┐}}}
+    let pat = '\k*\%' .. pos .. 'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
+    "                                   ├──┘  ├───────────┘  ├──────────┘{{{
+    "                                   │     │              └ or all the non-word text we're in
+    "                                   │     └ or the next word if we're outside of a word
+    "                                   └ the rest of the word after the cursor
     "}}}
 
     let killed_text = matchstr(line, pat)
     call s:add_to_kill_ring(a:mode, killed_text, 1, 0)
 
-    return s:break_undo_before_deletions(a:mode)..repeat("\<del>", strchars(killed_text, 1))
+    return s:break_undo_before_deletions(a:mode) .. repeat("\<del>", strchars(killed_text, 1))
 endfu
 
 fu readline#move_by_words(...) abort "{{{2
@@ -545,7 +550,7 @@ fu readline#move_by_words(...) abort "{{{2
         " if you try to throw the exception manually (echo v:exception, echo
         " v:throwpoint), nothing will be displayed, so don't bother
         catch
-            return lg#catch()
+            return s:Catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -574,15 +579,15 @@ fu s:move_by_words(...) abort
         " all characters from the beginning of the line until the last
         " character of the nearest *next* word (current one if we're in a word,
         " or somewhere *after* otherwise)
-        let pat = '.*\%'..pos..'c\%(.\{-1,}\>\|.*\)'
-        "                                      │
-        "     if there's no word where we are, ┘
+        let pat = '.*\%' .. pos .. 'c\%(.\{-1,}\>\|.*\)'
+        "                                          │
+        "         if there's no word where we are, ┘
         " nor after us, then go on until the end of the line
     else
         " all characters from the beginning of the line until the first
         " character of the nearest *previous* word (current one if we're in a
         " word, or somewhere *before* otherwise)
-        let pat = '.*\ze\<.\{-1,}\%'..pos..'c'
+        let pat = '.*\ze\<.\{-1,}\%' .. pos .. 'c'
     endif
     let str = matchstr(line, pat)
     let new_pos = strlen(str)
@@ -602,7 +607,7 @@ fu s:move_by_words(...) abort
     "}}}
     if capitalize
         let new_line = substitute(line,
-            \ '\%'..pos..'c.\{-}\zs\(\k\)\(.\{-}\)\%'..(new_pos+1)..'c',
+            \ '\%' .. pos .. 'c.\{-}\zs\(\k\)\(.\{-}\)\%' .. (new_pos+1) .. 'c',
             \ '\u\1\L\2', '')
         if mode is# 'c'
             call setcmdpos(new_pos + 1)
@@ -615,11 +620,11 @@ fu s:move_by_words(...) abort
     let new_pos_char = strchars(str, 1)
     " necessary to move correctly on a line such as:
     "          ́ foo  ́ bar
-    let pos_char = strchars(matchstr(line, '.*\%'..pos..'c'), 1)
+    let pos_char = matchstr(line, '.*\%' .. pos .. 'c')->strchars(1)
     let diff = pos_char - new_pos_char
     let building_motion = mode is# 'i'
-                      \ ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
-                      \ :     diff > 0 ? "\<left>" : "\<right>"
+        \ ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
+        \ :     diff > 0 ? "\<left>" : "\<right>"
 
     " Why `feedkeys()`?{{{
     "
@@ -635,8 +640,8 @@ endfu
 fu readline#set_mark() abort "{{{2
     let mode = s:mode()
     let s:mark_{mode} = mode is# 'i'
-        \ ?     strchars(matchstr(getline('.'), '.*\%'..col('.')..'c'), 1)
-        \ :     strchars(matchstr(getcmdline(), '.*\%'..getcmdpos()..'c'), 1)
+        \ ?     getline('.')->matchstr('.*\%' .. col('.') .. 'c')->strchars(1)
+        \ :     getcmdline()->matchstr('.*\%' .. getcmdpos() .. 'c')->strchars(1)
     return ''
 endfu
 
@@ -649,13 +654,13 @@ fu readline#transpose_chars() abort "{{{2
         "
         "     âêîôû
         return mode is# 'i'
-           \ ?     "\<c-g>U\<left>\<bs>\<c-g>U\<right>"..matchstr(line, '.\ze.\%'..pos..'c')
-           \ :     "\<left>\<bs>\<right>"..matchstr(line, '.\ze.\%'..pos..'c')
+            \ ?     "\<c-g>U\<left>\<bs>\<c-g>U\<right>" .. matchstr(line, '.\ze.\%' .. pos .. 'c')
+            \ :     "\<left>\<bs>\<right>" .. matchstr(line, '.\ze.\%' .. pos .. 'c')
 
     elseif pos > 1
         return mode is# 'i'
-           \ ?     "\<bs>\<c-g>U\<right>"..matchstr(line, '.\%'..pos..'c')
-           \ :     "\<bs>\<right>"..matchstr(line, '.\%'..pos..'c')
+            \ ?     "\<bs>\<c-g>U\<right>" .. matchstr(line, '.\%' .. pos .. 'c')
+            \ :     "\<bs>\<right>" .. matchstr(line, '.\%' .. pos .. 'c')
 
     else
         return ''
@@ -675,7 +680,7 @@ fu readline#transpose_words(...) abort "{{{2
         try
             return s:transpose_words(mode)
         catch
-            return lg#catch()
+            return s:Catch()
         finally
             call setbufvar(bufnr, '&isk', isk_save)
         endtry
@@ -701,14 +706,14 @@ fu s:transpose_words(mode) abort
     "
     " It will be used  at the end, once Vim thinks it has  found a match for
     " two words.
-    " It checks that the cursor isn't on the first word. For example, the
+    " It  checks that  the cursor  isn't on  the first  word.  For  example, the
     " cursor being represented by the bar:
     "
     "     e|cho foo
     "
     " ... there should be no transposition (to mimic readline)
     "}}}
-    let not_on_first = '\%(\<\k*\%'..pos..'c\k\+\>\)\@!\&'
+    let not_on_first = '\%(\<\k*\%' .. pos .. 'c\k\+\>\)\@!\&'
 
     " The cursor must not be before the 2 words:{{{
     "
@@ -716,7 +721,7 @@ fu s:transpose_words(mode) abort
     "               ├─────┘
     "               └ don't transpose those 2
     "}}}
-    let not_before = '\%(\%'..pos..'c.*\)\@<!'
+    let not_before = '\%(\%' .. pos .. 'c.*\)\@<!'
 
     " The cursor must not be after the 2 words,{{{
     " unless it is  inside a sequence of non-words characters  at the end of
@@ -733,12 +738,12 @@ fu s:transpose_words(mode) abort
     "            ├──────┘
     "            └ the cursor may be anywhere in here
     "}}}
-    let not_after = '\%(\%(.*\%'..pos..'c\)\@!\|\%(\%(\k\@!.\)*$\)\@=\)'
+    let not_after = '\%(\%(.*\%' .. pos .. 'c\)\@!\|\%(\%(\k\@!.\)*$\)\@=\)'
 
     " final pattern
-    let pat = not_on_first..not_before..pat..not_after
+    let pat = not_on_first .. not_before .. pat .. not_after
 
-    let text = matchstr(line, '.*\%('..pat..'\)')
+    let text = matchstr(line, '.*\%(' .. pat .. '\)')
     let new_pos = strlen(text)
     let rep = '\3\2\1'
     let new_line = substitute(line, pat, rep, '')
@@ -778,23 +783,23 @@ endfu
 
 fu readline#unix_line_discard() abort "{{{2
     let mode = s:mode()
-    if pumvisible() && len(complete_info(['items']).items) > s:FAST_SCROLL_IN_PUM
+    if pumvisible() && complete_info(['items']).items->len() > s:FAST_SCROLL_IN_PUM
         return repeat("\<c-p>", s:FAST_SCROLL_IN_PUM)
     endif
 
     let [line, pos] = s:setup_and_get_info(mode, 1, 0, 0)
 
     if mode is# 'c'
-        call s:add_to_kill_ring(mode, matchstr(line, '.*\%'..pos..'c'), 0, 1)
+        call s:add_to_kill_ring(mode, matchstr(line, '.*\%' .. pos .. 'c'), 0, 1)
     else
-        let old_line = matchstr(line, '.*\%'..pos..'c')
+        let old_line = matchstr(line, '.*\%' .. pos .. 'c')
         fu! s:add_deleted_text_to_kill_ring() abort closure
-            let new_line = matchstr(getline('.'), '.*\%'..col('.')..'c')
-            call s:add_to_kill_ring('i', substitute(old_line, '\V'..escape(new_line, '\'), '', ''), 0, 1)
+            let new_line = getline('.')->matchstr('.*\%' .. col('.') .. 'c')
+            call s:add_to_kill_ring('i', substitute(old_line, '\V' .. escape(new_line, '\'), '', ''), 0, 1)
         endfu
         au TextChangedI * ++once call s:add_deleted_text_to_kill_ring()
     endif
-    return s:break_undo_before_deletions(mode).."\<c-u>"
+    return s:break_undo_before_deletions(mode) .. "\<c-u>"
 endfu
 
 fu readline#yank(pop) abort "{{{2
@@ -816,9 +821,9 @@ fu readline#yank(pop) abort "{{{2
     au SafeState * ++once call s:reset_cm_y()
     let @- = s:kill_ring_{mode}[-1]
     return (a:pop
-    \       ?    repeat((mode is# 'i' ? "\<c-g>U" : '').."\<left>\<del>", length)
-    \       :    '')
-    \       .."\<c-r>-"
+        \ ?    repeat((mode is# 'i' ? "\<c-g>U" : '') .. "\<left>\<del>", length)
+        \ :    '')
+        \ .. "\<c-r>-"
 endfu
 
 fu s:reset_cm_y() abort
@@ -843,8 +848,8 @@ endfu
 fu s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
     if s:concat_next_kill
         let s:kill_ring_{a:mode}[-1] = a:after
-                                   \ ?     s:kill_ring_{a:mode}[-1]..a:text
-                                   \ :     a:text..s:kill_ring_{a:mode}[-1]
+            \ ?     s:kill_ring_{a:mode}[-1] .. a:text
+            \ :     a:text .. s:kill_ring_{a:mode}[-1]
     else
         if s:kill_ring_{a:mode} ==# ['']
             let s:kill_ring_{a:mode} = [a:text]
@@ -857,7 +862,7 @@ fu s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
             endif
             " before adding  sth in  the kill-ring,  check whether  it's already
             " there, and if it is, remove it
-            call filter(s:kill_ring_{a:mode}, {_,v -> v isnot# a:text})
+            call filter(s:kill_ring_{a:mode}, {_, v -> v isnot# a:text})
             call add(s:kill_ring_{a:mode}, a:text)
         endif
     endif
@@ -869,8 +874,8 @@ fu s:break_undo_before_deletions(mode) abort "{{{2
         return ''
     else
         " If  the execution  has reached  this point,  it means  we're going  to
-        " delete some multi-char text. But, if we delete another multi-char text
-        " right after, we don't want to, again, break the undo sequence.
+        " delete some  multi-char text.   But, if  we delete  another multi-char
+        " text right after, we don't want to, again, break the undo sequence.
         let s:deleting = 1
         " We'll re-enable the  breaking of the undo sequence  before a deletion,
         " the next time we insert a character, or leave insert mode.
@@ -895,7 +900,7 @@ endfu
 " any given sequence of multi-char deletions.
 " This lets us visit AB.
 " In the past, we used some code, which broke the undo sequence after a sequence
-" of  deletions. It allowed  us to  visit A  (alone). We don't  use it  anymore,
+" of deletions.   It allowed us  to visit A (alone).   We don't use  it anymore,
 " because it leads to too many issues.
 "}}}
 
@@ -933,7 +938,7 @@ fu s:mode() abort "{{{2
 endfu
 
 fu s:set_concat_next_kill(mode, this_kill_is_big) abort "{{{2
-    let s:concat_next_kill  = a:this_kill_is_big && s:last_kill_was_big ? 0 : 1
+    let s:concat_next_kill = a:this_kill_is_big && s:last_kill_was_big ? 0 : 1
     let s:last_kill_was_big = a:this_kill_is_big
 
     if a:mode is# 'c'
@@ -994,8 +999,8 @@ endfu
 
 fu s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
     let [line, pos] = a:mode is# 'c'
-                  \ ?     [getcmdline(), getcmdpos()]
-                  \ :     [getline('.'), col('.')]
+        \ ?     [getcmdline(), getcmdpos()]
+        \ :     [getline('.'), col('.')]
 
     " `transpose_words()` may call this function from normal mode
     if a:add_to_undolist && a:mode isnot# 'n'
