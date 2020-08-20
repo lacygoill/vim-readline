@@ -532,8 +532,8 @@ endfu
 fu readline#move_by_words(...) abort "{{{2
 " Implementing this function was tricky, it has to handle:{{{
 "
-"    - multi-byte characters (éàî)
-"    - multi-cell characters (tab)
+"    - multibyte characters (éàî)
+"    - multicell characters (tab)
 "    - composing characters  ( ́)
 "}}}
     if !a:0
@@ -640,8 +640,8 @@ endfu
 fu readline#set_mark() abort "{{{2
     let mode = s:mode()
     let s:mark_{mode} = mode is# 'i'
-        \ ?     getline('.')->matchstr('.*\%' .. col('.') .. 'c')->strchars(1)
-        \ :     getcmdline()->matchstr('.*\%' .. getcmdpos() .. 'c')->strchars(1)
+        \ ?     getline('.')->strpart(0, col('.') - 1)->strchars(1)
+        \ :     getcmdline()->strpart(0, getcmdpos() - 1)->strchars(1)
     return ''
 endfu
 
@@ -649,7 +649,7 @@ fu readline#transpose_chars() abort "{{{2
     let mode = s:mode()
     let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
     if pos > strlen(line)
-        " We use `matchstr()` because of potential multi-byte characters.
+        " We use `matchstr()` because of potential multibyte characters.
         " Test on this:
         "
         "     âêîôû
