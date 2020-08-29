@@ -52,7 +52,7 @@ let g:autoloaded_readline = 1
 "
 " If you break it just before, then  when you insert a register after a sequence
 " of deletions,  the last  character of  the register  is changed  (deleted then
-" replaced with the 1st):
+" replaced by the 1st):
 "
 "     $ vim -Nu NONE -S <(cat <<'EOF'
 "         let @a = 'abc'
@@ -99,7 +99,7 @@ let g:autoloaded_readline = 1
 "     )
 "     " press: i C-w
 "     " press: v a l SPC
-"     " 'al' is replaced with 'la' ✘
+"     " 'al' is replaced by 'la' ✘
 "     " this happens because `c-g u` has been executed after `v` and before `al`
 "
 " In any case, no  matter what you do, Vim's behavior  when editing text becomes
