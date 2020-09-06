@@ -264,7 +264,7 @@ fu readline#backward_char() abort "{{{2
 endfu
 
 fu readline#backward_delete_char() abort "{{{2
-    let [line, pos] = s:setup_and_get_info(s:mode(), 1, 0, 0)
+    let [line, pos] = s:mode()->s:setup_and_get_info(1, 0, 0)
     return "\<c-h>"
 endfu
 
