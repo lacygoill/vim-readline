@@ -575,6 +575,26 @@ fu s:move_by_words(...) abort
     "                                            │
     "                                            ├────────┐}}}
     let [line, pos] = s:setup_and_get_info(mode, capitalize, 1, 1)
+    " Sometimes, this dramatically improves the performance.{{{
+    "
+    " Example:
+    "
+    "     $ vim -S <(cat <<'EOF'
+    "         setl wrap
+    "         call repeat('the quick brown fox jumps over the lazy dog ', 10)->setline(1)
+    "         startinsert
+    "     EOF
+    "     )
+    "
+    " Press `M-b` for 2 seconds.
+    " Press `M-f` to  move forward: the motion lags by  about 4 seconds, because
+    " Vim needs time to process your previous keystrokes.
+    "
+    " A profiling tells us that this line is the culprit:
+    "
+    "     let str = matchstr(line, pat)
+    "}}}
+    if !is_fwd && pos <= 1 | return '' | endif
     if is_fwd
         " all characters from the beginning of the line until the last
         " character of the nearest *next* word (current one if we're in a word,
