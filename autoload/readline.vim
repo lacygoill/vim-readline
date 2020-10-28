@@ -485,7 +485,7 @@ fu readline#kill_line() abort "{{{2
     "
     "     $ vim -Nu NONE \
     "     +'setl wrap so=3|ino <expr> <c-k><c-k> repeat("<del>", 11000)' \
-    "     +"%d|pu =repeat(['0123456789'], 1000)|%j|0pu=''|exe 'norm! j'|startinsert" /tmp/file
+    "     +"%d|pu =repeat(['0123456789'], 1000)|%j|0pu_|exe 'norm! j'|startinsert" /tmp/file
     "     " press C-k C-k: the line is deleted only after 2 or 3 seconds
     "}}}
     return s:break_undo_before_deletions(mode)
