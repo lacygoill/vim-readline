@@ -177,29 +177,16 @@ augroup my_granular_undo | au!
     "
     " It doesn't seem a big deal atm.
     "}}}
-    "   TODO: We may solve this issue by using the new `<cmd>` argument:{{{
+    "   Could `<cmd>` help?{{{
     "
-    " https://github.com/vim/vim/issues/4784
-    "
-    " Once it's implemented, try to use  it in readline key bindings which enter
-    " the expression register.  Example:
-    "
-    "     cno <silent><unique> <c-d> <cmd>call readline#delete_char('c')<cr>
-    "     ino <silent><unique> <c-d> <cmd>call readline#delete_char('i')<cr>
-    "
-    " Also, once  `<cmd>` is available,  look everywhere for  `<expr>` mappings.
-    " You may eliminate them thanks to  `<cmd>`, and avoid all the pitfalls they
-    " introduce.
-    "
-    " Maybe get rid of `<c-r>=` too (whenever possible)...
-    " Rationale: entering a command-line (no matter the type: `=`, `:`, `/`, ...)
-    " can  have undesirable  side effects  because it  fires `CmdlineEnter`  and
-    " `CmdlineLeave`, it makes you lose the visual selection, etc...
+    " It does, but we can't always use it.
+    " Sometimes,  we  still  need  `<c-r>=`  or `<c-\>e`,  both  of  which  fire
+    " `CmdlineEnter`.
     "}}}
     au CmdlineLeave [^=>] let s:concat_next_kill = 0
     " reset undolist and marks when we leave insert/command-line mode
     au CmdlineLeave [^=>] let s:undolist_c = [] | let s:mark_c = 0
-    au InsertLeave  [^=>] let s:undolist_i = [] | let s:mark_i = 0
+    au InsertLeave * let s:undolist_i = [] | let s:mark_i = 0
 augroup END
 
 let s:deleting = 0
@@ -435,7 +422,6 @@ fu readline#edit_and_execute_command() abort "{{{2
     let &cedit = "\<c-x>"
     call feedkeys(&cedit, 'in')
     au CmdWinEnter * ++once let &cedit = s:cedit_save | unlet! s:cedit_save
-    return ''
 endfu
 
 fu readline#end_of_line() abort "{{{2
@@ -662,7 +648,6 @@ fu readline#set_mark() abort "{{{2
     let s:mark_{mode} = mode is# 'i'
         \ ?     getline('.')->strpart(0, col('.') - 1)->strchars(1)
         \ :     getcmdline()->strpart(0, getcmdpos() - 1)->strchars(1)
-    return ''
 endfu
 
 fu readline#transpose_chars() abort "{{{2
@@ -822,7 +807,7 @@ fu readline#unix_line_discard() abort "{{{2
     return s:break_undo_before_deletions(mode) .. "\<c-u>"
 endfu
 
-fu readline#yank(pop) abort "{{{2
+fu readline#yank(pop = v:false) abort "{{{2
     let mode = s:mode()
     if pumvisible() | return "\<c-y>" | endif
     if a:pop && (! s:cm_y || len(s:kill_ring_{mode}) < 2) | return '' | endif

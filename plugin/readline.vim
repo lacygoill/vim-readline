@@ -59,7 +59,7 @@ augroup END
 " But if for some reason, you choose another key, or remove the mapping entirely,
 " make sure to disable these keys again.
 "}}}
-noremap! <expr><unique> <c-@> readline#set_mark()
+noremap! <unique> <c-@> <cmd>call readline#set_mark()<cr>
 " For some reason, there's no conflict between this mapping and `i_C-j` in vimrc.{{{
 "
 " Even though `C-j` produces `C-@` (C-v C-j → c-@).
@@ -85,8 +85,8 @@ noremap! <expr><unique> <c-@> readline#set_mark()
 " Using  `<expr>`  would  make  the  code of  `readline#undo()`  a  little  more
 " complicated.
 "}}}
-cno         <unique> <c-_> <c-\>e readline#undo()<cr>
-ino <silent><unique> <c-_> <c-r>=readline#undo()<cr>
+cno <unique> <c-_> <c-\>e readline#undo()<cr>
+ino <unique> <c-_> <cmd>call readline#undo()<cr>
 
 " C-a        beginning-of-line {{{3
 
@@ -100,11 +100,11 @@ noremap! <expr><unique> <c-b> readline#backward_char()
 
 " Do *not* use `<expr>` for these mappings!{{{
 "
-" You would need to invoke feedkeys from a timer because `:redraw` has no effect
-" during a textlock.
+" You would  need to invoke `feedkeys()`  from a timer because  `:redraw` has no
+" effect during a textlock.
 "}}}
-cno         <unique> <c-d> <c-\>e readline#delete_char()<cr>
-ino <silent><unique> <c-d> <c-r>=readline#delete_char()<cr>
+cno <unique> <c-d> <c-\>e readline#delete_char()<cr>
+ino <unique> <c-d> <cmd>call readline#delete_char()<cr>
 
 " C-e        end-of-line {{{3
 
@@ -182,7 +182,7 @@ noremap! <expr><unique> <c-w> readline#backward_kill_word()
 "
 "     This is wrong, Vim should open the command-line window *only* when we press `C-x C-e`.
 "}}}
-cno <expr><unique> <c-x><c-e> readline#edit_and_execute_command()
+cno <unique> <c-x><c-e> <cmd>call readline#edit_and_execute_command()<cr>
 
 " C-x C-x    exchange-point-and-mark {{{3
 
@@ -200,7 +200,7 @@ noremap! <expr><unique> <c-x><c-x> readline#exchange_point_and_mark()
 "
 " ... we should be able to paste it with `C-y`, like in readline.
 
-noremap! <expr><unique> <c-y> readline#yank(0)
+noremap! <expr><unique> <c-y> readline#yank()
 " }}}2
 " Meta {{{2
 " M-b/f      forward-word    backward-word {{{3
@@ -269,5 +269,5 @@ sil! call s:MapMeta('t', 'readline#transpose_words()', 'n', 'eu')
 
 " M-y        yank-pop {{{3
 
-sil! call s:MapMeta('y', 'readline#yank(1)', '!', 'eu')
+sil! call s:MapMeta('y', 'readline#yank(v:true)', '!', 'eu')
 
