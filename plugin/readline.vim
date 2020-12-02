@@ -234,20 +234,20 @@ sil! call s:MapMeta('i', '<c-\>e readline#move_by_words(1, 1)<cr>', 'c', 'u')
 sil! call s:MapMeta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
 
 sil! call s:MapMeta('i', 'readline#move_by_words()', 'n', 'eu')
-sil! call s:MapMeta('i', ':<c-u>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'su')
+sil! call s:MapMeta('i', '<c-\><c-n><cmd>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'u')
 
 " M-u M-o    change-case-word {{{3
 
 sil! call s:MapMeta('o', '<c-\>e readline#change_case_setup(0) .. readline#change_case_word()<cr>', 'c', 'u')
 sil! call s:MapMeta('o', '<c-r>=readline#change_case_setup(0) .. readline#change_case_word()<cr>', 'i', 'su')
-sil! call s:MapMeta('o', ':<c-u>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'su')
+sil! call s:MapMeta('o', '<c-\><c-n><cmd>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'u')
 
 sil! call s:MapMeta('o', 'readline#change_case_setup(0)', 'n', 'eu')
 
 sil! call s:MapMeta('u', '<c-\>e readline#change_case_setup(1) .. readline#change_case_word()<cr>', 'c', 'u')
 sil! call s:MapMeta('u', '<c-r>=readline#change_case_setup(1) .. readline#change_case_word()<cr>', 'i', 'su')
 sil! call s:MapMeta('u', 'U', 'x', 'u')
-sil! call s:MapMeta('u', ':<c-u>call readline#m_u#main()<cr>', 'n', 'su')
+sil! call s:MapMeta('u', '<cmd>call readline#m_u#main()<cr>', 'n', 'u')
 
 " M-d        kill-word {{{3
 
