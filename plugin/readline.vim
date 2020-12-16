@@ -19,13 +19,13 @@ import MapMeta from 'lg/map.vim'
 
 " Autocmds {{{1
 
-augroup install_add_to_undolist | au!
+augroup InstallAddToUndolist | au!
     au CmdlineEnter,InsertEnter *
-        \   exe 'au! install_add_to_undolist'
+        \   exe 'au! InstallAddToUndolist'
         \ | call readline#add_to_undolist()
 augroup END
 
-augroup operate_and_get_next | au!
+augroup OperateAndGetNext | au!
     " Why a timer?{{{
     "
     " To avoid remembering commands which  we haven't executed manually like the
