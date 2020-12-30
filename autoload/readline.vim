@@ -1,238 +1,240 @@
-if exists('g:autoloaded_readline')
-    finish
-endif
-let g:autoloaded_readline = 1
+vim9script noclear
 
-" FIXME: `Del` is broken with some composing characters.{{{
-"
-" Sometimes, our functions return `Del`.
-" Most of the time, it works as expected; but watch this:
-"
-"     Ë͙͙̬̹͈͔̜́̽D̦̩̱͕͗̃͒̅̐I̞̟̣̫ͯ̀ͫ͑ͧT̞Ŏ͍̭̭̞͙̆̎̍R̺̟̼͈̟̓͆
-"
-" Press, `Del` while the cursor is at the beginning of the word, in a buffer; it
-" works.  Now,  do the same  on the command-line; you'll  have to press  the key
-" `51` times!  `51` is the output of `strchars('Ë͙͙̬̹͈͔̜́̽D̦̩̱͕͗̃͒̅̐I̞̟̣̫ͯ̀ͫ͑ͧT̞Ŏ͍̭̭̞͙̆̎̍R̺̟̼͈̟̓͆')`, btw.
-" Because of this, some readline functions  don't work with these types of text,
-" while on the command-line, like `M-d` and `C-w`.
-"
-" https://github.com/vim/vim/issues/6134
-"}}}
+if exists('loaded') | finish | endif
+var loaded = true
 
-" Could I change Vim's undo granularity automatically (via autocmds)?{{{
-"
-" Yes, see this: https://vi.stackexchange.com/a/2377/17449
-"}}}
-"   What would it allow me to do?{{{
-"
-" You could recover the state of the buffer after deleting some text.
-" For example, you could recover the state (2) in the following edition:
-"
-"     " state (1)
-"     hello world|
-"                ^
-"                cursor
-"     " press: C-w
-"
-"     " state (2)
-"     hello |
-"     " press: p e o p l e
-"
-"     " state (3)
-"     hello people|
-"}}}
-"   Why don't you use this code?{{{
-"
-" Because:
-"
-"    - either you  break the undo sequence  just *before* the next  insertion of a
-"    character, after a sequence of deletion
-"
-"    - or you break it just *after*
-"
-" If you break it just before, then  when you insert a register after a sequence
-" of deletions,  the last  character of  the register  is changed  (deleted then
-" replaced by the 1st):
-"
-"     $ vim -Nu NONE -S <(cat <<'EOF'
-"         let @a = 'abc'
-"         set backspace=start
-"         let s:deleting = 0
-"         au InsertLeave * let s:deleting = 0
-"         au InsertCharPre * call s:break_undo_after_deletions()
-"         fu s:break_undo_after_deletions()
-"             if !s:deleting | return | endif
-"             call feedkeys("\<bs>\<c-g>u" .. v:char, 'in')
-"             let s:deleting = 0
-"         endfu
-"         ino <expr> <c-w> C_w()
-"         fu C_w()
-"             let s:deleting = 1
-"             return "\<c-w>"
-"         endfu
-"     EOF
-"     )
-"     " press: i C-w
-"     " press: C-r a
-"     " 'aba' is inserted instead of 'abc' ✘
-"
-" And if you break it just after,  then a custom abbreviation may be expanded in
-" the middle of a word you type:
-"
-"     $ vim -Nu NONE -S <(cat <<'EOF'
-"         set backspace=start
-"         inorea al la
-"         let s:deleting = 0
-"         au InsertLeave * let s:deleting = 0
-"         au InsertCharPre * call s:break_undo_after_deletions()
-"         fu s:break_undo_after_deletions()
-"             if !s:deleting | return | endif
-"             call feedkeys("\<c-g>u", 'in')
-"             let s:deleting = 0
-"         endfu
-"         ino <expr> <c-w> C_w()
-"         fu C_w()
-"             let s:deleting = 1
-"             return "\<c-w>"
-"         endfu
-"     EOF
-"     )
-"     " press: i C-w
-"     " press: v a l SPC
-"     " 'al' is replaced by 'la' ✘
-"     " this happens because `c-g u` has been executed after `v` and before `al`
-"
-" In any case, no  matter what you do, Vim's behavior  when editing text becomes
-" less predictable.  I don't like that.
-"}}}
+# FIXME: `Del` is broken with some composing characters.{{{
+#
+# Sometimes, our functions return `Del`.
+# Most of the time, it works as expected; but watch this:
+#
+#     Ë͙͙̬̹͈͔̜́̽D̦̩̱͕͗̃͒̅̐I̞̟̣̫ͯ̀ͫ͑ͧT̞Ŏ͍̭̭̞͙̆̎̍R̺̟̼͈̟̓͆
+#
+# Press, `Del` while the cursor is at the beginning of the word, in a buffer; it
+# works.  Now,  do the same  on the command-line; you'll  have to press  the key
+# `51` times!  `51` is the output of `strchars('Ë͙͙̬̹͈͔̜́̽D̦̩̱͕͗̃͒̅̐I̞̟̣̫ͯ̀ͫ͑ͧT̞Ŏ͍̭̭̞͙̆̎̍R̺̟̼͈̟̓͆')`, btw.
+# Because of this, some readline functions  don't work with these types of text,
+# while on the command-line, like `M-d` and `C-w`.
+#
+# https://github.com/vim/vim/issues/6134
+#}}}
 
-" Init {{{1
+# Could I change Vim's undo granularity automatically (via autocmds)?{{{
+#
+# Yes, see this: https://vi.stackexchange.com/a/2377/17449
+#}}}
+#   What would it allow me to do?{{{
+#
+# You could recover the state of the buffer after deleting some text.
+# For example, you could recover the state (2) in the following edition:
+#
+#     " state (1)
+#     hello world|
+#                ^
+#                cursor
+#     " press: C-w
+#
+#     " state (2)
+#     hello |
+#     " press: p e o p l e
+#
+#     " state (3)
+#     hello people|
+#}}}
+#   Why don't you use this code?{{{
+#
+# Because:
+#
+#    - either you  break the undo sequence  just *before* the next  insertion of a
+#    character, after a sequence of deletion
+#
+#    - or you break it just *after*
+#
+# If you break it just before, then  when you insert a register after a sequence
+# of deletions,  the last  character of  the register  is changed  (deleted then
+# replaced by the 1st):
+#
+#     $ vim -Nu NONE -S <(cat <<'EOF'
+#         vim9
+#         @a = 'abc'
+#         set backspace=start
+#         var deleting: bool
+#         au InsertLeave * deleting = 0
+#         au InsertCharPre * BreakUndoAfterDeletions()
+#         def BreakUndoAfterDeletions()
+#             if !deleting | return | endif
+#             feedkeys("\<bs>\<c-g>u" .. v:char, 'in')
+#             deleting = false
+#         enddef
+#         ino <expr> <c-w> C_w()
+#         def g:C_w(): string
+#             deleting = true
+#             return "\<c-w>"
+#         enddef
+#     EOF
+#     )
+#     " press: i C-w
+#     " press: C-r a
+#     " 'aba' is inserted instead of 'abc' ✘
+#
+# And if you break it just after,  then a custom abbreviation may be expanded in
+# the middle of a word you type:
+#
+#     $ vim -Nu NONE -S <(cat <<'EOF'
+#         vim9
+#         set backspace=start
+#         inorea al la
+#         var deleting = false
+#         au InsertLeave * deleting = false
+#         au InsertCharPre * BreakUndoAfterDeletions()
+#         def BreakUndoAfterDeletions()
+#             if !deleting | return | endif
+#             feedkeys("\<c-g>u", 'in')
+#             deleting = false
+#         enddef
+#         ino <expr> <c-w> C_w()
+#         def g:C_w(): string
+#             deleting = true
+#             return "\<c-w>"
+#         enddef
+#     EOF
+#     )
+#     " press: i C-w
+#     " press: v a l SPC
+#     " 'al' is replaced by 'la' ✘
+#     " this happens because `c-g u` has been executed after `v` and before `al`
+#
+# In any case, no  matter what you do, Vim's behavior  when editing text becomes
+# less predictable.  I don't like that.
+#}}}
+
+# Init {{{1
 
 import Catch from 'lg.vim'
 
 augroup MyGranularUndo | au!
-    " Why resetting `s:concat_next_kill`?{{{
-    "
-    "     :one two
-    "     C-w Esc
-    "     :three
-    "     C-w
-    "     C-y
-    "     threetwo    ✘~
-    "     C-y
-    "     three       ✔~
-    "}}}
+    # Why resetting `s:concat_next_kill`?{{{
+    #
+    #     :one two
+    #     C-w Esc
+    #     :three
+    #     C-w
+    #     C-y
+    #     threetwo    ✘~
+    #     C-y
+    #     three       ✔~
+    #}}}
 
-    " Why `[^=]` instead of `*`?{{{
-    "
-    " We have some readline mappings in  insert mode and command-line mode whose
-    " rhs uses `c-r =`.
-    " When they are invoked, we shouldn't reset those variables.
-    " Otherwise:
-    "
-    "     " press C-d
-    "     echo b|ar
-    "           ^
-    "           cursor
-    "
-    "     " press C-d
-    "     echo br
-    "
-    "     " press C-d
-    "     echo b
-    "
-    "     " press C-_ (✔)
-    "     echo br
-    "
-    "     " press C-_ (✘ we should get bar)
-    "     echo br
-    "}}}
-    "   And why do you also include `>`?{{{
-    "
-    " When we quit debug mode after hitting a breakpoint, there is noise related
-    " to these autocmds:
-    "
-    "     Entering Debug mode.  Type "cont" to continue.
-    "     CmdlineLeave Autocommands for "[^=]"
-    "     cmd: let s:concat_next_kill = 0
-    "     >
-    "     CmdlineLeave Autocommands for "[^=]"
-    "     cmd: let s:undolist_c = [] | let s:mark_c = 0
-    "     >
-    "     CmdlineLeave Autocommands for "[^=]"
-    "     cmd: let s:mark_c = 0
-    "}}}
-    "   Won't it cause an issue when we leave the expression command-line?{{{
-    "
-    " Usually, we enter the expression command-line from command-line mode,
-    " so the variables will be reset after we leave the regular command-line.
-    "
-    " But yeah, after entering the command-line from insert mode or command-line
-    " mode, then getting back to the previous mode, we'll have an outdated undolist,
-    " which won't be removed until we get back to normal mode.
-    "
-    " It should rarely happen, as I don't use the expression register frequently.
-    " And when it does happen, the real  issue will only occur if we press `C-_`
-    " enough to get back to this outdated undolist.
-    "
-    " It doesn't seem a big deal atm.
-    "}}}
-    "   Could `<cmd>` help?{{{
-    "
-    " It does, but we can't always use it.
-    " Sometimes,  we  still  need  `<c-r>=`  or `<c-\>e`,  both  of  which  fire
-    " `CmdlineEnter`.
-    "}}}
-    au CmdlineLeave [^=>] let s:concat_next_kill = 0
-    " reset undolist and marks when we leave insert/command-line mode
-    au CmdlineLeave [^=>] let s:undolist_c = [] | let s:mark_c = 0
-    au InsertLeave * let s:undolist_i = [] | let s:mark_i = 0
+    # Why `[^=]` instead of `*`?{{{
+    #
+    # We have some readline mappings in  insert mode and command-line mode whose
+    # rhs uses `c-r =`.
+    # When they are invoked, we shouldn't reset those variables.
+    # Otherwise:
+    #
+    #     " press C-d
+    #     echo b|ar
+    #           ^
+    #           cursor
+    #
+    #     " press C-d
+    #     echo br
+    #
+    #     " press C-d
+    #     echo b
+    #
+    #     " press C-_ (✔)
+    #     echo br
+    #
+    #     " press C-_ (✘ we should get bar)
+    #     echo br
+    #}}}
+    #   And why do you also include `>`?{{{
+    #
+    # When we quit debug mode after hitting a breakpoint, there is noise related
+    # to these autocmds:
+    #
+    #     Entering Debug mode.  Type "cont" to continue.
+    #     CmdlineLeave Autocommands for "[^=]"
+    #     cmd: let s:concat_next_kill = 0
+    #     >
+    #     CmdlineLeave Autocommands for "[^=]"
+    #     cmd: let s:undolist_c = [] | let s:mark_c = 0
+    #     >
+    #     CmdlineLeave Autocommands for "[^=]"
+    #     cmd: let s:mark_c = 0
+    #}}}
+    #   Won't it cause an issue when we leave the expression command-line?{{{
+    #
+    # Usually, we enter the expression command-line from command-line mode,
+    # so the variables will be reset after we leave the regular command-line.
+    #
+    # But yeah, after entering the command-line from insert mode or command-line
+    # mode, then getting back to the previous mode, we'll have an outdated undolist,
+    # which won't be removed until we get back to normal mode.
+    #
+    # It should rarely happen, as I don't use the expression register frequently.
+    # And when it does happen, the real  issue will only occur if we press `C-_`
+    # enough to get back to this outdated undolist.
+    #
+    # It doesn't seem a big deal atm.
+    #}}}
+    #   Could `<cmd>` help?{{{
+    #
+    # It does, but we can't always use it.
+    # Sometimes,  we  still  need  `<c-r>=`  or `<c-\>e`,  both  of  which  fire
+    # `CmdlineEnter`.
+    #}}}
+    au CmdlineLeave [^=>] concat_next_kill = false
+    # reset undolist and marks when we leave insert/command-line mode
+    au CmdlineLeave [^=>] undolist_c = [] | mark_c = 0
+    au InsertLeave * undolist_i = [] | mark_i = 0
 augroup END
 
-let s:deleting = 0
+var deleting = false
 
-" Why `sil!`?{{{
-"
-" We resource this file after running `:Debug`:
-"
-"     ~/.vim/plugged/vim-debug/autoload/debug.vim:142
-"}}}
-sil! const s:FAST_SCROLL_IN_PUM = 5
+# Why `sil!`?{{{
+#
+# We resource this file after running `:Debug`:
+#
+#     ~/.vim/plugged/vim-debug/autoload/debug.vim:142
+#}}}
+sil! const FAST_SCROLL_IN_PUM = 5
 
-let s:mark_i = 0
-let s:mark_c = 0
+var mark_i: number
+var mark_c: number
 
-let s:undolist_i = []
-let s:undolist_c = []
+var undolist_i: list<list<any>>
+var undolist_c: list<list<any>>
 
-" When we kill with:
-"
-"    - M-d: the text is appended  to the top of the kill ring
-"    - C-w: the text is prepended "
-"    - C-u: the text is prepended "
-"    - C-k: the text is appended  "
-"
-" Exceptions:
-" C-k + C-u  →  C-u (only the text killed by C-u goes into the top of the kill ring)
-" C-u + C-k  →  C-k ("                       C-k                                   )
-"
-" Basically, we should *not* concat 2 consecutive big kills.
-let s:last_kill_was_big = 0
-let s:concat_next_kill = 0
-let s:kill_ring_i = ['']
-let s:kill_ring_c = ['']
+# When we kill with:
+#
+#    - M-d: the text is appended  to the top of the kill ring
+#    - C-w: the text is prepended "
+#    - C-u: the text is prepended "
+#    - C-k: the text is appended  "
+#
+# Exceptions:
+# C-k + C-u  →  C-u (only the text killed by C-u goes into the top of the kill ring)
+# C-u + C-k  →  C-k ("                       C-k                                   )
+#
+# Basically, we should *not* concat 2 consecutive big kills.
+var last_kill_was_big: bool
+var concat_next_kill: bool
+var kill_ring_i: list<string>
+var kill_ring_c: list<string>
 
-let s:cm_y = 0
+var cm_y: bool
 
-" Interface {{{1
-fu readline#add_to_undolist() abort "{{{2
+# Interface {{{1
+def readline#addToUndolist() #{{{2
     augroup AddToUndolist | au!
-        au User AddToUndolistC call s:add_to_undolist('c', getcmdline(), getcmdpos())
-        au User AddToUndolistI call s:add_to_undolist('i', getline('.'), col('.'))
+        au User AddToUndolistC AddToUndolist('c', getcmdline(), getcmdpos())
+        au User AddToUndolistI AddToUndolist('i', getline('.'), col('.'))
     augroup END
-endfu
+enddef
 
-fu s:add_to_undolist(mode, line, pos) abort
+fu s:AddToUndolist(mode, line, pos) abort
     let undo_len = len(s:undolist_{a:mode})
     if undo_len > 100
         " limit the size of the undolist to 100 entries
@@ -241,60 +243,64 @@ fu s:add_to_undolist(mode, line, pos) abort
     let s:undolist_{a:mode} += [[a:line, a:pos]]
 endfu
 
-fu readline#backward_char() abort "{{{2
-    let s:concat_next_kill = 0
+def readline#backwardChar(): string #{{{2
+    concat_next_kill = false
 
-    " SPC + C-h = close wildmenu
-    return s:mode() is# 'i'
-        \ ?     "\<c-g>U\<left>"
-        \ :     (wildmenumode() ? "\<space>\<c-h>" : '') .. "\<left>"
-endfu
+    # SPC + C-h = close wildmenu
+    return s:Mode() == 'i'
+        ?     "\<c-g>U\<left>"
+        :     (wildmenumode() ? "\<space>\<c-h>" : '') .. "\<left>"
+enddef
 
-fu readline#backward_delete_char() abort "{{{2
-    let [line, pos] = s:mode()->s:setup_and_get_info(1, 0, 0)
+def readline#backwardDeleteChar(): string #{{{2
+    var line: string
+    var pos: number
+    [line, pos] = Mode()->SetupAndGetInfo(true, false, false)
     return "\<c-h>"
-endfu
+enddef
 
-fu readline#backward_kill_word() abort "{{{2
-    let mode = s:mode()
-    let [isk_save, bufnr] = [&l:isk, bufnr('%')]
+def readline#backwardKillWord(): string #{{{2
+    var mode = Mode()
+    var isk_save = &l:isk
+    var bufnr = bufnr('%')
 
-    " All functions using a `try` conditional causes an issue when we hit a breakpoint while debugging an issue.{{{
-    "
-    "     $ vim /tmp/vim.vim +'breakadd func vim#refactor#heredoc#main'
-    "     " press `=rh` (to run `:RefHeredoc`)
-    "     >n
-    "     " press `M-b`
-    "     :return  made pending~
-    "     :return  resumed~
-    "
-    " Solution: Inspect the type of command-line with `getcmdtype()`.
-    " If it's `>`, don't use `try`.
-    "
-    " ---
-    "
-    " This solution entails  that there is a risk that  some option (e.g. 'isk')
-    " is not properly restored, but that's a risk I'm willing to take.
-    " If we're hitting a  breakpoint, it means that sth is  broken; and when sth
-    " is broken, we often restart.
-    " IOW this issue will have almost no effect in practice.
-    "}}}
-    if getcmdtype() is# '>'
-        return s:backward_kill_word(mode)
+    # All functions using a `try` conditional causes an issue when we hit a breakpoint while debugging an issue.{{{
+    #
+    #     $ vim /tmp/vim.vim +'breakadd func vim#refactor#heredoc#main'
+    #     " press `=rh` (to run `:RefHeredoc`)
+    #     >n
+    #     " press `M-b`
+    #     :return  made pending~
+    #     :return  resumed~
+    #
+    # Solution: Inspect the type of command-line with `getcmdtype()`.
+    # If it's `>`, don't use `try`.
+    #
+    # ---
+    #
+    # This solution entails  that there is a risk that  some option (e.g. 'isk')
+    # is not properly restored, but that's a risk I'm willing to take.
+    # If we're hitting a  breakpoint, it means that sth is  broken; and when sth
+    # is broken, we often restart.
+    # IOW this issue will have almost no effect in practice.
+    #}}}
+    if getcmdtype() == '>'
+        return BackwardKillWord(mode)
     else
         try
-            return s:backward_kill_word(mode)
+            return BackwardKillWord(mode)
         catch
-            return s:Catch()
+            Catch()
+            return ''
         finally
-            call setbufvar(bufnr, '&isk', isk_save)
+            setbufvar(bufnr, '&isk', isk_save)
         endtry
     endif
     return ''
-endfu
+enddef
 
-fu s:backward_kill_word(mode) abort
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
+fu BackwardKillWord(mode) abort
+    let [line, pos] = s:SetupAndGetInfo(a:mode, 1, 0, 1)
     "          ┌ word before cursor{{{
     "          │
     "          │  ┌ there may be some non-word text between the word and the cursor
@@ -316,7 +322,7 @@ endfu
 
 fu readline#beginning_of_line() abort "{{{2
     let s:concat_next_kill = 0
-    return s:mode() is# 'c'
+    return s:Mode() is# 'c'
         \ ?     "\<home>"
         \ : col('.') >= getline('.')->match('\S') + 1
         \ ?     repeat("\<c-g>U\<left>",
@@ -327,7 +333,7 @@ endfu
 
 fu readline#change_case_setup(upcase) abort "{{{2
     let s:change_case_up = a:upcase
-    if s:mode() is# 'n'
+    if s:Mode() is# 'n'
         let &opfunc = 'readline#change_case_word'
         return 'g@l'
     endif
@@ -335,9 +341,9 @@ fu readline#change_case_setup(upcase) abort "{{{2
 endfu
 
 fu readline#change_case_word(...) abort "{{{2
-"                            ^-^
+"                            ^^^
 "                            type passed from opfunc
-    let mode = s:mode()
+    let mode = s:Mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
         return s:change_case_word(mode)
@@ -354,7 +360,7 @@ fu readline#change_case_word(...) abort "{{{2
 endfu
 
 fu s:change_case_word(mode) abort
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 1)
+    let [line, pos] = s:SetupAndGetInfo(a:mode, 1, 1, 1)
     let pat = '\k*\%' .. pos .. 'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
     let word = matchstr(line, pat)
 
@@ -380,8 +386,8 @@ fu s:change_case_word(mode) abort
 endfu
 
 fu readline#delete_char() abort "{{{2
-    let mode = s:mode()
-    let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
+    let mode = s:Mode()
+    let [line, pos] = s:SetupAndGetInfo(mode, 1, 1, 0)
 
     if mode is# 'c'
         " If the cursor is at the end of the command-line, we want `C-d` to keep
@@ -430,8 +436,8 @@ fu readline#end_of_line() abort "{{{2
 endfu
 
 fu readline#exchange_point_and_mark() abort "{{{2
-    let mode = s:mode()
-    let [line, pos] = s:setup_and_get_info(mode, 0, 0, 0)
+    let mode = s:Mode()
+    let [line, pos] = s:SetupAndGetInfo(mode, 0, 0, 0)
     let new_pos = s:mark_{mode}
 
     if mode is# 'i'
@@ -449,7 +455,7 @@ endfu
 
 fu readline#forward_char() abort "{{{2
     let s:concat_next_kill = 0
-    return s:mode() is# 'c'
+    return s:Mode() is# 'c'
         \ ?    (wildmenumode() ? "\<space>\<c-h>" : '') .. "\<right>"
         \ : col('.') > getline('.')->strlen()
         \ ?     ''
@@ -459,8 +465,8 @@ fu readline#forward_char() abort "{{{2
 endfu
 
 fu readline#kill_line() abort "{{{2
-    let mode = s:mode()
-    let [line, pos] = s:setup_and_get_info(mode, 1, 0, 0)
+    let mode = s:Mode()
+    let [line, pos] = s:SetupAndGetInfo(mode, 1, 0, 0)
 
     let killed_text = matchstr(line, '.*\%' .. pos .. 'c\zs.*')
     call s:add_to_kill_ring(mode, killed_text, 1, 1)
@@ -479,7 +485,7 @@ fu readline#kill_line() abort "{{{2
 endfu
 
 fu readline#kill_word() abort "{{{2
-    let mode = s:mode()
+    let mode = s:Mode()
     let [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() is# '>'
         return s:kill_word(mode)
@@ -496,7 +502,7 @@ fu readline#kill_word() abort "{{{2
 endfu
 
 fu s:kill_word(mode) abort
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 0, 1)
+    let [line, pos] = s:SetupAndGetInfo(a:mode, 1, 0, 1)
     "          ┌ from the cursor until the end of the current word;{{{
     "          │ if the cursor is outside of a word, the pattern
     "          │ still matches, because we use `*`, not `+`
@@ -512,7 +518,8 @@ fu s:kill_word(mode) abort
     let killed_text = matchstr(line, pat)
     call s:add_to_kill_ring(a:mode, killed_text, 1, 0)
 
-    return s:break_undo_before_deletions(a:mode) .. repeat("\<del>", strchars(killed_text, 1))
+    return s:break_undo_before_deletions(a:mode)
+        \ .. repeat("\<del>", strchars(killed_text, 1))
 endfu
 
 fu readline#move_by_words(...) abort "{{{2
@@ -546,7 +553,7 @@ endfu
 
 fu s:move_by_words(...) abort
     let [mode, is_fwd, capitalize] = a:0 == 2
-        \ ? [s:mode(), a:1, a:2]
+        \ ? [s:Mode(), a:1, a:2]
         \ : ['n', 1, 1]
     "         ^{{{
     " When  this  function will  be  invoked  from  normal mode,  the  first
@@ -554,13 +561,13 @@ fu s:move_by_words(...) abort
     " We need to pass the mode manually in this case (`'n'`).
     "}}}
 
-    "                                            ┌ if, in addition to moving the cursor forward,{{{
-    "                                            │ we're going to capitalize,
-    "                                            │ we want to add the current line to the undolist
-    "                                            │ to be able to undo
-    "                                            │
-    "                                            ├────────┐}}}
-    let [line, pos] = s:setup_and_get_info(mode, capitalize, 1, 1)
+    "                                         ┌ if, in addition to moving the cursor forward,{{{
+    "                                         │ we're going to capitalize,
+    "                                         │ we want to add the current line to the undolist
+    "                                         │ to be able to undo
+    "                                         │
+    "                                         ├────────┐}}}
+    let [line, pos] = s:SetupAndGetInfo(mode, capitalize, 1, 1)
     " Sometimes, this dramatically improves the performance.{{{
     "
     " Example:
@@ -644,15 +651,15 @@ fu s:move_by_words(...) abort
 endfu
 
 fu readline#set_mark() abort "{{{2
-    let mode = s:mode()
+    let mode = s:Mode()
     let s:mark_{mode} = mode is# 'i'
         \ ?     getline('.')->strpart(0, col('.') - 1)->strchars(1)
         \ :     getcmdline()->strpart(0, getcmdpos() - 1)->strchars(1)
 endfu
 
 fu readline#transpose_chars() abort "{{{2
-    let mode = s:mode()
-    let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
+    let mode = s:Mode()
+    let [line, pos] = s:SetupAndGetInfo(mode, 1, 1, 0)
     if pos > strlen(line)
         " We use `matchstr()` because of potential multibyte characters.
         " Test on this:
@@ -673,7 +680,7 @@ fu readline#transpose_chars() abort "{{{2
 endfu
 
 fu readline#transpose_words(...) abort "{{{2
-    let mode = s:mode()
+    let mode = s:Mode()
     if !a:0 && mode is# 'n'
         let &opfunc = 'readline#transpose_words'
         return 'g@l'
@@ -694,7 +701,7 @@ fu readline#transpose_words(...) abort "{{{2
 endfu
 
 fu s:transpose_words(mode) abort
-    let [line, pos] = s:setup_and_get_info(a:mode, 1, 1, 1)
+    let [line, pos] = s:SetupAndGetInfo(a:mode, 1, 1, 1)
     " We're looking for 2 words which are separated by non-word characters.
     " Why non-word characters, and not whitespace?{{{
     "
@@ -764,13 +771,27 @@ fu s:transpose_words(mode) abort
 endfu
 
 fu readline#undo() abort "{{{2
-    let mode = s:mode()
+    let mode = s:Mode()
     if empty(s:undolist_{mode})
         return ''
     endif
     let [old_line, old_pos] = remove(s:undolist_{mode}, -1)
     fu! s:undo_restore_cursor() closure
         if mode is# 'c'
+            " FIXME: Consider command-line:{{{
+            "
+            "     echo foo bar baz
+            "         ^
+            "         cursor right after this space
+            "
+            " Press `M-d` 3 times so that *all* the words are deleted.
+            " Now, press `C-_` to undo the last deletion.
+            " The  text is  correctly  restored, but  not  the cursor  position.
+            " `old_pos`  is  correct;  the  issue   is  that  for  some  reason,
+            " `setcmdpos()` has  no effect.  It  happens only if you  delete the
+            " words until the end  of the line.  Is it some  weird bug caused by
+            " `<Cmd>`?  Find a MWE.
+            "}}}
             call setcmdpos(old_pos)
         else
             call cursor('.', old_pos)
@@ -787,12 +808,12 @@ fu readline#undo() abort "{{{2
 endfu
 
 fu readline#unix_line_discard() abort "{{{2
-    let mode = s:mode()
+    let mode = s:Mode()
     if pumvisible() && complete_info(['items']).items->len() > s:FAST_SCROLL_IN_PUM
         return repeat("\<c-p>", s:FAST_SCROLL_IN_PUM)
     endif
 
-    let [line, pos] = s:setup_and_get_info(mode, 1, 0, 0)
+    let [line, pos] = s:SetupAndGetInfo(mode, 1, 0, 0)
 
     if mode is# 'c'
         call s:add_to_kill_ring(mode, matchstr(line, '.*\%' .. pos .. 'c'), 0, 1)
@@ -808,13 +829,13 @@ fu readline#unix_line_discard() abort "{{{2
 endfu
 
 fu readline#yank(pop = v:false) abort "{{{2
-    let mode = s:mode()
+    let mode = s:Mode()
     if pumvisible() | return "\<c-y>" | endif
     if a:pop && (! s:cm_y || len(s:kill_ring_{mode}) < 2) | return '' | endif
 
     " set flag telling that `C-y` or `M-y` has just been pressed
     let s:cm_y = 1
-    let [line, pos] = s:setup_and_get_info(mode, 1, 1, 0)
+    let [line, pos] = s:SetupAndGetInfo(mode, 1, 1, 0)
     if a:pop
         let length = strchars(s:kill_ring_{mode}[-1], 1)
         call insert(s:kill_ring_{mode}, remove(s:kill_ring_{mode}, -1), 0)
@@ -848,8 +869,8 @@ fu s:reset_cm_y() abort
         au SafeState * ++once let s:cm_y = 0
     augroup END
 endfu
-"}}}1
-" Util {{{1
+#}}}1
+# Util {{{1
 fu s:add_to_kill_ring(mode, text, after, this_kill_is_big) abort "{{{2
     if s:concat_next_kill
         let s:kill_ring_{a:mode}[-1] = a:after
@@ -890,26 +911,26 @@ fu s:break_undo_before_deletions(mode) abort "{{{2
         return "\<c-g>u"
     endif
 endfu
-" Purpose:{{{
-"
-"    - A is a text we insert
-"    - B is a text we insert after A
-"    - C is a text we insert to replace B after deleting the latter
-"
-" Without any custom “granular undo“, we can only visit:
-"
-"    - ∅
-"    - AC
-"
-" This function presses `C-g  u` the first time we delete  a multi-char text, in
-" any given sequence of multi-char deletions.
-" This lets us visit AB.
-" In the past, we used some code, which broke the undo sequence after a sequence
-" of deletions.   It allowed us  to visit A (alone).   We don't use  it anymore,
-" because it leads to too many issues.
-"}}}
+# Purpose:{{{
+#
+#    - A is a text we insert
+#    - B is a text we insert after A
+#    - C is a text we insert to replace B after deleting the latter
+#
+# Without any custom “granular undo“, we can only visit:
+#
+#    - ∅
+#    - AC
+#
+# This function presses `C-g  u` the first time we delete  a multi-char text, in
+# any given sequence of multi-char deletions.
+# This lets us visit AB.
+# In the past, we used some code, which broke the undo sequence after a sequence
+# of deletions.   It allowed us  to visit A (alone).   We don't use  it anymore,
+# because it leads to too many issues.
+#}}}
 
-fu s:mode() abort "{{{2
+fu s:Mode() abort "{{{2
     let mode = mode()
     " if you enter the search command-line from visual mode, `mode()` wrongly returns `v`
     " https://github.com/vim/vim/issues/6127#issuecomment-633119610
@@ -930,7 +951,7 @@ fu s:mode() abort "{{{2
     "}}}
     if mode =~# "^[vV\<c-v>t]$"
         return 'c'
-    " To suppress this error in `s:add_to_undolist()`:{{{
+    " To suppress this error in `s:AddToUndolist()`:{{{
     "
     "     E121: Undefined variable: s:undolist_R~
     "
@@ -1002,14 +1023,14 @@ fu s:set_isk() abort "{{{2
     setl isk=@,48-57,192-255
 endfu
 
-fu s:setup_and_get_info(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
+fu SetupAndGetInfo(mode, add_to_undolist, reset_concat, set_isk) abort "{{{2
     let [line, pos] = a:mode is# 'c'
         \ ?     [getcmdline(), getcmdpos()]
         \ :     [getline('.'), col('.')]
 
     " `transpose_words()` may call this function from normal mode
     if a:add_to_undolist && a:mode isnot# 'n'
-        call s:add_to_undolist(a:mode, line, pos)
+        call s:AddToUndolist(a:mode, line, pos)
     endif
 
     if a:reset_concat && a:mode isnot# 'n'
