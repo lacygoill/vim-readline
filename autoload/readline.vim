@@ -824,23 +824,39 @@ def readline#undo(): string #{{{2
     var old_line: string
     var old_pos: number
     [old_line, old_pos] = remove(mode == 'i' ? undolist_i : undolist_c, -1)
-    # FIXME: Consider this command-line:{{{
-    #
-    #     echo foo bar baz
-    #         ^
-    #         cursor right after this space
-    #
-    # Press `M-d` 3 times so that *all* the words are deleted.
-    # Now, press `C-_` to undo the last deletion.
-    # The  text is  correctly  restored, but  not  the cursor  position.
-    # `old_pos`  is  correct;  the  issue   is  that  for  some  reason,
-    # `setcmdpos()` has  no effect.  It  happens only if you  delete the
-    # words until the end  of the line.  Is it some  weird bug caused by
-    # `<Cmd>`?  Find a MWE.
-    #}}}
-    UndoRestoreCursor = () => mode == 'c'
-        ? setcmdpos(old_pos)
-        : cursor('.', old_pos)
+    UndoRestoreCursor = () => mode == 'i'
+        ? cursor('.', old_pos)
+        # `setcmdpos()` doesn't work from `CmdlineChanged`.{{{
+        #
+        # It only works when editing the command-line.
+        #
+        # ---
+        #
+        # Note that we  only need to restore the position  in 1 particular case:
+        # when there  is no text  after the cursor.   That happens e.g.  when we
+        # smash `M-d`;  once there is  no word to  delete anymore, if  you press
+        # `C-_` to undo the last deletion of  a word, you'll see that the cursor
+        # is not restored where you want.
+        #
+        # I guess  we could check whether  there is some text  after the cursor,
+        # before invoking `feedkeys()`.  For now, I prefer to not overcomplicate
+        # the  code.  You  might  want  to add  this  check  later (*maybe*  for
+        # slightly better performance on long  command-lines); but wait for Vim9
+        # to support `() =>  { Ex commands }` first.  This  way, you could split
+        # the  code  on  multiple  lines to  use  assignments  and  intermediate
+        # variables.
+        #
+        # You might wonder why we only need  to restore the cursor position in 1
+        # particular case.   I think  it's just a  property of  `:h c_CTRL-\_e`.
+        # When you  edit the command-line  with the latter, the  cursor probably
+        # remains unchanged; *unless*,  your cursor was at the end  of the line.
+        # In which case, Vim probably tries to be smart, and think that you want
+        # your cursor to be at the end of the new command-line (just like it was
+        # at the end of the old one).
+        #}}}
+        : (feedkeys("\<c-b>"
+                 .. repeat("\<right>", getcmdline()->strpart(0, old_pos)->strchars(true) - 1),
+                    'n') ? 0 : 0)
     if mode == 'c'
         au CmdlineChanged * ++once UndoRestoreCursor()
         return old_line
