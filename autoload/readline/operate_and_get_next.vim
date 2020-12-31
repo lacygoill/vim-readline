@@ -1,37 +1,36 @@
-if exists('g:autoloaded_readline#operate_and_get_next')
-    finish
-endif
-let g:autoloaded_readline#operate_and_get_next = 1
+vim9script noclear
 
-let s:HISTORY_MAX_SIZE = 10
+if exists('loaded') | finish | endif
+var loaded = true
 
-fu readline#operate_and_get_next#main() abort "{{{1
-    let cmdline = getcmdline()
-    let history = get(s:, 'cmdline_history', [])
-    let s:pos_in_history = (index(history, cmdline) + 1) % len(history)
-    if len(history) == 0
+var HISTORY_MAX_SIZE = 10
+var cmdline_history: list<string>
+
+def readline#operate_and_get_next#main(): string #{{{1
+    if len(cmdline_history) == 0
         return ''
     endif
-    let seq = history[s:pos_in_history]
+    var cmdline = getcmdline()
+    var pos_in_history = (index(cmdline_history, cmdline) + 1) % len(cmdline_history)
+    var seq = cmdline_history[pos_in_history]
     return "\<cr>:" .. seq
-endfu
+enddef
 
-fu readline#operate_and_get_next#remember(when) abort "{{{1
-    if mode() isnot# 'c'
+def readline#operate_and_get_next#remember(when: string) #{{{1
+    if mode() != 'c'
         return
     endif
-    if a:when is# 'on_leave'
-        au CmdlineLeave : ++once call readline#operate_and_get_next#remember('now')
+    if when == 'on_leave'
+        au CmdlineLeave : ++once readline#operate_and_get_next#remember('now')
     else
-        let cmdline = getcmdline()
-        let history = get(s:, 'cmdline_history', [])
+        var cmdline = getcmdline()
         if cmdline == ''
             return
         endif
-        let s:cmdline_history = history + [cmdline]
-        if len(history) > s:HISTORY_MAX_SIZE
-            call remove(s:cmdline_history, 0)
+        cmdline_history = cmdline_history + [cmdline]
+        if len(cmdline_history) > HISTORY_MAX_SIZE
+            remove(cmdline_history, 0)
         endif
     endif
-endfu
+enddef
 

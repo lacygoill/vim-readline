@@ -58,7 +58,7 @@ augroup END
 # But if for some reason, you choose another key, or remove the mapping entirely,
 # make sure to disable these keys again.
 #}}}
-noremap! <unique> <c-@> <cmd>call readline#set_mark()<cr>
+noremap! <unique> <c-@> <cmd>call readline#setMark()<cr>
 # For some reason, there's no conflict between this mapping and `i_C-j` in vimrc.{{{
 #
 # Even though `C-j` produces `C-@` (C-v C-j → c-@).
@@ -89,7 +89,7 @@ ino <unique> <c-_> <cmd>call readline#undo()<cr>
 
 # C-a        beginning-of-line {{{3
 
-noremap! <expr><unique> <c-a> readline#beginning_of_line()
+noremap! <expr><unique> <c-a> readline#beginningOfLine()
 
 # C-b        backward-char {{{3
 
@@ -102,17 +102,17 @@ noremap! <expr><unique> <c-b> readline#backwardChar()
 # You would  need to invoke `feedkeys()`  from a timer because  `:redraw` has no
 # effect during a textlock.
 #}}}
-cno <unique> <c-d> <c-\>e readline#delete_char()<cr>
-ino <unique> <c-d> <cmd>call readline#delete_char()<cr>
+cno <unique> <c-d> <c-\>e readline#deleteChar()<cr>
+ino <unique> <c-d> <cmd>call readline#deleteChar()<cr>
 
 # C-e        end-of-line {{{3
 
-ino <expr><unique> <c-e> readline#end_of_line()
+ino <expr><unique> <c-e> readline#endOfLine()
 
 # C-f        forward-char {{{3
 
 &cedit = ''
-noremap! <expr><unique> <c-f> readline#forward_char()
+noremap! <expr><unique> <c-f> readline#forwardChar()
 
 # C-h        backward-delete-char {{{3
 
@@ -120,7 +120,7 @@ noremap! <expr><unique> <c-h> readline#backwardDeleteChar()
 
 # C-k        kill-line {{{3
 
-cno <expr><unique> <c-k> readline#kill_line()
+cno <expr><unique> <c-k> readline#killLine()
 
 # We need to restore the insertion of digraph functionality on the command-line.
 cno <unique> <c-x>k <c-k>
@@ -131,7 +131,7 @@ cno <unique> <c-x>k <c-k>
 #
 # But doing so, we lose the possibility to delete everything after the cursor.
 # To restore this functionality, we map it to `C-k C-k`.
-ino <expr><unique> <c-k><c-k> readline#kill_line()
+ino <expr><unique> <c-k><c-k> readline#killLine()
 
 # C-o        operate-and-get-next {{{3
 
@@ -140,11 +140,11 @@ cno <expr><unique> <c-o> readline#operate_and_get_next#main()
 
 # C-t        transpose-chars {{{3
 
-noremap! <expr><unique> <c-t> readline#transpose_chars()
+noremap! <expr><unique> <c-t> readline#transposeChars()
 
 # C-u        unix-line-discard {{{3
 
-noremap! <expr><unique> <c-u> readline#unix_line_discard()
+noremap! <expr><unique> <c-u> readline#unixLineDiscard()
 
 # C-w        backward-kill-word {{{3
 
@@ -181,12 +181,12 @@ noremap! <expr><unique> <c-w> readline#backwardKillWord()
 #
 #     This is wrong, Vim should open the command-line window *only* when we press `C-x C-e`.
 #}}}
-cno <unique> <c-x><c-e> <cmd>call readline#edit_and_execute_command()<cr>
+cno <unique> <c-x><c-e> <cmd>call readline#editAndExecuteCommand()<cr>
 
 # C-x C-x    exchange-point-and-mark {{{3
 
 # See also: https://gist.github.com/lacygoill/c8ccf30dfac6393f737e3fa4efccdf9d
-noremap! <expr><unique> <c-x><c-x> readline#exchange_point_and_mark()
+noremap! <expr><unique> <c-x><c-x> readline#exchangePointAndMark()
 
 # C-y        yank {{{3
 
@@ -214,11 +214,11 @@ noremap! <expr><unique> <c-y> readline#yank()
 
 #                                      ┌  close wildmenu
 #                                      │
-sil! MapMeta('b', '(wildmenumode() ? "<space><c-h>" : "") .. readline#move_by_words(0, 0)', 'c', 'eu')
-sil! MapMeta('f', '(wildmenumode() ? "<space><c-h>" : "") .. readline#move_by_words(1, 0)', 'c', 'eu')
+sil! MapMeta('b', '(wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:false, v:false)', 'c', 'eu')
+sil! MapMeta('f', '(wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:true, v:false)', 'c', 'eu')
 
-sil! MapMeta('b', 'readline#move_by_words(0, 0)', 'i', 'eu')
-sil! MapMeta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
+sil! MapMeta('b', 'readline#moveByWords(v:false, v:false)', 'i', 'eu')
+sil! MapMeta('f', 'readline#moveByWords(v:true, v:false)', 'i', 'eu')
 
 # M-i        capitalize-word {{{3
 
@@ -229,22 +229,22 @@ sil! MapMeta('f', 'readline#move_by_words(1, 0)', 'i', 'eu')
 #     xno <m-u> <nop>
 #}}}
 
-sil! MapMeta('i', '<c-\>e readline#move_by_words(1, 1)<cr>', 'c', 'u')
-sil! MapMeta('i', '<c-r>=readline#move_by_words(1, 1)<cr>', 'i', 'su')
+sil! MapMeta('i', '<c-\>e readline#moveByWords(v:true, v:true)<cr>', 'c', 'u')
+sil! MapMeta('i', '<c-r>=readline#moveByWords(v:true, v:true)<cr>', 'i', 'su')
 
-sil! MapMeta('i', 'readline#move_by_words()', 'n', 'eu')
+sil! MapMeta('i', 'readline#moveByWords()', 'n', 'eu')
 sil! MapMeta('i', '<c-\><c-n><cmd>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'u')
 
 # M-u M-o    change-case-word {{{3
 
-sil! MapMeta('o', '<c-\>e readline#change_case_setup(0) .. readline#change_case_word()<cr>', 'c', 'u')
-sil! MapMeta('o', '<c-r>=readline#change_case_setup(0) .. readline#change_case_word()<cr>', 'i', 'su')
+sil! MapMeta('o', '<c-\>e readline#changeCaseSetup() .. readline#changeCaseWord()<cr>', 'c', 'u')
+sil! MapMeta('o', '<c-r>=readline#changeCaseSetup() .. readline#changeCaseWord()<cr>', 'i', 'su')
 sil! MapMeta('o', '<c-\><c-n><cmd>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'u')
 
-sil! MapMeta('o', 'readline#change_case_setup(0)', 'n', 'eu')
+sil! MapMeta('o', 'readline#changeCaseSetup()', 'n', 'eu')
 
-sil! MapMeta('u', '<c-\>e readline#change_case_setup(1) .. readline#change_case_word()<cr>', 'c', 'u')
-sil! MapMeta('u', '<c-r>=readline#change_case_setup(1) .. readline#change_case_word()<cr>', 'i', 'su')
+sil! MapMeta('u', '<c-\>e readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'c', 'u')
+sil! MapMeta('u', '<c-r>=readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'i', 'su')
 sil! MapMeta('u', 'U', 'x', 'u')
 sil! MapMeta('u', '<cmd>call readline#m_u#main()<cr>', 'n', 'u')
 
@@ -253,7 +253,7 @@ sil! MapMeta('u', '<cmd>call readline#m_u#main()<cr>', 'n', 'u')
 # Delete until the beginning of the next word.
 # In bash, M-d does the same, and is bound to the function kill-word.
 
-sil! MapMeta('d', 'readline#kill_word()', '!', 'eu')
+sil! MapMeta('d', 'readline#killWord()', '!', 'eu')
 
 # M-n/p      history-search-forward/backward {{{3
 
@@ -262,9 +262,9 @@ sil! MapMeta('p', '<up>', 'c', 'u')
 
 # M-t        transpose-words {{{3
 
-sil! MapMeta('t', '<c-\>e readline#transpose_words()<cr>', 'c', 'u')
-sil! MapMeta('t', '<c-r>=readline#transpose_words()<cr>', 'i', 'su')
-sil! MapMeta('t', 'readline#transpose_words()', 'n', 'eu')
+sil! MapMeta('t', '<c-\>e readline#transposeWords()<cr>', 'c', 'u')
+sil! MapMeta('t', '<c-r>=readline#transposeWords()<cr>', 'i', 'su')
+sil! MapMeta('t', 'readline#transposeWords()', 'n', 'eu')
 
 # M-y        yank-pop {{{3
 
