@@ -630,9 +630,13 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
         # all characters from the beginning of the line until the last
         # character of the nearest *next* word (current one if we're in a word,
         # or somewhere *after* otherwise)
-        pat = '.*\%' .. pos .. 'c\%(.\{-1,}\>\|.*\)'
-        #                                      │
-        #     if there's no word where we are, ┘
+        # Why `\%#=1`?{{{
+        #
+        # https://github.com/vim/vim/pull/7572#issuecomment-753563155
+        #}}}
+        pat = '\%#=1.*\%' .. pos .. 'c\%(.\{-1,}\>\|.*\)'
+        #                                           │
+        #          if there's no word where we are, ┘
         # nor after us, then go on until the end of the line
     else
         # all characters from the beginning of the line until the first
