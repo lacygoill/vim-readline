@@ -1,4 +1,4 @@
-vim9script noclear
+vim9 noclear
 
 if exists('loaded') | finish | endif
 var loaded = true
@@ -567,10 +567,10 @@ def readline#moveByWords(type: any = '', capitalize = false): string #{{{2
     var bufnr: number
     [isk_save, bufnr] = [&l:isk, bufnr('%')]
     if getcmdtype() == '>'
-        return call('MoveByWords', [type, capitalize])
+        return call(MoveByWords, [type, capitalize])
     else
         try
-            return call('MoveByWords', [type, capitalize])
+            return call(MoveByWords, [type, capitalize])
         # the `catch` clause prevents errors from being echoed
         # if you try to throw the exception manually (echo v:exception, echo
         # v:throwpoint), nothing will be displayed, so don't bother
