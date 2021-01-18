@@ -3,16 +3,16 @@ vim9 noclear
 if exists('loaded') | finish | endif
 var loaded = true
 
-var HISTORY_MAX_SIZE = 10
+const HISTORY_MAX_SIZE: number = 10
 var cmdline_history: list<string>
 
 def readline#operate_and_get_next#main(): string #{{{1
     if len(cmdline_history) == 0
         return ''
     endif
-    var cmdline = getcmdline()
-    var pos_in_history = (index(cmdline_history, cmdline) + 1) % len(cmdline_history)
-    var seq = cmdline_history[pos_in_history]
+    var cmdline: string = getcmdline()
+    var pos_in_history: number = (index(cmdline_history, cmdline) + 1) % len(cmdline_history)
+    var seq: string = cmdline_history[pos_in_history]
     return "\<cr>:" .. seq
 enddef
 
@@ -23,7 +23,7 @@ def readline#operate_and_get_next#remember(when: string) #{{{1
     if when == 'on_leave'
         au CmdlineLeave : ++once readline#operate_and_get_next#remember('now')
     else
-        var cmdline = getcmdline()
+        var cmdline: string = getcmdline()
         if cmdline == ''
             return
         endif

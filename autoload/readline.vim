@@ -62,7 +62,9 @@ var loaded = true
 #         au InsertLeave * deleting = 0
 #         au InsertCharPre * BreakUndoAfterDeletions()
 #         def BreakUndoAfterDeletions()
-#             if !deleting | return | endif
+#             if !deleting
+#                 return
+#             endif
 #             feedkeys("\<bs>\<c-g>u" .. v:char, 'in')
 #             deleting = false
 #         enddef
@@ -84,11 +86,13 @@ var loaded = true
 #         vim9
 #         set backspace=start
 #         inorea al la
-#         var deleting = false
+#         var deleting: bool = false
 #         au InsertLeave * deleting = false
 #         au InsertCharPre * BreakUndoAfterDeletions()
 #         def BreakUndoAfterDeletions()
-#             if !deleting | return | endif
+#             if !deleting
+#                 return
+#             endif
 #             feedkeys("\<c-g>u", 'in')
 #             deleting = false
 #         enddef
@@ -191,7 +195,7 @@ augroup MyGranularUndo | au!
     au InsertLeave * undolist_i = [] | mark_i = 0
 augroup END
 
-var deleting = false
+var deleting: bool = false
 
 # Why `sil!`?{{{
 #
@@ -199,7 +203,7 @@ var deleting = false
 #
 #     ~/.vim/plugged/vim-debug/autoload/debug.vim:142
 #}}}
-sil! const FAST_SCROLL_IN_PUM = 5
+sil! const FAST_SCROLL_IN_PUM: number = 5
 
 var mark_i: number
 var mark_c: number
@@ -235,8 +239,8 @@ def readline#addToUndolist() #{{{2
 enddef
 
 def AddToUndolist(mode: string, line: string, pos: number)
-    var undolist = mode == 'i' ? undolist_i : undolist_c
-    var undo_len = len(undolist)
+    var undolist: list<list<any>> = mode == 'i' ? undolist_i : undolist_c
+    var undo_len: number = len(undolist)
     if undo_len > 100
         # limit the size of the undolist to 100 entries
         remove(undolist, 0, undo_len - 101)
@@ -265,9 +269,9 @@ def readline#backwardDeleteChar(): string #{{{2
 enddef
 
 def readline#backwardKillWord(): string #{{{2
-    var mode = Mode()
-    var isk_save = &l:isk
-    var bufnr = bufnr('%')
+    var mode: string = Mode()
+    var isk_save: string = &l:isk
+    var bufnr: number = bufnr('%')
 
     # All functions using a `try` conditional causes an issue when we hit a breakpoint while debugging an issue.{{{
     #
@@ -308,15 +312,15 @@ def BackwardKillWord(mode: string): string
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, false, true)
-    #          ┌ word before cursor{{{
-    #          │
-    #          │  ┌ there may be some non-word text between the word and the cursor
-    #          │  │
-    #          │  │                   ┌ the cursor
-    #          ├─┐├──────────────────┐├──────────────┐}}}
-    var pat = '\k*\%(\%(\k\@!.\)\+\)\=\%' .. pos .. 'c'
+    var pat: string =
+        # word before cursor
+        '\k*'
+        # there may be some non-word text between the word and the cursor
+        .. '\%(\%(\k\@!.\)\+\)\='
+        # the cursor
+        .. '\%' .. pos .. 'c'
 
-    var killed_text = matchstr(line, pat)
+    var killed_text: string = matchstr(line, pat)
     AddToKillRing(killed_text, mode, false, false)
 
     # Do *not* feed `<BS>` directly, because sometimes it would delete too much text.
@@ -349,9 +353,9 @@ enddef
 var change_case_up: bool
 
 def readline#changeCaseWord(type = ''): string #{{{2
-    var mode = Mode()
-    var isk_save = &l:isk
-    var bufnr = bufnr('%')
+    var mode: string = Mode()
+    var isk_save: string = &l:isk
+    var bufnr: number = bufnr('%')
     if getcmdtype() == '>'
         return ChangeCaseWord(mode)
     else
@@ -370,24 +374,24 @@ def ChangeCaseWord(mode: string): string
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, true, true)
-    var pat = '\k*\%' .. pos .. 'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
-    var word = matchstr(line, pat)
+    var pat: string = '\k*\%' .. pos .. 'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
+    var word: string = matchstr(line, pat)
 
     if mode == 'c'
         if pos > strlen(line)
             return line
         else
-            var new_cmdline = substitute(line, pat,
+            var new_cmdline: string = substitute(line, pat,
                 change_case_up ? '\U&' : '\L&', '')
             setcmdpos(pos + strlen(word))
             return new_cmdline
         endif
     elseif mode == 'i'
-        var length = strchars(word, v:true)
+        var length: number = strchars(word, v:true)
         return repeat("\<del>", length) .. (change_case_up ? toupper(word) : tolower(word))
     elseif mode == 'n'
-        var new_line = substitute(line, pat, (change_case_up ? '\U&' : '\L&'), '')
-        var new_pos = match(line, pat .. '\zs') + 1
+        var new_line: string = substitute(line, pat, (change_case_up ? '\U&' : '\L&'), '')
+        var new_pos: number = match(line, pat .. '\zs') + 1
         setline('.', new_line)
         cursor('.', new_pos)
     endif
@@ -395,7 +399,7 @@ def ChangeCaseWord(mode: string): string
 enddef
 
 def readline#deleteChar(): string #{{{2
-    var mode = Mode()
+    var mode: string = Mode()
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, true, false)
@@ -425,7 +429,7 @@ def readline#deleteChar(): string #{{{2
     #    - if the pum is visible, and there are enough matches to scroll a page down, scroll
     #    - otherwise, if we're *before* the end of the line, delete next character
     #    - "                   *at* the end of the line,     delete the newline
-    var seq = pumvisible() && complete_info(['items']).items->len() > FAST_SCROLL_IN_PUM
+    var seq: string = pumvisible() && complete_info(['items']).items->len() > FAST_SCROLL_IN_PUM
         ?     repeat("\<c-n>", FAST_SCROLL_IN_PUM)
         : col('.') <= getline('.')->strlen()
         ?     "\<del>"
@@ -448,12 +452,12 @@ def readline#endOfLine(): string #{{{2
 enddef
 
 def readline#exchangePointAndMark(): string #{{{2
-    var mode = Mode()
+    var mode: string = Mode()
 
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, false, false, false)
-    var new_pos = mode == 'i' ? mark_i : mark_c
+    var new_pos: number = mode == 'i' ? mark_i : mark_c
 
     var old_pos: number
     var motion: string
@@ -464,7 +468,7 @@ def readline#exchangePointAndMark(): string #{{{2
             :     "\<c-g>U\<left>"
     endif
 
-    var n = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
+    var n: number = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
     if mode == 'i'
         mark_i = n
     else
@@ -487,12 +491,12 @@ def readline#forwardChar(): string #{{{2
 enddef
 
 def readline#killLine(): string #{{{2
-    var mode = Mode()
+    var mode: string = Mode()
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, false, false)
 
-    var killed_text = matchstr(line, '.*\%' .. pos .. 'c\zs.*')
+    var killed_text: string = matchstr(line, '.*\%' .. pos .. 'c\zs.*')
     AddToKillRing(killed_text, mode, true, true)
 
     # Warning: it may take a long time on a mega long soft-wrapped line if `'so'` is different than 0{{{
@@ -509,7 +513,7 @@ def readline#killLine(): string #{{{2
 enddef
 
 def readline#killWord(): string #{{{2
-    var mode = Mode()
+    var mode: string = Mode()
     var isk_save: string
     var bufnr: number
     [isk_save, bufnr] = [&l:isk, bufnr('%')]
@@ -531,19 +535,22 @@ def KillWord(mode: string): string
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, false, true)
-    #          ┌ from the cursor until the end of the current word;{{{
-    #          │ if the cursor is outside of a word, the pattern
-    #          │ still matches, because we use `*`, not `+`
-    #          │
-    #          ├─────────────────┐}}}
-    var pat = '\k*\%' .. pos .. 'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
-    #                                   ├──┘  ├───────────┘  ├──────────┘{{{
-    #                                   │     │              └ or all the non-word text we're in
-    #                                   │     └ or the next word if we're outside of a word
-    #                                   └ the rest of the word after the cursor
-    #}}}
+    var pat: string =
+    # from  the cursor  until the  end of  the current  word; if  the cursor  is
+    # outside of a word, the pattern still matches, because we use `*`, not `+`
+    '\k*\%' .. pos .. 'c'
+        .. '\zs\%('
+        # or all the non-word text we're in
+        .. '\k\+'
+        .. '\|'
+        # or the next word if we're outside of a word
+        .. '.\{-}\<\k\+\>'
+        .. '\|'
+        # the rest of the word after the cursor
+        .. '\%(\k\@!.\)\+'
+        .. '\)'
 
-    var killed_text = matchstr(line, pat)
+    var killed_text: string = matchstr(line, pat)
     AddToKillRing(killed_text, mode, true, false)
 
     return BreakUndoBeforeDeletions(mode)
@@ -622,9 +629,11 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
     #
     # A profiling tells us that this line is the culprit:
     #
-    #     var str = matchstr(line, pat)
+    #     var str: string = matchstr(line, pat)
     #}}}
-    if !is_fwd && pos <= 1 | return '' | endif
+    if !is_fwd && pos <= 1
+        return ''
+    endif
     var pat: string
     if is_fwd
         # all characters from the beginning of the line until the last
@@ -644,8 +653,8 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
         # word, or somewhere *before* otherwise)
         pat = '.*\ze\<.\{-1,}\%' .. pos .. 'c'
     endif
-    var str = matchstr(line, pat)
-    var new_pos = strlen(str)
+    var str: string = matchstr(line, pat)
+    var new_pos: number = strlen(str)
 
     # Here's how it works in readline:{{{
     #
@@ -661,7 +670,7 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
     #       with their lowercase counterparts
     #}}}
     if capitalize
-        var new_line = substitute(line,
+        var new_line: string = substitute(line,
             '\%' .. pos .. 'c.\{-}\zs\(\k\)\(.\{-}\)\%' .. (new_pos + 1) .. 'c',
             '\u\1\L\2', '')
         if mode == 'c'
@@ -672,12 +681,12 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
         endif
     endif
 
-    var new_pos_char = strchars(str, true)
+    var new_pos_char: number = strchars(str, true)
     # necessary to move correctly on a line such as:
     #          ́ foo  ́ bar
-    var pos_char = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
-    var diff = pos_char - new_pos_char
-    var building_motion = mode == 'i'
+    var pos_char: number = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
+    var diff: number = pos_char - new_pos_char
+    var building_motion: string = mode == 'i'
         ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
         :     diff > 0 ? "\<left>" : "\<right>"
 
@@ -686,7 +695,7 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
     # Needed  to move  the cursor at  the end  of the word  when we  want to
     # capitalize it in normal mode.
     #}}}
-    var seq = repeat(building_motion, abs(diff))
+    var seq: string = repeat(building_motion, abs(diff))
     return mode == 'i'
         ? seq
         : (feedkeys(seq, 'in') ? '' : '')
@@ -701,7 +710,7 @@ def readline#setMark() #{{{2
 enddef
 
 def readline#transposeChars(): string #{{{2
-    var mode = Mode()
+    var mode: string = Mode()
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, true, false)
@@ -725,7 +734,7 @@ def readline#transposeChars(): string #{{{2
 enddef
 
 def readline#transposeWords(type = ''): string #{{{2
-    var mode = Mode()
+    var mode: string = Mode()
     if type == '' && mode == 'n'
         &opfunc = 'readline#transposeWords'
         return 'g@l'
@@ -761,7 +770,7 @@ def TransposeWords(mode: string): string
     #          ^
     #          cursor
     #}}}
-    var pat = '\(\<\k\+\>\)\(\%(\k\@!.\)\+\)\(\<\k\+\>\)'
+    var pat: string = '\(\<\k\+\>\)\(\%(\k\@!.\)\+\)\(\<\k\+\>\)'
 
     # What's this concat (\&) for?{{{
     #
@@ -774,7 +783,7 @@ def TransposeWords(mode: string): string
     #
     # ... there should be no transposition (to mimic readline)
     #}}}
-    var not_on_first = '\%(\<\k*\%' .. pos .. 'c\k\+\>\)\@!\&'
+    var not_on_first: string = '\%(\<\k*\%' .. pos .. 'c\k\+\>\)\@!\&'
 
     # The cursor must not be before the 2 words:{{{
     #
@@ -782,7 +791,7 @@ def TransposeWords(mode: string): string
     #               ├─────┘
     #               └ don't transpose those 2
     #}}}
-    var not_before = '\%(\%' .. pos .. 'c.*\)\@<!'
+    var not_before: string = '\%(\%' .. pos .. 'c.*\)\@<!'
 
     # The cursor must not be after the 2 words,{{{
     # unless it is  inside a sequence of non-words characters  at the end of
@@ -799,15 +808,15 @@ def TransposeWords(mode: string): string
     #            ├──────┘
     #            └ the cursor may be anywhere in here
     #}}}
-    var not_after = '\%(\%(.*\%' .. pos .. 'c\)\@!\|\%(\%(\k\@!.\)*$\)\@=\)'
+    var not_after: string = '\%(\%(.*\%' .. pos .. 'c\)\@!\|\%(\%(\k\@!.\)*$\)\@=\)'
 
     # final pattern
     pat = not_on_first .. not_before .. pat .. not_after
 
-    var text = matchstr(line, '.*\%(' .. pat .. '\)')
-    var new_pos = strlen(text)
-    var rep = '\3\2\1'
-    var new_line = substitute(line, pat, rep, '')
+    var text: string = matchstr(line, '.*\%(' .. pat .. '\)')
+    var new_pos: number = strlen(text)
+    var rep: string = '\3\2\1'
+    var new_line: string = substitute(line, pat, rep, '')
 
     if mode == 'c'
         setcmdpos(new_pos + 1)
@@ -820,7 +829,7 @@ def TransposeWords(mode: string): string
 enddef
 
 def readline#undo(): string #{{{2
-    var mode = Mode()
+    var mode: string = Mode()
     if mode == 'i' && empty(undolist_i)
     || mode == 'c' && empty(undolist_c)
         return ''
@@ -873,7 +882,7 @@ enddef
 var UndoRestoreCursor: func
 
 def readline#unixLineDiscard(): string #{{{2
-    var mode = Mode()
+    var mode: string = Mode()
     if pumvisible() && complete_info(['items']).items->len() > FAST_SCROLL_IN_PUM
         return repeat("\<c-p>", FAST_SCROLL_IN_PUM)
     endif
@@ -888,8 +897,8 @@ def readline#unixLineDiscard(): string #{{{2
         # TODO(Vim9): Use the new `() => { Ex commands }` syntax when it becomes available:{{{
         #
         #     AddDeletedTextToKillRing = () => {
-        #         var new_line = getline('.')->matchstr('.*\%' .. col('.') .. 'c')
-        #         var killed_text = substitute(old_line, '\V' .. escape(new_line, '\'), '', '')
+        #         var new_line: string = getline('.')->matchstr('.*\%' .. col('.') .. 'c')
+        #         var killed_text: string = substitute(old_line, '\V' .. escape(new_line, '\'), '', '')
         #         AddToKillRing(killed_text, 'i', false, true)
         #     }
         #
@@ -907,9 +916,11 @@ enddef
 var AddDeletedTextToKillRing: func
 
 def readline#yank(pop = false): string #{{{2
-    var mode = Mode()
-    if pumvisible() | return "\<c-y>" | endif
-    var kill_ring = mode == 'i' ? kill_ring_i : kill_ring_c
+    var mode: string = Mode()
+    if pumvisible()
+        return "\<c-y>"
+    endif
+    var kill_ring: list<string> = mode == 'i' ? kill_ring_i : kill_ring_c
     if pop && (!cm_y || len(kill_ring) < 2)
         return ''
     endif
@@ -972,7 +983,7 @@ def AddToKillRing(text: string, mode: string, after: bool, this_kill_is_big: boo
         elseif mode == 'c' && kill_ring_c == ['']
             kill_ring_c = [text]
         else
-            var kill_ring = mode == 'i' ? kill_ring_i : kill_ring_c
+            var kill_ring: list<string> = mode == 'i' ? kill_ring_i : kill_ring_c
             # the kill ring  is never reset in readline; we  should not reset it
             # either but I don't like letting it  grow too much, so we keep only
             # the last 10 killed text
@@ -1024,7 +1035,7 @@ enddef
 #}}}
 
 def Mode(): string #{{{2
-    var mode = mode()
+    var mode: string = mode()
     # if you enter the search command-line from visual mode, `mode()` wrongly returns `v`
     # https://github.com/vim/vim/issues/6127#issuecomment-633119610
     # Why do you compare `mode` to `t`?{{{
