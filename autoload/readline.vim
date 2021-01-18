@@ -387,7 +387,7 @@ def ChangeCaseWord(mode: string): string
             return new_cmdline
         endif
     elseif mode == 'i'
-        var length: number = strchars(word, v:true)
+        var length: number = strchars(word, true)
         return repeat("\<del>", length) .. (change_case_up ? toupper(word) : tolower(word))
     elseif mode == 'n'
         var new_line: string = substitute(line, pat, (change_case_up ? '\U&' : '\L&'), '')
