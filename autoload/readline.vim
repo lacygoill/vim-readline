@@ -228,7 +228,7 @@ var concat_next_kill: bool
 var kill_ring_i: list<string>
 var kill_ring_c: list<string>
 
-var cm_y: bool
+var did_yank_or_pop: bool
 
 # Interface {{{1
 def readline#addToUndolist() #{{{2
@@ -915,42 +915,43 @@ def readline#unixLineDiscard(): string #{{{2
 enddef
 var AddDeletedTextToKillRing: func
 
-def readline#yank(pop = false): string #{{{2
+def readline#yank(want_to_pop = false): string #{{{2
     var mode: string = Mode()
     if pumvisible()
         return "\<c-y>"
     endif
     var kill_ring: list<string> = mode == 'i' ? kill_ring_i : kill_ring_c
-    if pop && (!cm_y || len(kill_ring) < 2)
+    if want_to_pop && (!did_yank_or_pop || len(kill_ring) < 2)
+        || !want_to_pop && kill_ring->empty()
         return ''
     endif
 
     # set flag telling that `C-y` or `M-y` has just been pressed
-    cm_y = true
+    did_yank_or_pop = true
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, true, false)
     var length: number
-    if pop
+    if want_to_pop
         length = strchars(kill_ring[-1], true)
         insert(kill_ring, remove(kill_ring, -1), 0)
     endif
-    if exists('#ResetCmY')
-        au! ResetCmY
-        aug! ResetCmY
+    if exists('#ResetDidYankOrPop')
+        au! ResetDidYankOrPop
+        aug! ResetDidYankOrPop
     endif
-    au SafeState * ++once ResetCmY()
+    au SafeState * ++once ResetDidYankOrPop()
     @- = kill_ring[-1]
-    return (pop
+    return (want_to_pop
         ?    repeat((mode == 'i' ? "\<c-g>U" : '') .. "\<left>\<del>", length)
         :    '')
         .. "\<c-r>-"
 enddef
 
-def ResetCmY()
+def ResetDidYankOrPop()
     # In the shell, as soon as you move the cursor, `M-y` doesn't do anything anymore.
     # We want the same behavior in Vim.
-    augroup ResetCmY | au!
+    augroup ResetDidYankOrPop | au!
         # Do *not* use a long list of events (`CursorMovedI`, `CmdlineChanged`, ...).{{{
         #
         #     au CursorMovedI,CmdlineChanged,InsertLeave,CursorMoved *
@@ -961,7 +962,7 @@ def ResetCmY()
         # Besides, finding the  right list of events may be  tricky; you have to
         # consider special cases, such as pressing `C-c` to leave insert mode.
         #}}}
-        au SafeState * ++once cm_y = false
+        au SafeState * ++once did_yank_or_pop = false
     augroup END
 enddef
 #}}}1
