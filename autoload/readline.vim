@@ -117,7 +117,7 @@ var loaded = true
 import Catch from 'lg.vim'
 
 augroup MyGranularUndo | au!
-    # Why resetting `s:concat_next_kill`?{{{
+    # Why resetting `concat_next_kill`?{{{
     #
     #     :one two
     #     C-w Esc
@@ -160,13 +160,13 @@ augroup MyGranularUndo | au!
     #
     #     Entering Debug mode.  Type "cont" to continue.
     #     CmdlineLeave Autocommands for "[^=]"
-    #     cmd: let s:concat_next_kill = 0
+    #     cmd: concat_next_kill = false
     #     >
     #     CmdlineLeave Autocommands for "[^=]"
-    #     cmd: let s:undolist_c = [] | let s:mark_c = 0
+    #     cmd: undolist_c = [] | mark_c = 0
     #     >
     #     CmdlineLeave Autocommands for "[^=]"
-    #     cmd: let s:mark_c = 0
+    #     cmd: mark_c = 0
     #}}}
     #   Won't it cause an issue when we leave the expression command-line?{{{
     #
@@ -256,7 +256,7 @@ def readline#backwardChar(): string #{{{2
     concat_next_kill = false
 
     # SPC + C-h = close wildmenu
-    return s:Mode() == 'i'
+    return Mode() == 'i'
         ?     "\<c-g>U\<left>"
         :     (wildmenumode() ? "\<space>\<c-h>" : '') .. "\<left>"
 enddef
@@ -514,9 +514,8 @@ enddef
 
 def readline#killWord(): string #{{{2
     var mode: string = Mode()
-    var isk_save: string
-    var bufnr: number
-    [isk_save, bufnr] = [&l:isk, bufnr('%')]
+    var isk_save: string = &l:isk
+    var bufnr: number = bufnr('%')
     if getcmdtype() == '>'
         return KillWord(mode)
     else
@@ -570,9 +569,8 @@ def readline#moveByWords(type: any = '', capitalize = false): string #{{{2
         &opfunc = 'readline#moveByWords'
         return 'g@l'
     endif
-    var isk_save: string
-    var bufnr: number
-    [isk_save, bufnr] = [&l:isk, bufnr('%')]
+    var isk_save: string = &l:isk
+    var bufnr: number = bufnr('%')
     if getcmdtype() == '>'
         return call(MoveByWords, [type, capitalize])
     else
@@ -739,9 +737,8 @@ def readline#transposeWords(type = ''): string #{{{2
         &opfunc = 'readline#transposeWords'
         return 'g@l'
     endif
-    var isk_save: string
-    var bufnr: number
-    [isk_save, bufnr] = [&l:isk, bufnr('%')]
+    var isk_save: string = &l:isk
+    var bufnr: number = bufnr('%')
     if getcmdtype() == '>'
         return TransposeWords(mode)
     else
@@ -1056,9 +1053,9 @@ def Mode(): string #{{{2
     #}}}
     if mode =~ "^[vV\<c-v>t]$"
         return 'c'
-    # To suppress this error in `s:AddToUndolist()`:{{{
+    # To suppress this error in `AddToUndolist()`:{{{
     #
-    #     E121: Undefined variable: s:undolist_R~
+    #     E121: Undefined variable: undolist_R~
     #
     # Happens when we press `R` in normal mode followed by `C-y`.
     #}}}
