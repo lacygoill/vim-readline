@@ -565,7 +565,7 @@ def readline#moveByWords(type: any = '', capitalize = false): string #{{{2
 #    - multicell characters (tab)
 #    - composing characters  ( ́)
 #}}}
-    if type(type) == v:t_string && type == ''
+    if typename(type) == 'string' && type == ''
         &opfunc = 'readline#moveByWords'
         return 'g@l'
     endif
@@ -595,7 +595,7 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
     # When  this  function will  be  invoked  from  normal mode,  the  first
     # argument won't be the current mode, but the type of a text-object.
     # We need to pass the mode manually in this case (`'n'`).
-    if type(arg_is_fwd) == v:t_string
+    if typename(arg_is_fwd) == 'string'
         [mode, is_fwd, capitalize] = ['n', true, true]
     else
         [mode, is_fwd, capitalize] = [Mode(), arg_is_fwd, arg_capitalize]
