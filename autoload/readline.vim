@@ -1,4 +1,4 @@
-vim9 noclear
+vim9script noclear
 
 if exists('loaded') | finish | endif
 var loaded = true
@@ -55,7 +55,7 @@ var loaded = true
 # replaced by the 1st):
 #
 #     $ vim -Nu NONE -S <(cat <<'EOF'
-#         vim9
+#         vim9script
 #         @a = 'abc'
 #         set backspace=start
 #         var deleting: bool
@@ -83,7 +83,7 @@ var loaded = true
 # the middle of a word you type:
 #
 #     $ vim -Nu NONE -S <(cat <<'EOF'
-#         vim9
+#         vim9script
 #         set backspace=start
 #         inorea al la
 #         var deleting: bool = false
