@@ -990,7 +990,7 @@ def AddToKillRing(text: string, mode: string, after: bool, this_kill_is_big: boo
             endif
             # before adding  sth in  the kill-ring,  check whether  it's already
             # there, and if it is, remove it
-            filter(kill_ring, (_, v) => v != text)
+            filter(kill_ring, (_, v: string): bool => v != text)
             add(kill_ring, text)
         endif
     endif
