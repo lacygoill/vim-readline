@@ -212,13 +212,13 @@ noremap! <expr><unique> <c-y> readline#yank()
 # Because it seems to consider `-` as part of a word.
 # `M-b`, `M-f` would move too far compared to readline.
 
-#                                      ┌  close wildmenu
-#                                      │
-sil! MapMeta('b', '(wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:false, v:false)', 'c', 'eu')
-sil! MapMeta('f', '(wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:true, v:false)', 'c', 'eu')
+#                                 ┌  close wildmenu
+#                                 │
+MapMeta('b', '(wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:false, v:false)', 'c', 'eu')
+MapMeta('f', '(wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:true, v:false)', 'c', 'eu')
 
-sil! MapMeta('b', 'readline#moveByWords(v:false, v:false)', 'i', 'eu')
-sil! MapMeta('f', 'readline#moveByWords(v:true, v:false)', 'i', 'eu')
+MapMeta('b', 'readline#moveByWords(v:false, v:false)', 'i', 'eu')
+MapMeta('f', 'readline#moveByWords(v:true, v:false)', 'i', 'eu')
 
 # M-i        capitalize-word {{{3
 
@@ -229,44 +229,44 @@ sil! MapMeta('f', 'readline#moveByWords(v:true, v:false)', 'i', 'eu')
 #     xno <m-u> <nop>
 #}}}
 
-sil! MapMeta('i', '<c-\>e readline#moveByWords(v:true, v:true)<cr>', 'c', 'u')
-sil! MapMeta('i', '<c-r>=readline#moveByWords(v:true, v:true)<cr>', 'i', 'su')
+MapMeta('i', '<c-\>e readline#moveByWords(v:true, v:true)<cr>', 'c', 'u')
+MapMeta('i', '<c-r>=readline#moveByWords(v:true, v:true)<cr>', 'i', 'su')
 
-sil! MapMeta('i', 'readline#moveByWords()', 'n', 'eu')
-sil! MapMeta('i', '<c-\><c-n><cmd>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'u')
+MapMeta('i', 'readline#moveByWords()', 'n', 'eu')
+MapMeta('i', '<c-\><c-n><cmd>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<cr>', 'x', 'u')
 
 # M-u M-o    change-case-word {{{3
 
-sil! MapMeta('o', '<c-\>e readline#changeCaseSetup() .. readline#changeCaseWord()<cr>', 'c', 'u')
-sil! MapMeta('o', '<c-r>=readline#changeCaseSetup() .. readline#changeCaseWord()<cr>', 'i', 'su')
-sil! MapMeta('o', '<c-\><c-n><cmd>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'u')
+MapMeta('o', '<c-\>e readline#changeCaseSetup() .. readline#changeCaseWord()<cr>', 'c', 'u')
+MapMeta('o', '<c-r>=readline#changeCaseSetup() .. readline#changeCaseWord()<cr>', 'i', 'su')
+MapMeta('o', '<c-\><c-n><cmd>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'u')
 
-sil! MapMeta('o', 'readline#changeCaseSetup()', 'n', 'eu')
+MapMeta('o', 'readline#changeCaseSetup()', 'n', 'eu')
 
-sil! MapMeta('u', '<c-\>e readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'c', 'u')
-sil! MapMeta('u', '<c-r>=readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'i', 'su')
-sil! MapMeta('u', 'U', 'x', 'u')
-sil! MapMeta('u', '<cmd>call readline#m_u#main()<cr>', 'n', 'u')
+MapMeta('u', '<c-\>e readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'c', 'u')
+MapMeta('u', '<c-r>=readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'i', 'su')
+MapMeta('u', 'U', 'x', 'u')
+MapMeta('u', '<cmd>call readline#m_u#main()<cr>', 'n', 'u')
 
 # M-d        kill-word {{{3
 
 # Delete until the beginning of the next word.
 # In bash, M-d does the same, and is bound to the function kill-word.
 
-sil! MapMeta('d', 'readline#killWord()', '!', 'eu')
+MapMeta('d', 'readline#killWord()', '!', 'eu')
 
 # M-n/p      history-search-forward/backward {{{3
 
-sil! MapMeta('n', '<down>', 'c', 'u')
-sil! MapMeta('p', '<up>', 'c', 'u')
+MapMeta('n', '<down>', 'c', 'u')
+MapMeta('p', '<up>', 'c', 'u')
 
 # M-t        transpose-words {{{3
 
-sil! MapMeta('t', '<c-\>e readline#transposeWords()<cr>', 'c', 'u')
-sil! MapMeta('t', '<c-r>=readline#transposeWords()<cr>', 'i', 'su')
-sil! MapMeta('t', 'readline#transposeWords()', 'n', 'eu')
+MapMeta('t', '<c-\>e readline#transposeWords()<cr>', 'c', 'u')
+MapMeta('t', '<c-r>=readline#transposeWords()<cr>', 'i', 'su')
+MapMeta('t', 'readline#transposeWords()', 'n', 'eu')
 
 # M-y        yank-pop {{{3
 
-sil! MapMeta('y', 'readline#yank(v:true)', '!', 'eu')
+MapMeta('y', 'readline#yank(v:true)', '!', 'eu')
 
