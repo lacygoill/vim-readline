@@ -197,13 +197,7 @@ augroup END
 
 var deleting: bool = false
 
-# Why `sil!`?{{{
-#
-# We resource this file after running `:Debug`:
-#
-#     ~/.vim/plugged/vim-debug/autoload/debug.vim:142
-#}}}
-sil! const FAST_SCROLL_IN_PUM: number = 5
+const FAST_SCROLL_IN_PUM: number = 5
 
 var mark_i: number
 var mark_c: number

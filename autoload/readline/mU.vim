@@ -3,7 +3,7 @@ vim9script noclear
 if exists('loaded') | finish | endif
 var loaded = true
 
-def readline#m_u#main()
+def readline#mU#main()
     # if a preview window is present in the tab page, scroll half a page up
     sil! if window#util#hasPreview() || window#util#latestPopup()
         sil! window#popup#scroll('c-u')

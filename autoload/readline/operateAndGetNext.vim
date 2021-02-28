@@ -6,7 +6,7 @@ var loaded = true
 const HISTORY_MAX_SIZE: number = 10
 var cmdline_history: list<string>
 
-def readline#operate_and_get_next#main(): string #{{{1
+def readline#operateAndGetNext#main(): string #{{{1
     if len(cmdline_history) == 0
         return ''
     endif
@@ -16,12 +16,12 @@ def readline#operate_and_get_next#main(): string #{{{1
     return "\<cr>:" .. seq
 enddef
 
-def readline#operate_and_get_next#remember(when: string) #{{{1
+def readline#operateAndGetNext#remember(when: string) #{{{1
     if mode() != 'c'
         return
     endif
     if when == 'on_leave'
-        au CmdlineLeave : ++once readline#operate_and_get_next#remember('now')
+        au CmdlineLeave : ++once readline#operateAndGetNext#remember('now')
     else
         var cmdline: string = getcmdline()
         if cmdline == ''

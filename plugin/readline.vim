@@ -30,7 +30,7 @@ augroup OperateAndGetNext | au!
     # To avoid remembering commands which  we haven't executed manually like the
     # ones in mappings.
     #}}}
-    au CmdlineEnter : timer_start(0, () => readline#operate_and_get_next#remember('on_leave'))
+    au CmdlineEnter : timer_start(0, () => readline#operateAndGetNext#remember('on_leave'))
 augroup END
 
 # Mappings {{{1
@@ -136,7 +136,7 @@ ino <expr><unique> <c-k><c-k> readline#killLine()
 # C-o        operate-and-get-next {{{3
 
 # Also called `accept-line-and-down-history` by zle.
-cno <expr><unique> <c-o> readline#operate_and_get_next#main()
+cno <expr><unique> <c-o> readline#operateAndGetNext#main()
 
 # C-t        transpose-chars {{{3
 
@@ -246,7 +246,7 @@ MapMeta('o', 'readline#changeCaseSetup()', 'n', 'eu')
 MapMeta('u', '<c-\>e readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'c', 'u')
 MapMeta('u', '<c-r>=readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'i', 'su')
 MapMeta('u', 'U', 'x', 'u')
-MapMeta('u', '<cmd>call readline#m_u#main()<cr>', 'n', 'u')
+MapMeta('u', '<cmd>call readline#mU#main()<cr>', 'n', 'u')
 
 # M-d        kill-word {{{3
 
