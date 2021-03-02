@@ -375,8 +375,8 @@ def ChangeCaseWord(mode: string): string
         if pos > strlen(line)
             return line
         else
-            var new_cmdline: string = substitute(line, pat,
-                change_case_up ? '\U&' : '\L&', '')
+            var new_cmdline: string = line
+                ->substitute(pat, change_case_up ? '\U&' : '\L&', '')
             setcmdpos(pos + strlen(word))
             return new_cmdline
         endif
@@ -384,7 +384,8 @@ def ChangeCaseWord(mode: string): string
         var length: number = strchars(word, true)
         return repeat("\<del>", length) .. (change_case_up ? toupper(word) : tolower(word))
     elseif mode == 'n'
-        var new_line: string = substitute(line, pat, (change_case_up ? '\U&' : '\L&'), '')
+        var new_line: string = line
+            ->substitute(pat, (change_case_up ? '\U&' : '\L&'), '')
         var new_pos: number = match(line, pat .. '\zs') + 1
         setline('.', new_line)
         cursor('.', new_pos)
@@ -662,9 +663,12 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
     #       with their lowercase counterparts
     #}}}
     if capitalize
-        var new_line: string = substitute(line,
-            '\%' .. pos .. 'c.\{-}\zs\(\k\)\(.\{-}\)\%' .. (new_pos + 1) .. 'c',
-            '\u\1\L\2', '')
+        var new_line: string = line
+            ->substitute(
+                '\%' .. pos .. 'c.\{-}\zs\(\k\)\(.\{-}\)\%' .. (new_pos + 1) .. 'c',
+                '\u\1\L\2',
+                ''
+            )
         if mode == 'c'
             setcmdpos(new_pos + 1)
             return new_line
@@ -807,7 +811,7 @@ def TransposeWords(mode: string): string
     var text: string = matchstr(line, '.*\%(' .. pat .. '\)')
     var new_pos: number = strlen(text)
     var rep: string = '\3\2\1'
-    var new_line: string = substitute(line, pat, rep, '')
+    var new_line: string = line->substitute(pat, rep, '')
 
     if mode == 'c'
         setcmdpos(new_pos + 1)
@@ -858,9 +862,10 @@ def readline#undo(): string #{{{2
         # your cursor to be at the end of the new command-line (just like it was
         # at the end of the old one).
         #}}}
-        : (feedkeys("\<c-b>"
-                 .. repeat("\<right>", getcmdline()->strpart(0, old_pos)->strchars(true) - 1),
-                    'n') ? 0 : 0)
+        : feedkeys(   "\<c-b>"
+                   .. repeat("\<right>", getcmdline()->strpart(0, old_pos)->strchars(true) - 1),
+                    'n'
+                  )
     if mode == 'c'
         au CmdlineChanged * ++once UndoRestoreCursor()
         return old_line
@@ -889,17 +894,19 @@ def readline#unixLineDiscard(): string #{{{2
         #
         #     AddDeletedTextToKillRing = () => {
         #         var new_line: string = getline('.')->matchstr('.*\%' .. col('.') .. 'c')
-        #         var killed_text: string = substitute(old_line, '\V' .. escape(new_line, '\'), '', '')
+        #         var killed_text: string = old_line->substitute('\V' .. escape(new_line, '\'), '', '')
         #         AddToKillRing(killed_text, 'i', false, true)
         #     }
         #
         # It should make the code more readable.
         #}}}
-        AddDeletedTextToKillRing = () => matchstr(line, '.*\%' .. pos .. 'c')
+        AddDeletedTextToKillRing = () =>
+              matchstr(line, '.*\%' .. pos .. 'c')
             ->substitute('\V' .. getline('.')
-                ->matchstr('.*\%' .. col('.') .. 'c')
-                ->escape('\'),
-                '', '')->AddToKillRing('i', false, true)
+                               ->matchstr('.*\%' .. col('.') .. 'c')
+                               ->escape('\'),
+                         '', '')
+            ->AddToKillRing('i', false, true)
         au TextChangedI * ++once AddDeletedTextToKillRing()
     endif
     return BreakUndoBeforeDeletions(mode) .. "\<c-u>"
@@ -980,12 +987,13 @@ def AddToKillRing(text: string, mode: string, after: bool, this_kill_is_big: boo
             # either but I don't like letting it  grow too much, so we keep only
             # the last 10 killed text
             if len(kill_ring) > 10
-                remove(kill_ring, 0, len(kill_ring) - 9)
+                kill_ring->remove(0, len(kill_ring) - 9)
             endif
-            # before adding  sth in  the kill-ring,  check whether  it's already
-            # there, and if it is, remove it
-            filter(kill_ring, (_, v: string): bool => v != text)
-            add(kill_ring, text)
+            kill_ring
+                # before adding sth in the kill-ring, check whether it's already
+                # there, and if it is, remove it
+                ->filter((_, v: string): bool => v != text)
+                ->add(text)
         endif
     endif
     SetConcatNextKill(mode, this_kill_is_big)
