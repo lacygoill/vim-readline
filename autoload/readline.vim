@@ -242,7 +242,13 @@ def AddToUndolist(mode: string, line: string, pos: number)
     if mode == 'i'
         undolist_i += [[line, pos]]
     else
-        undolist_c += [[line, pos]]
+        # Might need an offset for the cursor position to be correct after undoing `C-w`.
+        var ppos: number = pos
+        # The guard is necessary for the cursor position to be correct after undoing `M-d`.
+        if pos != len(line) + 1
+            ppos = pos - 1
+        endif
+        undolist_c += [[line, ppos]]
     endif
 enddef
 
@@ -855,7 +861,7 @@ def readline#undo(): string #{{{2
         # at the end of the old one).
         #}}}
         : feedkeys(   "\<c-b>"
-                   .. repeat("\<right>", getcmdline()->strpart(0, old_pos)->strchars(true) - 1),
+                   .. repeat("\<right>", strpart(old_line, 0, old_pos)->strchars(true)),
                     'n'
                   )
     if mode == 'c'
