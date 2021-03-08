@@ -322,18 +322,24 @@ def BackwardKillWord(mode: string): string
     # Instead, feed `<Left><Del>`.
     return BreakUndoBeforeDeletions(mode)
          .. repeat((mode == 'i' ? "\<c-g>U" : '') .. "\<left>\<del>",
-                  strchars(killed_text, true))
+                    strchars(killed_text, true))
 enddef
 
 def readline#beginningOfLine(): string #{{{2
     concat_next_kill = 0
-    return Mode() == 'c'
-        ?     "\<home>"
-        : col('.') >= getline('.')->match('\S') + 1
-        ?     repeat("\<c-g>U\<left>",
-                getline('.')->matchstr('\S.*\%' .. col('.') .. 'c')->strchars(true))
-        :     repeat("\<c-g>U\<right>",
-                getline('.')->matchstr('\%' .. col('.') .. 'c\s*\ze\S')->strchars(true))
+    if Mode() == 'c'
+        return "\<home>"
+    endif
+    var after_first_nonws = col('.') >= getline('.')->match('\S') + 1
+    var pat: string = after_first_nonws
+        ?     '\S.*\%' .. col('.') .. 'c'
+        :     '\%' .. col('.') .. 'c\s*\ze\S'
+    var count: number = getline('.')->matchstr(pat)->strchars(true)
+    # on a very long line, the `repeat(...)` sequence might be huge and too slow for Vim to type
+    if count > &columns
+        return "\<home>"
+    endif
+    return repeat("\<c-g>U" .. (after_first_nonws ? "\<left>" : "\<right>"), count)
 enddef
 
 def readline#changeCaseSetup(upcase = false): string #{{{2
@@ -443,7 +449,11 @@ var cedit_save: string
 
 def readline#endOfLine(): string #{{{2
     concat_next_kill = false
-    return repeat("\<c-g>U\<right>", col('$') - col('.'))
+    var count: number = col('$') - col('.')
+    if count > &columns
+        return "\<end>"
+    endif
+    return repeat("\<c-g>U\<right>", count)
 enddef
 
 def readline#exchangePointAndMark(): string #{{{2
@@ -454,20 +464,18 @@ def readline#exchangePointAndMark(): string #{{{2
     [line, pos] = SetupAndGetInfo(mode, false, false, false)
     var new_pos: number = mode == 'i' ? mark_i : mark_c
 
-    var old_pos: number
+    var old_pos: number = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
     var motion: string
     if mode == 'i'
-        old_pos = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
         motion = new_pos > old_pos
             ?     "\<c-g>U\<right>"
             :     "\<c-g>U\<left>"
     endif
 
-    var n: number = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
     if mode == 'i'
-        mark_i = n
+        mark_i = old_pos
     else
-        mark_c = n
+        mark_c = old_pos
     endif
     return mode == 'c'
         ?     "\<c-b>" .. repeat("\<right>", new_pos)
@@ -605,28 +613,6 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
     #                                   │
     #                                   ├────────┐}}}
     [line, pos] = SetupAndGetInfo(mode, capitalize, true, true)
-    # Sometimes, this dramatically improves the performance.{{{
-    #
-    # Example:
-    #
-    #     $ vim -S <(cat <<'EOF'
-    #         setl wrap
-    #         call repeat('the quick brown fox jumps over the lazy dog ', 10)->setline(1)
-    #         startinsert
-    #     EOF
-    #     )
-    #
-    # Press `M-b` for 2 seconds.
-    # Press `M-f` to  move forward: the motion lags by  about 4 seconds, because
-    # Vim needs time to process your previous keystrokes.
-    #
-    # A profiling tells us that this line is the culprit:
-    #
-    #     var str: string = matchstr(line, pat)
-    #}}}
-    if !is_fwd && pos <= 1
-        return ''
-    endif
     var pat: string
     if is_fwd
         # all characters from the beginning of the line until the last
@@ -646,8 +632,10 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
         # word, or somewhere *before* otherwise)
         pat = '.*\ze\<.\{-1,}\%' .. pos .. 'c'
     endif
-    var str: string = matchstr(line, pat)
-    var new_pos: number = strlen(str)
+    var new_pos: number = matchend(line, pat)
+    if new_pos == -1
+        return "\<home>"
+    endif
 
     # Here's how it works in readline:{{{
     #
@@ -677,7 +665,10 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
         endif
     endif
 
-    var new_pos_char: number = strchars(str, true)
+    var new_pos_char: number = charidx(line, new_pos)
+    if new_pos_char == -1
+        return "\<end>"
+    endif
     # necessary to move correctly on a line such as:
     #          ́ foo  ́ bar
     var pos_char: number = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
@@ -715,14 +706,16 @@ def readline#transposeChars(): string #{{{2
         # Test on this:
         #
         #     âêîôû
+        var deleted_char: string = matchstr(line, '.\ze.\%' .. pos .. 'c')
         return mode == 'i'
-            ?     "\<c-g>U\<left>\<bs>\<c-g>U\<right>" .. matchstr(line, '.\ze.\%' .. pos .. 'c')
-            :     "\<left>\<bs>\<right>" .. matchstr(line, '.\ze.\%' .. pos .. 'c')
+            ?     "\<c-g>U\<left>\<bs>\<c-g>U\<right>" .. deleted_char
+            :     "\<left>\<bs>\<right>" .. deleted_char
 
     elseif pos > 1
+        var deleted_char: string = matchstr(line, '.\%' .. pos .. 'c')
         return mode == 'i'
-            ?     "\<bs>\<c-g>U\<right>" .. matchstr(line, '.\%' .. pos .. 'c')
-            :     "\<bs>\<right>" .. matchstr(line, '.\%' .. pos .. 'c')
+            ?     "\<bs>\<c-g>U\<right>" .. deleted_char
+            :     "\<bs>\<right>" .. deleted_char
 
     else
         return ''
@@ -808,8 +801,7 @@ def TransposeWords(mode: string): string
     # final pattern
     pat = not_on_first .. not_before .. pat .. not_after
 
-    var text: string = matchstr(line, '.*\%(' .. pat .. '\)')
-    var new_pos: number = strlen(text)
+    var new_pos: number = matchend(line, '.*\%(' .. pat .. '\)')
     var rep: string = '\3\2\1'
     var new_line: string = line->substitute(pat, rep, '')
 
