@@ -185,7 +185,7 @@ cno <unique> <c-x><c-e> <cmd>call readline#editAndExecuteCommand()<cr>
 
 # C-x C-x    exchange-point-and-mark {{{3
 
-# See also: https://gist.github.com/lacygoill/c8ccf30dfac6393f737e3fa4efccdf9d
+# See also: https://gist.github.com/nicsig/289deda5f7ae03ccd32bc5efd6afbf9c
 noremap! <expr><unique> <c-x><c-x> readline#exchangePointAndMark()
 
 # C-y        yank {{{3
