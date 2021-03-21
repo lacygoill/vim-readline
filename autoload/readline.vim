@@ -328,7 +328,7 @@ def BackwardKillWord(mode: string): string
     # Instead, feed `<Left><Del>`.
     return BreakUndoBeforeDeletions(mode)
          .. repeat((mode == 'i' ? "\<c-g>U" : '') .. "\<left>\<del>",
-                    strchars(killed_text, true))
+                    strcharlen(killed_text))
 enddef
 
 def readline#beginningOfLine(): string #{{{2
@@ -336,11 +336,12 @@ def readline#beginningOfLine(): string #{{{2
     if Mode() == 'c'
         return "\<home>"
     endif
-    var after_first_nonws = col('.') >= getline('.')->match('\S') + 1
+    var col: number = col('.')
+    var after_first_nonws = col >= getline('.')->match('\S') + 1
     var pat: string = after_first_nonws
-        ?     '\S.*\%' .. col('.') .. 'c'
-        :     '\%' .. col('.') .. 'c\s*\ze\S'
-    var count: number = getline('.')->matchstr(pat)->strchars(true)
+        ?     '\S.*\%' .. col .. 'c'
+        :     '\%' .. col .. 'c\s*\ze\S'
+    var count: number = getline('.')->matchstr(pat)->strcharlen()
     # on a very long line, the `repeat(...)` sequence might be huge and too slow for Vim to type
     if count > &columns
         return "\<home>"
@@ -393,7 +394,7 @@ def ChangeCaseWord(mode: string): string
             return new_cmdline
         endif
     elseif mode == 'i'
-        var length: number = strchars(word, true)
+        var length: number = strcharlen(word)
         return repeat("\<del>", length) .. (change_case_up ? toupper(word) : tolower(word))
     elseif mode == 'n'
         var new_line: string = line
@@ -470,7 +471,7 @@ def readline#exchangePointAndMark(): string #{{{2
     [line, pos] = SetupAndGetInfo(mode, false, false, false)
     var new_pos: number = mode == 'i' ? mark_i : mark_c
 
-    var old_pos: number = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
+    var old_pos: number = line->strpart(0, pos - 1)->strcharlen()
     var motion: string
     if mode == 'i'
         motion = new_pos > old_pos
@@ -505,7 +506,7 @@ def readline#killLine(): string #{{{2
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, false, false)
 
-    var killed_text: string = matchstr(line, '.*\%' .. pos .. 'c\zs.*')
+    var killed_text: string = strpart(line, pos - 1)
     AddToKillRing(killed_text, mode, true, true)
 
     # Warning: it may take a long time on a mega long soft-wrapped line if `'so'` is different than 0{{{
@@ -518,7 +519,7 @@ def readline#killLine(): string #{{{2
     #     " press C-k C-k: the line is deleted only after 2 or 3 seconds
     #}}}
     return BreakUndoBeforeDeletions(mode)
-        .. repeat("\<del>", strchars(killed_text, true))
+        .. repeat("\<del>", strcharlen(killed_text))
 enddef
 
 def readline#killWord(): string #{{{2
@@ -562,7 +563,7 @@ def KillWord(mode: string): string
     AddToKillRing(killed_text, mode, true, false)
 
     return BreakUndoBeforeDeletions(mode)
-        .. repeat("\<del>", strchars(killed_text, true))
+        .. repeat("\<del>", strcharlen(killed_text))
 enddef
 
 def readline#moveByWords(type: any = '', capitalize = false): string #{{{2
@@ -677,7 +678,7 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
     endif
     # necessary to move correctly on a line such as:
     #          ́ foo  ́ bar
-    var pos_char: number = matchstr(line, '.*\%' .. pos .. 'c')->strchars(true)
+    var pos_char: number = line->strpart(0, pos - 1)->strcharlen()
     var diff: number = pos_char - new_pos_char
     var building_motion: string = mode == 'i'
         ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
@@ -696,9 +697,9 @@ enddef
 
 def readline#setMark() #{{{2
     if Mode() == 'i'
-        mark_i = getline('.')->strpart(0, col('.') - 1)->strchars(true)
+        mark_i = charcol('.') - 1
     else
-        mark_c = getcmdline()->strpart(0, getcmdpos() - 1)->strchars(true)
+        mark_c = getcmdline()->strpart(0, getcmdpos() - 1)->strcharlen()
     endif
 enddef
 
@@ -707,18 +708,18 @@ def readline#transposeChars(): string #{{{2
     var line: string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, true, false)
+    # Test on this:
+    #
+    #     âêîôû
     if pos > strlen(line)
-        # We use `matchstr()` because of potential multibyte characters.
-        # Test on this:
-        #
-        #     âêîôû
-        var deleted_char: string = matchstr(line, '.\ze.\%' .. pos .. 'c')
+        var deleted_char: string = line[-2]
         return mode == 'i'
             ?     "\<c-g>U\<left>\<bs>\<c-g>U\<right>" .. deleted_char
             :     "\<left>\<bs>\<right>" .. deleted_char
 
     elseif pos > 1
-        var deleted_char: string = matchstr(line, '.\%' .. pos .. 'c')
+        # Alternative: `line[line->charidx(pos - 1) - 1]`
+        var deleted_char: string = line->strpart(0, pos - 1)[-1]
         return mode == 'i'
             ?     "\<bs>\<c-g>U\<right>" .. deleted_char
             :     "\<bs>\<right>" .. deleted_char
@@ -861,7 +862,7 @@ def readline#undo(): string #{{{2
         # at the end of the old one).
         #}}}
         : feedkeys(   "\<c-b>"
-                   .. repeat("\<right>", strpart(old_line, 0, old_pos)->strchars(true)),
+                   .. repeat("\<right>", strpart(old_line, 0, old_pos)->strcharlen()),
                     'n'
                   )
     if mode == 'c'
@@ -886,27 +887,28 @@ def readline#unixLineDiscard(): string #{{{2
     [line, pos] = SetupAndGetInfo(mode, true, false, false)
 
     if mode == 'c'
-        matchstr(line, '.*\%' .. pos .. 'c')->AddToKillRing(mode, false, true)
+        line->strpart(0, pos - 1)->AddToKillRing('c', false, true)
     else
-        # TODO(Vim9): Use the new `() => { Ex commands }` syntax when it becomes available:{{{
-        #
-        #     AddDeletedTextToKillRing = () => {
-        #         var new_line: string = getline('.')->matchstr('.*\%' .. col('.') .. 'c')
-        #         var killed_text: string = old_line->substitute('\V' .. escape(new_line, '\'), '', '')
-        #         AddToKillRing(killed_text, 'i', false, true)
-        #     }
-        #
-        # It should make the code more readable.
-        #}}}
+
         AddDeletedTextToKillRing = () =>
-              matchstr(line, '.*\%' .. pos .. 'c')
-            ->substitute('\V' .. getline('.')
-                               ->matchstr('.*\%' .. col('.') .. 'c')
-                               ->escape('\'),
-                         '', '')
+            line
+            ->strpart(0, pos - 1)
+            # In insert mode, `C-u` does not necessarily delete the text all the way back to column 0.{{{
+            #
+            # It might stop somewhere before.
+            # For  example, if  `'backspace'` contains  the `start`  item, `C-u`
+            # stops at the column where you've started inserting text.
+            #
+            # That's why, we can't simply add  all the text before the cursor in
+            # the kill  ring.  If there's still  some text between column  0 and
+            # the cursor, it must be removed first.
+            #}}}
+            ->strpart(col('.') - 1)
             ->AddToKillRing('i', false, true)
+
         au TextChangedI * ++once AddDeletedTextToKillRing()
     endif
+
     return BreakUndoBeforeDeletions(mode) .. "\<c-u>"
 enddef
 var AddDeletedTextToKillRing: func
@@ -929,7 +931,7 @@ def readline#yank(want_to_pop = false): string #{{{2
     [line, pos] = SetupAndGetInfo(mode, true, true, false)
     var length: number
     if want_to_pop
-        length = strchars(kill_ring[-1], true)
+        length = strcharlen(kill_ring[-1])
         insert(kill_ring, remove(kill_ring, -1), 0)
     endif
     if exists('#ResetDidYankOrPop')
