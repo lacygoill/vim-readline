@@ -401,7 +401,7 @@ def ChangeCaseWord(mode: string): string
             ->substitute(pat, (change_case_up ? '\U&' : '\L&'), '')
         var new_pos: number = match(line, pat .. '\zs') + 1
         setline('.', new_line)
-        cursor('.', new_pos)
+        cursor(0, new_pos)
     endif
     return ''
 enddef
@@ -718,8 +718,9 @@ def readline#transposeChars(): string #{{{2
             :     "\<left>\<bs>\<right>" .. deleted_char
 
     elseif pos > 1
-        # Alternative: `line[line->charidx(pos - 1) - 1]`
-        var deleted_char: string = line->strpart(0, pos - 1)[-1]
+        # Alternative: `line->strpart(0, pos - 1)[-1]`
+        # It's (very) slightly slower though.
+        var deleted_char: string = line[line->charidx(pos - 1) - 1]
         return mode == 'i'
             ?     "\<bs>\<c-g>U\<right>" .. deleted_char
             :     "\<bs>\<right>" .. deleted_char
@@ -817,7 +818,7 @@ def TransposeWords(mode: string): string
         return new_line
     else
         setline('.', new_line)
-        cursor('.', new_pos + 1)
+        cursor(0, new_pos + 1)
     endif
     return ''
 enddef
@@ -831,8 +832,10 @@ def readline#undo(): string #{{{2
     var old_line: string
     var old_pos: number
     [old_line, old_pos] = remove(mode == 'i' ? undolist_i : undolist_c, -1)
-    UndoRestoreCursor = () => mode == 'i'
-        ? cursor('.', old_pos)
+    UndoRestoreCursor = () => {
+        if mode == 'i'
+            cursor(0, old_pos)
+        else
         # `setcmdpos()` doesn't work from `CmdlineChanged`.{{{
         #
         # It only works when editing the command-line.
@@ -848,10 +851,7 @@ def readline#undo(): string #{{{2
         # I guess  we could check whether  there is some text  after the cursor,
         # before invoking `feedkeys()`.  For now, I prefer to not overcomplicate
         # the  code.  You  might  want  to add  this  check  later (*maybe*  for
-        # slightly better performance on long  command-lines); but wait for Vim9
-        # to support `() =>  { Ex commands }` first.  This  way, you could split
-        # the  code  on  multiple  lines to  use  assignments  and  intermediate
-        # variables.
+        # slightly better performance on long command-lines).
         #
         # You might wonder why we only need  to restore the cursor position in 1
         # particular case.   I think  it's just a  property of  `:h c_CTRL-\_e`.
@@ -861,10 +861,9 @@ def readline#undo(): string #{{{2
         # your cursor to be at the end of the new command-line (just like it was
         # at the end of the old one).
         #}}}
-        : feedkeys(   "\<c-b>"
-                   .. repeat("\<right>", strpart(old_line, 0, old_pos)->strcharlen()),
-                    'n'
-                  )
+            feedkeys( "\<c-b>" .. repeat("\<right>", strpart(old_line, 0, old_pos)->strcharlen()), 'n')
+        endif
+    }
     if mode == 'c'
         au CmdlineChanged * ++once UndoRestoreCursor()
         return old_line

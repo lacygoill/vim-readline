@@ -30,7 +30,7 @@ augroup OperateAndGetNext | au!
     # To avoid remembering commands which  we haven't executed manually like the
     # ones in mappings.
     #}}}
-    au CmdlineEnter : timer_start(0, () => readline#operateAndGetNext#remember('on_leave'))
+    au CmdlineEnter : timer_start(0, (_) => readline#operateAndGetNext#remember('on_leave'))
 augroup END
 
 # Mappings {{{1

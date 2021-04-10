@@ -27,7 +27,7 @@ def readline#operateAndGetNext#remember(when: string) #{{{1
         if cmdline == ''
             return
         endif
-        cmdline_history = cmdline_history + [cmdline]
+        cmdline_history += [cmdline]
         if len(cmdline_history) > HISTORY_MAX_SIZE
             remove(cmdline_history, 0)
         endif
