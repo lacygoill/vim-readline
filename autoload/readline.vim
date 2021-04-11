@@ -232,7 +232,11 @@ def readline#addToUndolist() #{{{2
     augroup END
 enddef
 
-def AddToUndolist(mode: string, line: string, pos: number)
+def AddToUndolist( #{{{2
+    mode: string,
+    line: string,
+    pos: number
+)
     var undolist: list<list<any>> = mode == 'i' ? undolist_i : undolist_c
     var undo_len: number = len(undolist)
     if undo_len > 100
@@ -252,7 +256,7 @@ def AddToUndolist(mode: string, line: string, pos: number)
     endif
 enddef
 
-def readline#backwardChar(): string #{{{2
+def readline#backwardChar(): string
     concat_next_kill = false
 
     # SPC + C-h = close wildmenu
@@ -964,7 +968,12 @@ def ResetDidYankOrPop()
 enddef
 #}}}1
 # Util {{{1
-def AddToKillRing(text: string, mode: string, after: bool, this_kill_is_big: bool) #{{{2
+def AddToKillRing( #{{{2
+    text: string,
+    mode: string,
+    after: bool,
+    this_kill_is_big: bool
+)
     if concat_next_kill
         if mode == 'i'
             kill_ring_i[-1] = after
@@ -1102,7 +1111,13 @@ def SetConcatNextKill(mode: string, this_kill_is_big: bool) #{{{2
     augroup END
 enddef
 
-def SetupAndGetInfo(mode: string, add_to_undolist: bool, reset_concat: bool, set_isk: bool): list<any> #{{{2
+def SetupAndGetInfo( #{{{2
+    mode: string,
+    add_to_undolist: bool,
+    reset_concat: bool,
+    set_isk: bool
+): list<any>
+
     var line: string
     var pos: number
     [line, pos] = mode == 'c'
