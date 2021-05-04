@@ -324,11 +324,11 @@ def BackwardKillWord(mode: string): string
         # the cursor
         .. '\%' .. pos .. 'c'
 
-    var killed_text: string = matchstr(line, pat)
+    var killed_text: string = line->matchstr(pat)
     AddToKillRing(killed_text, mode, false, false)
 
     # Do *not* feed `<BS>` directly, because sometimes it would delete too much text.
-    # It may happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
+    # It might happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
     # Instead, feed `<Left><Del>`.
     return BreakUndoBeforeDeletions(mode)
          .. repeat((mode == 'i' ? "\<c-g>U" : '') .. "\<left>\<del>",
@@ -386,7 +386,7 @@ def ChangeCaseWord(mode: string): string
     var pos: number
     [line, pos] = SetupAndGetInfo(mode, true, true, true)
     var pat: string = '\k*\%' .. pos .. 'c\zs\%(\k\+\|.\{-}\<\k\+\>\|\%(\k\@!.\)\+\)'
-    var word: string = matchstr(line, pat)
+    var word: string = line->matchstr(pat)
 
     if mode == 'c'
         if pos > strlen(line)
@@ -563,7 +563,7 @@ def KillWord(mode: string): string
         .. '\%(\k\@!.\)\+'
         .. '\)'
 
-    var killed_text: string = matchstr(line, pat)
+    var killed_text: string = line->matchstr(pat)
     AddToKillRing(killed_text, mode, true, false)
 
     return BreakUndoBeforeDeletions(mode)
@@ -1018,7 +1018,8 @@ def BreakUndoBeforeDeletions(mode: string): string #{{{2
         # We'll re-enable the  breaking of the undo sequence  before a deletion,
         # the next time we insert a character, or leave insert mode.
         augroup ReadlineResetDeleting | au!
-            au InsertLeave,InsertCharPre * exe 'au! ReadlineResetDeleting' | deleting = false
+            au InsertLeave,InsertCharPre * exe 'au! ReadlineResetDeleting'
+                | deleting = false
         augroup END
         return "\<c-g>u"
     endif
