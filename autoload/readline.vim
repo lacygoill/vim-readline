@@ -124,9 +124,9 @@ augroup MyGranularUndo | au!
     #     :three
     #     C-w
     #     C-y
-    #     threetwo    ✘~
+    #     threetwo    ✘˜
     #     C-y
-    #     three       ✔~
+    #     three       ✔˜
     #}}}
 
     # Why `[^=]` instead of `*`?{{{
@@ -283,8 +283,8 @@ def readline#backwardKillWord(): string #{{{2
     #     " press `=rh` (to run `:RefHeredoc`)
     #     >n
     #     " press `M-b`
-    #     :return  made pending~
-    #     :return  resumed~
+    #     :return  made pending˜
+    #     :return  resumed˜
     #
     # Solution: Inspect the type of command-line with `getcmdtype()`.
     # If it's `>`, don't use `try`.
@@ -1068,13 +1068,13 @@ def Mode(): string #{{{2
     #
     #     > n
     #     > echo mode()
-    #     t~
+    #     t˜
     #}}}
     if mode =~ "^[vV\<c-v>t]$"
         return 'c'
     # To suppress this error in `AddToUndolist()`:{{{
     #
-    #     E121: Undefined variable: undolist_R~
+    #     E121: Undefined variable: undolist_R˜
     #
     # Happens when we press `R` in normal mode followed by `C-y`.
     #}}}
@@ -1097,8 +1097,8 @@ def SetConcatNextKill(mode: string, this_kill_is_big: bool) #{{{2
         #     :one C-u
         #     :two C-w
         #     C-y
-        #     twoone    ✘~
-        #     two       ✔~
+        #     twoone    ✘˜
+        #     two       ✔˜
         #}}}
         au CmdlineChanged * ++once if getcmdline() =~ '^\s*$'
             |     execute('concat_next_kill = false')
