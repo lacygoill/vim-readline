@@ -354,6 +354,14 @@ def readline#beginningOfLine(): string #{{{2
 enddef
 
 def readline#changeCaseSetup(upcase = false): string #{{{2
+# Warning: If you change the name of these functions:{{{
+#
+#    - `readline#changeCaseSetup()`
+#    - `readline#changeCaseWord()`
+#
+# Make sure to also change them when they're referenced in
+# `window#popup#scroll()`.
+#}}}
     change_case_up = upcase
     if Mode() == 'n'
         &opfunc = 'readline#changeCaseWord'

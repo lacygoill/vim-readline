@@ -246,7 +246,14 @@ MapMeta('o', 'readline#changeCaseSetup()', 'n', 'eu')
 MapMeta('u', '<c-\>e readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'c', 'u')
 MapMeta('u', '<c-r>=readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'i', 'su')
 MapMeta('u', 'U', 'x', 'u')
-MapMeta('u', '<cmd>call readline#mU#main()<cr>', 'n', 'u')
+# Do *not* install a mapping for `M-u` in normal mode.{{{
+#
+# It would not work, or it would break another mapping which we already install in:
+#
+#     ~/.vim/pack/mine/opt/window/plugin/window.vim
+#
+# Don't worry; the latter is able to uppercase a word.
+#}}}
 
 # M-d        kill-word {{{3
 
