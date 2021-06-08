@@ -29,7 +29,7 @@ def readline#operateAndGetNext#remember(when: string) #{{{1
         endif
         cmdline_history += [cmdline]
         if len(cmdline_history) > HISTORY_MAX_SIZE
-            remove(cmdline_history, 0)
+            cmdline_history->remove(0)
         endif
     endif
 enddef

@@ -57,7 +57,7 @@ var loaded = true
 #     $ vim -Nu NONE -S <(cat <<'EOF'
 #         vim9script
 #         @a = 'abc'
-#         set backspace=start
+#         &backspace = 'start'
 #         var deleting: bool
 #         au InsertLeave * deleting = 0
 #         au InsertCharPre * BreakUndoAfterDeletions()
@@ -84,7 +84,7 @@ var loaded = true
 #
 #     $ vim -Nu NONE -S <(cat <<'EOF'
 #         vim9script
-#         set backspace=start
+#         &backspace = 'start'
 #         inorea al la
 #         var deleting: bool = false
 #         au InsertLeave * deleting = false
@@ -241,7 +241,7 @@ def AddToUndolist( #{{{2
     var undo_len: number = len(undolist)
     if undo_len > 100
         # limit the size of the undolist to 100 entries
-        remove(undolist, 0, undo_len - 101)
+        undolist->remove(0, undo_len - 101)
     endif
     if mode == 'i'
         undolist_i += [[line, pos]]
@@ -274,7 +274,7 @@ enddef
 
 def readline#backwardKillWord(): string #{{{2
     var mode: string = Mode()
-    var isk_save: string = &l:isk
+    var iskeyword_save: string = &l:iskeyword
     var bufnr: number = bufnr('%')
 
     # All functions using a `try` conditional causes an issue when we hit a breakpoint while debugging an issue.{{{
@@ -291,11 +291,11 @@ def readline#backwardKillWord(): string #{{{2
     #
     # ---
     #
-    # This solution entails  that there is a risk that  some option (e.g. 'isk')
-    # is not properly restored, but that's a risk I'm willing to take.
-    # If we're hitting a  breakpoint, it means that sth is  broken; and when sth
-    # is broken, we often restart.
-    # IOW this issue will have almost no effect in practice.
+    # This  solution  entails that  there  is  a  risk  that some  option  (e.g.
+    # 'iskeyword') is  not properly restored, but  that's a risk I'm  willing to
+    # take.  If  we're hitting a  breakpoint, it means  that sth is  broken; and
+    # when sth is broken, we often restart.   IOW this issue will have almost no
+    # effect in practice.
     #}}}
     if getcmdtype() == '>'
         return BackwardKillWord(mode)
@@ -306,7 +306,7 @@ def readline#backwardKillWord(): string #{{{2
             Catch()
             return ''
         finally
-            setbufvar(bufnr, '&isk', isk_save)
+            setbufvar(bufnr, '&iskeyword', iskeyword_save)
         endtry
     endif
     return ''
@@ -328,8 +328,8 @@ def BackwardKillWord(mode: string): string
     AddToKillRing(killed_text, mode, false, false)
 
     # Do *not* feed `<BS>` directly, because sometimes it would delete too much text.
-    # It might happen when the cursor is after a sequence of whitespace (1 BS = &sw chars deleted).
-    # Instead, feed `<Left><Del>`.
+    # It might happen when the cursor is  after a sequence of whitespace (1 BS =
+    # `&shiftwidth` chars deleted).  Instead, feed `<Left><Del>`.
     return BreakUndoBeforeDeletions(mode)
          .. repeat((mode == 'i' ? "\<c-g>U" : '') .. "\<left>\<del>",
                     strcharlen(killed_text))
@@ -364,7 +364,7 @@ def readline#changeCaseSetup(upcase = false): string #{{{2
 #}}}
     change_case_up = upcase
     if Mode() == 'n'
-        &opfunc = 'readline#changeCaseWord'
+        &operatorfunc = 'readline#changeCaseWord'
         return 'g@l'
     endif
     return ''
@@ -373,7 +373,7 @@ var change_case_up: bool
 
 def readline#changeCaseWord(type = ''): string #{{{2
     var mode: string = Mode()
-    var isk_save: string = &l:isk
+    var iskeyword_save: string = &l:iskeyword
     var bufnr: number = bufnr('%')
     if getcmdtype() == '>'
         return ChangeCaseWord(mode)
@@ -383,7 +383,7 @@ def readline#changeCaseWord(type = ''): string #{{{2
         catch
             return Catch()
         finally
-            setbufvar(bufnr, '&isk', isk_save)
+            setbufvar(bufnr, '&iskeyword', iskeyword_save)
         endtry
     endif
     return ''
@@ -521,7 +521,7 @@ def readline#killLine(): string #{{{2
     var killed_text: string = strpart(line, pos - 1)
     AddToKillRing(killed_text, mode, true, true)
 
-    # Warning: it may take a long time on a mega long soft-wrapped line if `'so'` is different than 0{{{
+    # Warning: it may take a long time on a mega long soft-wrapped line if `'scrolloff'` is different than 0{{{
     #
     # MWE:
     #
@@ -536,7 +536,7 @@ enddef
 
 def readline#killWord(): string #{{{2
     var mode: string = Mode()
-    var isk_save: string = &l:isk
+    var iskeyword_save: string = &l:iskeyword
     var bufnr: number = bufnr('%')
     if getcmdtype() == '>'
         return KillWord(mode)
@@ -546,7 +546,7 @@ def readline#killWord(): string #{{{2
         catch
             return Catch()
         finally
-            setbufvar(bufnr, '&isk', isk_save)
+            setbufvar(bufnr, '&iskeyword', iskeyword_save)
         endtry
     endif
     return ''
@@ -588,10 +588,10 @@ def readline#moveByWords(type: any = '', capitalize = false): string #{{{2
 #    - composing characters  ( ́)
 #}}}
     if typename(type) == 'string' && type == ''
-        &opfunc = 'readline#moveByWords'
+        &operatorfunc = 'readline#moveByWords'
         return 'g@l'
     endif
-    var isk_save: string = &l:isk
+    var iskeyword_save: string = &l:iskeyword
     var bufnr: number = bufnr('%')
     if getcmdtype() == '>'
         return call(MoveByWords, [type, capitalize])
@@ -604,7 +604,7 @@ def readline#moveByWords(type: any = '', capitalize = false): string #{{{2
         catch
             return Catch()
         finally
-            setbufvar(bufnr, '&isk', isk_save)
+            setbufvar(bufnr, '&iskeyword', iskeyword_save)
         endtry
     endif
     return ''
@@ -680,7 +680,7 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
             setcmdpos(new_pos + 1)
             return new_line
         else
-            setline('.', new_line)
+            new_line->setline('.')
         endif
     endif
 
@@ -745,10 +745,10 @@ enddef
 def readline#transposeWords(type = ''): string #{{{2
     var mode: string = Mode()
     if type == '' && mode == 'n'
-        &opfunc = 'readline#transposeWords'
+        &operatorfunc = 'readline#transposeWords'
         return 'g@l'
     endif
-    var isk_save: string = &l:isk
+    var iskeyword_save: string = &l:iskeyword
     var bufnr: number = bufnr('%')
     if getcmdtype() == '>'
         return TransposeWords(mode)
@@ -758,7 +758,7 @@ def readline#transposeWords(type = ''): string #{{{2
         catch
             return Catch()
         finally
-            setbufvar(bufnr, '&isk', isk_save)
+            setbufvar(bufnr, '&iskeyword', iskeyword_save)
         endtry
     endif
     return ''
@@ -943,7 +943,7 @@ def readline#yank(want_to_pop = false): string #{{{2
     var length: number
     if want_to_pop
         length = strcharlen(kill_ring[-1])
-        insert(kill_ring, remove(kill_ring, -1), 0)
+        insert(kill_ring, kill_ring->remove(-1), 0)
     endif
     if exists('#ResetDidYankOrPop')
         au! ResetDidYankOrPop
@@ -1143,12 +1143,12 @@ def SetupAndGetInfo( #{{{2
     endif
 
     if set_isk
-        # Why re-setting 'isk'?{{{
+        # Why re-setting 'iskeyword'?{{{
         #
         # readline doesn't consider `-`, `#`, `_` as part of a word,
         # contrary to Vim which may disagree for some of them.
         #
-        # Removing them from 'isk' lets us operate on the following “words“:
+        # Removing them from 'iskeyword' lets us operate on the following “words“:
         #
         #     foo-bar
         #     foo#bar
@@ -1158,12 +1158,12 @@ def SetupAndGetInfo( #{{{2
         #
         # Previously, we used this code:
         #
-        #     setl isk-=_ isk-=- isk-=#
+        #     setl iskeyword-=_ iskeyword-=- iskeyword-=#
         #
         # But sometimes, the mapping behaved strangely.
-        # So now, I prefer to give an explicit value to `isk`.
+        # So now, I prefer to give an explicit value to `iskeyword`.
         #}}}
-        setl isk=@,48-57,192-255
+        &l:iskeyword = '@,48-57,192-255'
     endif
 
     return [line, pos]
