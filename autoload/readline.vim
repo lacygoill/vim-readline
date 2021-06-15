@@ -462,7 +462,7 @@ def readline#editAndExecuteCommand() #{{{2
     cedit_save = &cedit
     &cedit = "\<c-x>"
     feedkeys(&cedit, 'in')
-    au CmdWinEnter * ++once &cedit = cedit_save
+    au CmdwinEnter * ++once &cedit = cedit_save
 enddef
 var cedit_save: string
 
