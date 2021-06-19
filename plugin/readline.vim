@@ -58,7 +58,7 @@ augroup END
 # But if for some reason, you choose another key, or remove the mapping entirely,
 # make sure to disable these keys again.
 #}}}
-noremap! <unique> <c-@> <cmd>call readline#setMark()<cr>
+noremap! <unique> <c-@> <cmd>if !get(g:, 'debugging') <bar> call readline#setMark() <bar> endif<cr>
 # For some reason, there's no conflict between this mapping and `i_C-j` in vimrc.{{{
 #
 # Even though `C-j` produces `C-@` (C-v C-j → c-@).
@@ -84,16 +84,16 @@ noremap! <unique> <c-@> <cmd>call readline#setMark()<cr>
 # Using  `<expr>`  would  make  the  code of  `readline#undo()`  a  little  more
 # complicated.
 #}}}
-cno <unique> <c-_> <c-\>e readline#undo()<cr>
+cno <unique> <c-_> <c-\>e !get(g:, 'debugging') ? readline#undo() : getcmdline()<cr>
 ino <unique> <c-_> <cmd>call readline#undo()<cr>
 
 # C-a        beginning-of-line {{{3
 
-noremap! <expr><unique> <c-a> readline#beginningOfLine()
+noremap! <expr><unique> <c-a> !get(g:, 'debugging') ? readline#beginningOfLine() : '<c-b>'
 
 # C-b        backward-char {{{3
 
-noremap! <expr><unique> <c-b> readline#backwardChar()
+noremap! <expr><unique> <c-b> !get(g:, 'debugging') ? readline#backwardChar() : '<left>'
 
 # C-d        delete-char {{{3
 
@@ -102,7 +102,7 @@ noremap! <expr><unique> <c-b> readline#backwardChar()
 # You would  need to invoke `feedkeys()`  from a timer because  `:redraw` has no
 # effect during a textlock.
 #}}}
-cno <unique> <c-d> <c-\>e readline#deleteChar()<cr>
+cno <unique> <c-d> <c-\>e !get(g:, 'debugging') ? readline#deleteChar() : getcmdline()<cr>
 ino <unique> <c-d> <cmd>call readline#deleteChar()<cr>
 
 # C-e        end-of-line {{{3
@@ -112,15 +112,17 @@ ino <expr><unique> <c-e> readline#endOfLine()
 # C-f        forward-char {{{3
 
 &cedit = ''
-noremap! <expr><unique> <c-f> readline#forwardChar()
+noremap! <expr><unique> <c-f> !get(g:, 'debugging') ? readline#forwardChar() : '<right>'
 
 # C-h        backward-delete-char {{{3
 
-noremap! <expr><unique> <c-h> readline#backwardDeleteChar()
+noremap! <expr><unique> <c-h> !get(g:, 'debugging') ? readline#backwardDeleteChar() : '<c-h>'
 
 # C-k        kill-line {{{3
 
-cno <expr><unique> <c-k> readline#killLine()
+cno <expr><unique> <c-k> !get(g:, 'debugging')
+    \ ? readline#killLine()
+    \ : repeat('<del>', getcmdline()->strlen() - getcmdpos() + 1)
 
 # We need to restore the insertion of digraph functionality on the command-line.
 cno <unique> <c-x>k <c-k>
@@ -136,19 +138,19 @@ ino <expr><unique> <c-k><c-k> readline#killLine()
 # C-o        operate-and-get-next {{{3
 
 # Also called `accept-line-and-down-history` by zle.
-cno <expr><unique> <c-o> readline#operateAndGetNext#main()
+cno <expr><unique> <c-o> !get(g:, 'debugging') ? readline#operateAndGetNext#main() : ''
 
 # C-t        transpose-chars {{{3
 
-noremap! <expr><unique> <c-t> readline#transposeChars()
+noremap! <expr><unique> <c-t> !get(g:, 'debugging') ? readline#transposeChars() : ''
 
 # C-u        unix-line-discard {{{3
 
-noremap! <expr><unique> <c-u> readline#unixLineDiscard()
+noremap! <expr><unique> <c-u> !get(g:, 'debugging') ? readline#unixLineDiscard() : '<c-u>'
 
 # C-w        backward-kill-word {{{3
 
-noremap! <expr><unique> <c-w> readline#backwardKillWord()
+noremap! <expr><unique> <c-w> !get(g:, 'debugging') ? readline#backwardKillWord() : '<c-w>'
 
 # C-x C-e    edit-and-execute-command {{{3
 
@@ -186,7 +188,7 @@ cno <unique> <c-x><c-e> <cmd>call readline#editAndExecuteCommand()<cr>
 # C-x C-x    exchange-point-and-mark {{{3
 
 # See also: https://gist.github.com/lacygoill/c8ccf30dfac6393f737e3fa4efccdf9d
-noremap! <expr><unique> <c-x><c-x> readline#exchangePointAndMark()
+noremap! <expr><unique> <c-x><c-x> !get(g:, 'debugging') ? readline#exchangePointAndMark() : ''
 
 # C-y        yank {{{3
 
@@ -199,7 +201,7 @@ noremap! <expr><unique> <c-x><c-x> readline#exchangePointAndMark()
 #
 # ... we should be able to paste it with `C-y`, like in readline.
 
-noremap! <expr><unique> <c-y> readline#yank()
+noremap! <expr><unique> <c-y> !get(g:, 'debugging') ? readline#yank() : ''
 # }}}2
 # Meta {{{2
 # M-b/f      forward-word    backward-word {{{3
@@ -212,10 +214,18 @@ noremap! <expr><unique> <c-y> readline#yank()
 # Because it seems to consider `-` as part of a word.
 # `M-b`, `M-f` would move too far compared to readline.
 
-#                                 ┌  close wildmenu
-#                                 │
-MapMeta('b', '(wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:false, v:false)', 'c', 'eu')
-MapMeta('f', '(wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:true, v:false)', 'c', 'eu')
+var rhs: string = '!get(g:, "debugging")'
+    # `SPC C-h` closes the wildmenu if it's open
+    .. ' ? (wildmenumode() ? "<space><c-h>" : "") .. readline#moveByWords(v:false, v:false)'
+    .. ' : "<s-left>"'
+
+MapMeta('b', rhs, 'c', 'eu')
+MapMeta('f',
+    rhs->substitute('false', 'true', '')
+       ->substitute('left', 'right', ''),
+    'c',
+    'eu'
+)
 
 MapMeta('b', 'readline#moveByWords(v:false, v:false)', 'i', 'eu')
 MapMeta('f', 'readline#moveByWords(v:true, v:false)', 'i', 'eu')
@@ -229,7 +239,11 @@ MapMeta('f', 'readline#moveByWords(v:true, v:false)', 'i', 'eu')
 #     xno <m-u> <nop>
 #}}}
 
-MapMeta('i', '<c-\>e readline#moveByWords(v:true, v:true)<cr>', 'c', 'u')
+rhs = '<c-\>e !get(g:, "debugging")'
+    .. ' ? readline#moveByWords(v:true, v:true)'
+    .. ' : getcmdline()<cr>'
+
+MapMeta('i', rhs, 'c', 'u')
 MapMeta('i', '<c-r>=readline#moveByWords(v:true, v:true)<cr>', 'i', 'su')
 
 MapMeta('i', 'readline#moveByWords()', 'n', 'eu')
@@ -237,13 +251,23 @@ MapMeta('i', '<c-\><c-n><cmd>sil keepj keepp *s/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/
 
 # M-u M-o    change-case-word {{{3
 
-MapMeta('o', '<c-\>e readline#changeCaseSetup() .. readline#changeCaseWord()<cr>', 'c', 'u')
+rhs = '<c-\>e'
+    .. ' !get(g:, "debugging")'
+    .. ' ? readline#changeCaseSetup() .. readline#changeCaseWord()'
+    .. ' : getcmdline()<cr>'
+
+MapMeta('o', rhs, 'c', 'u')
 MapMeta('o', '<c-r>=readline#changeCaseSetup() .. readline#changeCaseWord()<cr>', 'i', 'su')
 MapMeta('o', '<c-\><c-n><cmd>sil keepj keepp *s/\%V[A-Z]/\l&/ge<cr>', 'x', 'u')
 
 MapMeta('o', 'readline#changeCaseSetup()', 'n', 'eu')
 
-MapMeta('u', '<c-\>e readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'c', 'u')
+rhs = '<c-\>e'
+    .. ' !get(g:, "debugging")'
+    .. ' ? readline#changeCaseSetup(v:true) .. readline#changeCaseWord()'
+    .. ' : getcmdline()<cr>'
+
+MapMeta('u', rhs, 'c', 'u')
 MapMeta('u', '<c-r>=readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<cr>', 'i', 'su')
 MapMeta('u', 'U', 'x', 'u')
 # Do *not* install a mapping for `M-u` in normal mode.{{{
@@ -260,7 +284,7 @@ MapMeta('u', 'U', 'x', 'u')
 # Delete until the beginning of the next word.
 # In bash, M-d does the same, and is bound to the function kill-word.
 
-MapMeta('d', 'readline#killWord()', '!', 'eu')
+MapMeta('d', '!get(g:, "debugging") ? readline#killWord() : ""', '!', 'eu')
 
 # M-n/p      history-search-forward/backward {{{3
 
@@ -269,11 +293,16 @@ MapMeta('p', '<up>', 'c', 'u')
 
 # M-t        transpose-words {{{3
 
-MapMeta('t', '<c-\>e readline#transposeWords()<cr>', 'c', 'u')
+rhs = '<c-\>e'
+    .. ' !get(g:, "debugging")'
+    .. ' ? readline#transposeWords()'
+    .. ' : getcmdline()<cr>'
+
+MapMeta('t', rhs, 'c', 'u')
 MapMeta('t', '<c-r>=readline#transposeWords()<cr>', 'i', 'su')
 MapMeta('t', 'readline#transposeWords()', 'n', 'eu')
 
 # M-y        yank-pop {{{3
 
-MapMeta('y', 'readline#yank(v:true)', '!', 'eu')
+MapMeta('y', '!get(g:, "debugging") ? readline#yank(v:true) : ""', '!', 'eu')
 
