@@ -102,7 +102,9 @@ noremap! <expr><unique> <c-b> !get(g:, 'debugging') ? readline#backwardChar() : 
 # You would  need to invoke `feedkeys()`  from a timer because  `:redraw` has no
 # effect during a textlock.
 #}}}
-cno <unique> <c-d> <c-\>e !get(g:, 'debugging') ? readline#deleteChar() : getcmdline()<cr>
+cno <unique> <c-d> <c-\>e !get(g:, 'debugging')
+    \ ? readline#deleteChar()
+    \ : getcmdline() .. (!!feedkeys("\<lt>del>", 'in') ? '' : '')<cr>
 ino <unique> <c-d> <cmd>call readline#deleteChar()<cr>
 
 # C-e        end-of-line {{{3
