@@ -13,7 +13,7 @@ def readline#operateAndGetNext#main(): string #{{{1
     var cmdline: string = getcmdline()
     var pos_in_history: number = (index(cmdline_history, cmdline) + 1) % len(cmdline_history)
     var seq: string = cmdline_history[pos_in_history]
-    return "\<cr>:" .. seq
+    return "\<CR>:" .. seq
 enddef
 
 def readline#operateAndGetNext#remember(when: string) #{{{1
@@ -21,7 +21,7 @@ def readline#operateAndGetNext#remember(when: string) #{{{1
         return
     endif
     if when == 'on_leave'
-        au CmdlineLeave : ++once readline#operateAndGetNext#remember('now')
+        autocmd CmdlineLeave : ++once readline#operateAndGetNext#remember('now')
     else
         var cmdline: string = getcmdline()
         if cmdline == ''

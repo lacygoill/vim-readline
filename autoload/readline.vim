@@ -59,19 +59,19 @@ var loaded = true
 #         @a = 'abc'
 #         &backspace = 'start'
 #         var deleting: bool
-#         au InsertLeave * deleting = 0
-#         au InsertCharPre * BreakUndoAfterDeletions()
+#         autocmd InsertLeave * deleting = 0
+#         autocmd InsertCharPre * BreakUndoAfterDeletions()
 #         def BreakUndoAfterDeletions()
 #             if !deleting
 #                 return
 #             endif
-#             feedkeys("\<bs>\<c-g>u" .. v:char, 'in')
+#             feedkeys("\<BS>\<C-G>u" .. v:char, 'in')
 #             deleting = false
 #         enddef
-#         ino <expr> <c-w> C_w()
+#         inoremap <expr> <C-W> C_w()
 #         def g:C_w(): string
 #             deleting = true
-#             return "\<c-w>"
+#             return "\<C-W>"
 #         enddef
 #     EOF
 #     )
@@ -85,28 +85,28 @@ var loaded = true
 #     $ vim -Nu NONE -S <(cat <<'EOF'
 #         vim9script
 #         &backspace = 'start'
-#         inorea al la
+#         inoreabbrev al la
 #         var deleting: bool = false
-#         au InsertLeave * deleting = false
-#         au InsertCharPre * BreakUndoAfterDeletions()
+#         autocmd InsertLeave * deleting = false
+#         autocmd InsertCharPre * BreakUndoAfterDeletions()
 #         def BreakUndoAfterDeletions()
 #             if !deleting
 #                 return
 #             endif
-#             feedkeys("\<c-g>u", 'in')
+#             feedkeys("\<C-G>u", 'in')
 #             deleting = false
 #         enddef
-#         ino <expr> <c-w> C_w()
+#         inoremap <expr> <C-W> C_w()
 #         def g:C_w(): string
 #             deleting = true
-#             return "\<c-w>"
+#             return "\<C-W>"
 #         enddef
 #     EOF
 #     )
 #     " press: i C-w
 #     " press: v a l SPC
 #     " 'al' is replaced by 'la' ✘
-#     " this happens because `c-g u` has been executed after `v` and before `al`
+#     " this happens because `C-g u` has been executed after `v` and before `al`
 #
 # In any case, no  matter what you do, Vim's behavior  when editing text becomes
 # less predictable.  I don't like that.
@@ -116,7 +116,7 @@ var loaded = true
 
 import Catch from 'lg.vim'
 
-augroup MyGranularUndo | au!
+augroup MyGranularUndo | autocmd!
     # Why resetting `concat_next_kill`?{{{
     #
     #     :one two
@@ -132,7 +132,7 @@ augroup MyGranularUndo | au!
     # Why `[^=]` instead of `*`?{{{
     #
     # We have some readline mappings in  insert mode and command-line mode whose
-    # rhs uses `c-r =`.
+    # rhs uses `C-r =`.
     # When they are invoked, we shouldn't reset those variables.
     # Otherwise:
     #
@@ -183,16 +183,16 @@ augroup MyGranularUndo | au!
     #
     # It doesn't seem a big deal atm.
     #}}}
-    #   Could `<cmd>` help?{{{
+    #   Could `<Cmd>` help?{{{
     #
     # It does, but we can't always use it.
-    # Sometimes,  we  still  need  `<c-r>=`  or `<c-\>e`,  both  of  which  fire
+    # Sometimes,  we  still  need  `<C-R>=`  or `<C-\>e`,  both  of  which  fire
     # `CmdlineEnter`.
     #}}}
-    au CmdlineLeave [^=>] concat_next_kill = false
+    autocmd CmdlineLeave [^=>] concat_next_kill = false
     # reset undolist and marks when we leave insert/command-line mode
-    au CmdlineLeave [^=>] undolist_c = [] | mark_c = 0
-    au InsertLeave * undolist_i = [] | mark_i = 0
+    autocmd CmdlineLeave [^=>] undolist_c = [] | mark_c = 0
+    autocmd InsertLeave * undolist_i = [] | mark_i = 0
 augroup END
 
 var deleting: bool = false
@@ -226,9 +226,9 @@ var did_yank_or_pop: bool
 
 # Interface {{{1
 def readline#addToUndolist() #{{{2
-    augroup AddToUndolist | au!
-        au User AddToUndolistC AddToUndolist('c', getcmdline(), getcmdpos())
-        au User AddToUndolistI AddToUndolist('i', getline('.'), col('.'))
+    augroup AddToUndolist | autocmd!
+        autocmd User AddToUndolistC AddToUndolist('c', getcmdline(), getcmdpos())
+        autocmd User AddToUndolistI AddToUndolist('i', getline('.'), col('.'))
     augroup END
 enddef
 
@@ -261,15 +261,15 @@ def readline#backwardChar(): string
 
     # SPC + C-h = close wildmenu
     return Mode() == 'i'
-        ?     "\<c-g>U\<left>"
-        :     (wildmenumode() ? "\<space>\<c-h>" : '') .. "\<left>"
+        ?     "\<C-G>U\<Left>"
+        :     (wildmenumode() ? "\<Space>\<C-H>" : '') .. "\<Left>"
 enddef
 
 def readline#backwardDeleteChar(): string #{{{2
     var line: string
     var pos: number
     [line, pos] = Mode()->SetupAndGetInfo(true, false, false)
-    return "\<c-h>"
+    return "\<C-H>"
 enddef
 
 def readline#backwardKillWord(): string #{{{2
@@ -331,7 +331,7 @@ def BackwardKillWord(mode: string): string
     # It might happen when the cursor is  after a sequence of whitespace (1 BS =
     # `&shiftwidth` chars deleted).  Instead, feed `<Left><Del>`.
     return BreakUndoBeforeDeletions(mode)
-         .. repeat((mode == 'i' ? "\<c-g>U" : '') .. "\<left>\<del>",
+         .. repeat((mode == 'i' ? "\<C-G>U" : '') .. "\<Left>\<Del>",
                     strcharlen(killed_text))
 enddef
 
@@ -350,7 +350,7 @@ def readline#beginningOfLine(): string #{{{2
     if count > &columns
         return "\<home>"
     endif
-    return repeat("\<c-g>U" .. (after_first_nonws ? "\<left>" : "\<right>"), count)
+    return repeat("\<C-G>U" .. (after_first_nonws ? "\<Left>" : "\<Right>"), count)
 enddef
 
 def readline#changeCaseSetup(upcase = false): string #{{{2
@@ -407,7 +407,7 @@ def ChangeCaseWord(mode: string): string
         endif
     elseif mode == 'i'
         var length: number = strcharlen(word)
-        return repeat("\<del>", length) .. (change_case_up ? toupper(word) : tolower(word))
+        return repeat("\<Del>", length) .. (change_case_up ? toupper(word) : tolower(word))
     elseif mode == 'n'
         var new_line: string = line
             ->substitute(pat, (change_case_up ? '\U&' : '\L&'), '')
@@ -435,13 +435,13 @@ def readline#deleteChar(): string #{{{2
             # listed  completion suggestions.   This makes  consecutive listings
             # more readable.
             # MWE:
-            #       :h dir       C-d
-            #       :h dire      C-d
-            #       :h directory C-d
+            #       :help dir       C-d
+            #       :help dire      C-d
+            #       :help directory C-d
             redraw
-            feedkeys("\<c-d>", 'in')
+            feedkeys("\<C-D>", 'in')
         else
-            feedkeys("\<del>", 'in')
+            feedkeys("\<Del>", 'in')
         endif
         return line
     endif
@@ -450,19 +450,19 @@ def readline#deleteChar(): string #{{{2
     #    - otherwise, if we're *before* the end of the line, delete next character
     #    - "                   *at* the end of the line,     delete the newline
     var seq: string = pumvisible() && complete_info(['items']).items->len() > FAST_SCROLL_IN_PUM
-        ?     repeat("\<c-n>", FAST_SCROLL_IN_PUM)
+        ?     repeat("\<C-N>", FAST_SCROLL_IN_PUM)
         : col('.') <= getline('.')->strlen()
-        ?     "\<del>"
-        :     "\<c-g>j\<home>\<bs>"
+        ?     "\<Del>"
+        :     "\<C-G>j\<home>\<BS>"
     feedkeys(seq, 'in')
     return ''
 enddef
 
 def readline#editAndExecuteCommand() #{{{2
     cedit_save = &cedit
-    &cedit = "\<c-x>"
+    &cedit = "\<C-X>"
     feedkeys(&cedit, 'in')
-    au CmdwinEnter * ++once &cedit = cedit_save
+    autocmd CmdwinEnter * ++once &cedit = cedit_save
 enddef
 var cedit_save: string
 
@@ -472,7 +472,7 @@ def readline#endOfLine(): string #{{{2
     if count > &columns
         return "\<end>"
     endif
-    return repeat("\<c-g>U\<right>", count)
+    return repeat("\<C-G>U\<Right>", count)
 enddef
 
 def readline#exchangePointAndMark(): string #{{{2
@@ -487,8 +487,8 @@ def readline#exchangePointAndMark(): string #{{{2
     var motion: string
     if mode == 'i'
         motion = new_pos > old_pos
-            ?     "\<c-g>U\<right>"
-            :     "\<c-g>U\<left>"
+            ?     "\<C-G>U\<Right>"
+            :     "\<C-G>U\<Left>"
     endif
 
     if mode == 'i'
@@ -497,17 +497,17 @@ def readline#exchangePointAndMark(): string #{{{2
         mark_c = old_pos
     endif
     return mode == 'c'
-        ?     "\<c-b>" .. repeat("\<right>", new_pos)
+        ?     "\<C-B>" .. repeat("\<Right>", new_pos)
         :     repeat(motion, abs(new_pos - old_pos))
 enddef
 
 def readline#forwardChar(): string #{{{2
     concat_next_kill = false
     return Mode() == 'c'
-        ?    (wildmenumode() ? "\<space>\<c-h>" : '') .. "\<right>"
+        ?    (wildmenumode() ? "\<Space>\<C-H>" : '') .. "\<Right>"
         : col('.') > getline('.')->strlen()
         ?     ''
-        :     "\<c-g>U\<right>"
+        :     "\<C-G>U\<Right>"
     # Go the right if we're in the middle of the line (custom), or fix the
     # indentation if we're at the end (default)
 enddef
@@ -525,13 +525,19 @@ def readline#killLine(): string #{{{2
     #
     # MWE:
     #
-    #     $ vim -Nu NONE \
-    #     +'setl wrap so=3|ino <expr> <c-k><c-k> repeat("<del>", 11000)' \
-    #     +"%d|pu =repeat(['0123456789'], 1000)|%j|0pu_|exe 'norm! j'|startinsert" /tmp/file
-    #     " press C-k C-k: the line is deleted only after 2 or 3 seconds
+    #     setlocal wrap scrolloff=3
+    #     inoremap <expr> <C-K><C-K> repeat('<Del>', 11000)
+    #     :% delete
+    #     put =['0123456789']->repeat(1000)
+    #     :% join
+    #     :0 put _
+    #     normal! j
+    #     startinsert
+    #
+    #     # press C-k C-k: the line is deleted only after 2 or 3 seconds
     #}}}
     return BreakUndoBeforeDeletions(mode)
-        .. repeat("\<del>", strcharlen(killed_text))
+        .. repeat("\<Del>", strcharlen(killed_text))
 enddef
 
 def readline#killWord(): string #{{{2
@@ -575,7 +581,7 @@ def KillWord(mode: string): string
     AddToKillRing(killed_text, mode, true, false)
 
     return BreakUndoBeforeDeletions(mode)
-        .. repeat("\<del>", strcharlen(killed_text))
+        .. repeat("\<Del>", strcharlen(killed_text))
 enddef
 
 def readline#moveByWords(type: any = '', capitalize = false): string #{{{2
@@ -693,8 +699,8 @@ def MoveByWords(arg_is_fwd: any, arg_capitalize: bool): string
     var pos_char: number = line->strpart(0, pos - 1)->strcharlen()
     var diff: number = pos_char - new_pos_char
     var building_motion: string = mode == 'i'
-        ?     diff > 0 ? "\<c-g>U\<left>" : "\<c-g>U\<right>"
-        :     diff > 0 ? "\<left>" : "\<right>"
+        ?     diff > 0 ? "\<C-G>U\<Left>" : "\<C-G>U\<Right>"
+        :     diff > 0 ? "\<Left>" : "\<Right>"
 
     # Why `feedkeys()`?{{{
     #
@@ -726,16 +732,16 @@ def readline#transposeChars(): string #{{{2
     if pos > strlen(line)
         var deleted_char: string = line[-2]
         return mode == 'i'
-            ?     "\<c-g>U\<left>\<bs>\<c-g>U\<right>" .. deleted_char
-            :     "\<left>\<bs>\<right>" .. deleted_char
+            ?     "\<C-G>U\<Left>\<BS>\<C-G>U\<Right>" .. deleted_char
+            :     "\<Left>\<BS>\<Right>" .. deleted_char
 
     elseif pos > 1
         # Alternative: `line->strpart(0, pos - 1)[-1]`
         # It's (very) slightly slower though.
         var deleted_char: string = line[line->charidx(pos - 1) - 1]
         return mode == 'i'
-            ?     "\<bs>\<c-g>U\<right>" .. deleted_char
-            :     "\<bs>\<right>" .. deleted_char
+            ?     "\<BS>\<C-G>U\<Right>" .. deleted_char
+            :     "\<BS>\<Right>" .. deleted_char
 
     else
         return ''
@@ -866,21 +872,21 @@ def readline#undo(): string #{{{2
         # slightly better performance on long command-lines).
         #
         # You might wonder why we only need  to restore the cursor position in 1
-        # particular case.   I think  it's just a  property of  `:h c_CTRL-\_e`.
+        # particular case.   I think  it's just a  property of  `:help c_CTRL-\_e`.
         # When you  edit the command-line  with the latter, the  cursor probably
         # remains unchanged; *unless*,  your cursor was at the end  of the line.
         # In which case, Vim probably tries to be smart, and think that you want
         # your cursor to be at the end of the new command-line (just like it was
         # at the end of the old one).
         #}}}
-            feedkeys( "\<c-b>" .. repeat("\<right>", strpart(old_line, 0, old_pos)->strcharlen()), 'n')
+            feedkeys( "\<C-B>" .. repeat("\<Right>", strpart(old_line, 0, old_pos)->strcharlen()), 'n')
         endif
     }
     if mode == 'c'
-        au CmdlineChanged * ++once UndoRestoreCursor()
+        autocmd CmdlineChanged * ++once UndoRestoreCursor()
         return old_line
     else
-        au TextChangedI * ++once UndoRestoreCursor()
+        autocmd TextChangedI * ++once UndoRestoreCursor()
         setline('.', old_line)
     endif
     return ''
@@ -890,7 +896,7 @@ var UndoRestoreCursor: func
 def readline#unixLineDiscard(): string #{{{2
     var mode: string = Mode()
     if pumvisible() && complete_info(['items']).items->len() > FAST_SCROLL_IN_PUM
-        return repeat("\<c-p>", FAST_SCROLL_IN_PUM)
+        return repeat("\<C-P>", FAST_SCROLL_IN_PUM)
     endif
 
     var line: string
@@ -917,17 +923,17 @@ def readline#unixLineDiscard(): string #{{{2
             ->strpart(col('.') - 1)
             ->AddToKillRing('i', false, true)
 
-        au TextChangedI * ++once AddDeletedTextToKillRing()
+        autocmd TextChangedI * ++once AddDeletedTextToKillRing()
     endif
 
-    return BreakUndoBeforeDeletions(mode) .. "\<c-u>"
+    return BreakUndoBeforeDeletions(mode) .. "\<C-U>"
 enddef
 var AddDeletedTextToKillRing: func
 
 def readline#yank(want_to_pop = false): string #{{{2
     var mode: string = Mode()
     if pumvisible()
-        return "\<c-y>"
+        return "\<C-Y>"
     endif
     var kill_ring: list<string> = mode == 'i' ? kill_ring_i : kill_ring_c
     if want_to_pop && (!did_yank_or_pop || len(kill_ring) < 2)
@@ -946,24 +952,24 @@ def readline#yank(want_to_pop = false): string #{{{2
         insert(kill_ring, kill_ring->remove(-1), 0)
     endif
     if exists('#ResetDidYankOrPop')
-        au! ResetDidYankOrPop
-        aug! ResetDidYankOrPop
+        autocmd! ResetDidYankOrPop
+        augroup! ResetDidYankOrPop
     endif
-    au SafeState * ++once ResetDidYankOrPop()
+    autocmd SafeState * ++once ResetDidYankOrPop()
     @- = kill_ring[-1]
     return (want_to_pop
-        ?    repeat((mode == 'i' ? "\<c-g>U" : '') .. "\<left>\<del>", length)
+        ?    repeat((mode == 'i' ? "\<C-G>U" : '') .. "\<Left>\<Del>", length)
         :    '')
-        .. "\<c-r>-"
+        .. "\<C-R>-"
 enddef
 
 def ResetDidYankOrPop()
     # In the shell, as soon as you move the cursor, `M-y` doesn't do anything anymore.
     # We want the same behavior in Vim.
-    augroup ResetDidYankOrPop | au!
+    augroup ResetDidYankOrPop | autocmd!
         # Do *not* use a long list of events (`CursorMovedI`, `CmdlineChanged`, ...).{{{
         #
-        #     au CursorMovedI,CmdlineChanged,InsertLeave,CursorMoved *
+        #     autocmd CursorMovedI,CmdlineChanged,InsertLeave,CursorMoved *
         #
         # It would not be as reliable as `SafeState`.
         # E.g., when you  move your cursor on the command-line,  the flag should
@@ -971,7 +977,7 @@ def ResetDidYankOrPop()
         # Besides, finding the  right list of events may be  tricky; you have to
         # consider special cases, such as pressing `C-c` to leave insert mode.
         #}}}
-        au SafeState * ++once did_yank_or_pop = false
+        autocmd SafeState * ++once did_yank_or_pop = false
     augroup END
 enddef
 #}}}1
@@ -1025,11 +1031,11 @@ def BreakUndoBeforeDeletions(mode: string): string #{{{2
         deleting = true
         # We'll re-enable the  breaking of the undo sequence  before a deletion,
         # the next time we insert a character, or leave insert mode.
-        augroup ReadlineResetDeleting | au!
-            au InsertLeave,InsertCharPre * exe 'au! ReadlineResetDeleting'
+        augroup ReadlineResetDeleting | autocmd!
+            autocmd InsertLeave,InsertCharPre * execute 'autocmd! ReadlineResetDeleting'
                 | deleting = false
         augroup END
-        return "\<c-g>u"
+        return "\<C-G>u"
     endif
 enddef
 # Purpose:{{{
@@ -1059,9 +1065,9 @@ def Mode(): string #{{{2
     #
     #     $ vim -Nu NONE -S <(cat <<'EOF'
     #         breakadd func Func
-    #         fu Func()
+    #         function Func()
     #             call term_start(&shell, {'hidden': 1})->popup_create({})
-    #         endfu
+    #         endfunction
     #         call Func()
     #     EOF
     #     )
@@ -1070,7 +1076,7 @@ def Mode(): string #{{{2
     #     > echo mode()
     #     t˜
     #}}}
-    if mode =~ "^[vV\<c-v>t]$"
+    if mode =~ "^[vV\<C-V>t]$"
         return 'c'
     # To suppress this error in `AddToUndolist()`:{{{
     #
@@ -1100,7 +1106,7 @@ def SetConcatNextKill(mode: string, this_kill_is_big: bool) #{{{2
         #     twoone    ✘˜
         #     two       ✔˜
         #}}}
-        au CmdlineChanged * ++once if getcmdline() =~ '^\s*$'
+        autocmd CmdlineChanged * ++once if getcmdline() =~ '^\s*$'
             |     execute('concat_next_kill = false')
             | endif
         return
@@ -1114,8 +1120,8 @@ def SetConcatNextKill(mode: string, this_kill_is_big: bool) #{{{2
     # We  should  make the  autocmd  listen  to  `CursorMovedI`, but  it  would,
     # wrongly, reset  `concat_next_kill` when  we delete  a 2nd  multi-char text
     # right after a 1st one.
-    augroup ReadlineResetConcatNextKill | au!
-        au InsertCharPre,InsertEnter,InsertLeave * exe 'au! ReadlineResetConcatNextKill'
+    augroup ReadlineResetConcatNextKill | autocmd!
+        autocmd InsertCharPre,InsertEnter,InsertLeave * execute 'autocmd! ReadlineResetConcatNextKill'
             | concat_next_kill = false
     augroup END
 enddef
@@ -1158,7 +1164,7 @@ def SetupAndGetInfo( #{{{2
         #
         # Previously, we used this code:
         #
-        #     setl iskeyword-=_ iskeyword-=- iskeyword-=#
+        #     setlocal iskeyword-=_ iskeyword-=- iskeyword-=#
         #
         # But sometimes, the mapping behaved strangely.
         # So now, I prefer to give an explicit value to `iskeyword`.
