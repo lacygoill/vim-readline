@@ -221,16 +221,13 @@ var rhs: string = '!get(g:, "debugging")'
     .. ' ? (wildmenumode() ? "<Space><C-H>" : "") .. readline#moveByWords(v:false, v:false)'
     .. ' : "<S-Left>"'
 
-MapMeta('b', rhs, 'c', 'eu')
-MapMeta('f',
-    rhs->substitute('false', 'true', '')
-       ->substitute('left', 'right', ''),
-    'c',
-    'eu'
-)
+MapMeta('cnoremap <expr><unique> <M-B> ' .. rhs)
+MapMeta('cnoremap <expr><unique> <M-F> '
+    .. rhs->substitute('false', 'true', '')
+          ->substitute('left', 'right', ''))
 
-MapMeta('b', 'readline#moveByWords(v:false, v:false)', 'i', 'eu')
-MapMeta('f', 'readline#moveByWords(v:true, v:false)', 'i', 'eu')
+MapMeta('inoremap <expr><unique> <M-B> readline#moveByWords(v:false, v:false)')
+MapMeta('inoremap <expr><unique> <M-F> readline#moveByWords(v:true, v:false)')
 
 # M-i        capitalize-word {{{3
 
@@ -241,38 +238,51 @@ MapMeta('f', 'readline#moveByWords(v:true, v:false)', 'i', 'eu')
 #     xnoremap <M-U> <Nop>
 #}}}
 
-rhs = '<C-\>e !get(g:, "debugging")'
+
+MapMeta('cnoremap <unique>'
+    .. ' <M-I>'
+    .. ' <C-\>e !get(g:, "debugging")'
     .. ' ? readline#moveByWords(v:true, v:true)'
-    .. ' : getcmdline()<CR>'
+    .. ' : getcmdline()<CR>')
 
-MapMeta('i', rhs, 'c', 'u')
-MapMeta('i', '<C-R>=readline#moveByWords(v:true, v:true)<CR>', 'i', 'su')
+MapMeta('inoremap <silent><unique>'
+    .. ' <M-I>'
+    .. ' <C-R>=readline#moveByWords(v:true, v:true)<CR>')
 
-MapMeta('i', 'readline#moveByWords()', 'n', 'eu')
-MapMeta('i', '<C-\><C-N><Cmd>silent keepjumps keeppatterns'
-    .. ' :* substitute/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<CR>', 'x', 'u')
+MapMeta('nnoremap <expr><unique> <M-I> readline#moveByWords()')
+MapMeta('xnoremap <unique> <M-I>'
+    .. ' <C-\><C-N><Cmd>silent keepjumps keeppatterns'
+    .. ' :* substitute/\%V.\{-}\zs\(\k\)\(\k*\%V\k\=\)/\u\1\L\2/ge<CR>')
 
 # M-u M-o    change-case-word {{{3
 
-rhs = '<C-\>e'
-    .. ' !get(g:, "debugging")'
+MapMeta('cnoremap <unique> '
+    .. ' <M-O>'
+    .. ' <C-\>e !get(g:, "debugging")'
     .. ' ? readline#changeCaseSetup() .. readline#changeCaseWord()'
-    .. ' : getcmdline()<CR>'
+    .. ' : getcmdline()<CR>')
 
-MapMeta('o', rhs, 'c', 'u')
-MapMeta('o', '<C-R>=readline#changeCaseSetup() .. readline#changeCaseWord()<CR>', 'i', 'su')
-MapMeta('o', '<C-\><C-N><Cmd>silent keepjumps keeppatterns :* substitute/\%V[A-Z]/\l&/ge<CR>', 'x', 'u')
+MapMeta('inoremap <silent><unique>'
+    .. ' <M-O>'
+    .. ' <C-R>=readline#changeCaseSetup() .. readline#changeCaseWord()<CR>')
 
-MapMeta('o', 'readline#changeCaseSetup()', 'n', 'eu')
+MapMeta('xnoremap <unique>'
+    .. ' <M-O>'
+    .. ' <C-\><C-N><Cmd>silent keepjumps keeppatterns :* substitute/\%V[A-Z]/\l&/ge<CR>')
 
-rhs = '<C-\>e'
-    .. ' !get(g:, "debugging")'
+MapMeta('nnoremap <expr><unique> <M-O> readline#changeCaseSetup()')
+
+MapMeta('cnoremap <unique>'
+    .. ' <M-U>'
+    .. ' <C-\>e !get(g:, "debugging")'
     .. ' ? readline#changeCaseSetup(v:true) .. readline#changeCaseWord()'
-    .. ' : getcmdline()<CR>'
+    .. ' : getcmdline()<CR>')
 
-MapMeta('u', rhs, 'c', 'u')
-MapMeta('u', '<C-R>=readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<CR>', 'i', 'su')
-MapMeta('u', 'U', 'x', 'u')
+MapMeta('inoremap <silent><unique>'
+    .. ' <M-U>'
+    .. ' <C-R>=readline#changeCaseSetup(v:true) .. readline#changeCaseWord()<CR>')
+
+MapMeta('xnoremap <unique> <M-U> U')
 # Do *not* install a mapping for `M-u` in normal mode.{{{
 #
 # It would not work, or it would break another mapping which we already install in:
@@ -287,25 +297,34 @@ MapMeta('u', 'U', 'x', 'u')
 # Delete until the beginning of the next word.
 # In bash, M-d does the same, and is bound to the function kill-word.
 
-MapMeta('d', '!get(g:, "debugging") ? readline#killWord() : ""', '!', 'eu')
+MapMeta('noremap! <expr><unique>'
+    .. ' <M-D>'
+    .. ' !get(g:, "debugging") ? readline#killWord() : ""')
 
 # M-n/p      history-search-forward/backward {{{3
 
-MapMeta('n', '<Down>', 'c', 'u')
-MapMeta('p', '<Up>', 'c', 'u')
+MapMeta('cnoremap <unique> <M-N> <Down>')
+MapMeta('cnoremap <unique> <M-P> <Up>')
 
 # M-t        transpose-words {{{3
 
-rhs = '<C-\>e'
-    .. ' !get(g:, "debugging")'
+MapMeta('cnoremap <unique>'
+    .. ' <M-T>'
+    .. ' <C-\>e !get(g:, "debugging")'
     .. ' ? readline#transposeWords()'
-    .. ' : getcmdline()<CR>'
+    .. ' : getcmdline()<CR>')
 
-MapMeta('t', rhs, 'c', 'u')
-MapMeta('t', '<C-R>=readline#transposeWords()<CR>', 'i', 'su')
-MapMeta('t', 'readline#transposeWords()', 'n', 'eu')
+MapMeta('inoremap <silent><unique>'
+    .. ' <M-T>'
+    .. ' <C-R>=readline#transposeWords()<CR>')
+
+MapMeta('nnoremap <expr><unique>'
+    .. ' <M-T>'
+    .. ' readline#transposeWords()')
 
 # M-y        yank-pop {{{3
 
-MapMeta('y', '!get(g:, "debugging") ? readline#yank(v:true) : ""', '!', 'eu')
+MapMeta('noremap! <expr><unique>'
+    .. ' <M-Y>'
+    .. ' !get(g:, "debugging") ? readline#yank(v:true) : ""')
 
