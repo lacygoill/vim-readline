@@ -1,8 +1,5 @@
 vim9script noclear
 
-if exists('loaded') | finish | endif
-var loaded = true
-
 # FIXME: `Del` is broken with some composing characters.{{{
 #
 # Sometimes, our functions return `Del`.
@@ -28,17 +25,17 @@ var loaded = true
 # You could recover the state of the buffer after deleting some text.
 # For example, you could recover the state (2) in the following edition:
 #
-#     " state (1)
+#     # state (1)
 #     hello world|
 #                ^
 #                cursor
-#     " press: C-w
+#     # press: C-w
 #
-#     " state (2)
+#     # state (2)
 #     hello |
-#     " press: p e o p l e
+#     # press: p e o p l e
 #
-#     " state (3)
+#     # state (3)
 #     hello people|
 #}}}
 #   Why don't you use this code?{{{
@@ -54,60 +51,54 @@ var loaded = true
 # of deletions,  the last  character of  the register  is changed  (deleted then
 # replaced by the 1st):
 #
-#     $ vim -Nu NONE -S <(cat <<'EOF'
-#         vim9script
-#         @a = 'abc'
-#         &backspace = 'start'
-#         var deleting: bool
-#         autocmd InsertLeave * deleting = 0
-#         autocmd InsertCharPre * BreakUndoAfterDeletions()
-#         def BreakUndoAfterDeletions()
-#             if !deleting
-#                 return
-#             endif
-#             feedkeys("\<BS>\<C-G>u" .. v:char, 'in')
-#             deleting = false
-#         enddef
-#         inoremap <expr> <C-W> C_w()
-#         def g:C_w(): string
-#             deleting = true
-#             return "\<C-W>"
-#         enddef
-#     EOF
-#     )
-#     " press: i C-w
-#     " press: C-r a
-#     " 'aba' is inserted instead of 'abc' ✘
+#     @a = 'abc'
+#     &backspace = 'start'
+#     var deleting: bool
+#     autocmd InsertLeave * deleting = 0
+#     autocmd InsertCharPre * BreakUndoAfterDeletions()
+#     def BreakUndoAfterDeletions()
+#         if !deleting
+#             return
+#         endif
+#         feedkeys("\<BS>\<C-G>u" .. v:char, 'in')
+#         deleting = false
+#     enddef
+#     inoremap <expr> <C-W> C_w()
+#     def g:C_w(): string
+#         deleting = true
+#         return "\<C-W>"
+#     enddef
+#     # press: i C-w
+#     # press: C-r a
+#     # expected: 'abc' is inserted
+#     # actual:   'aba' is inserted
 #
 # And if you break it just after,  then a custom abbreviation may be expanded in
 # the middle of a word you type:
 #
-#     $ vim -Nu NONE -S <(cat <<'EOF'
-#         vim9script
-#         &backspace = 'start'
-#         inoreabbrev al la
-#         var deleting: bool = false
-#         autocmd InsertLeave * deleting = false
-#         autocmd InsertCharPre * BreakUndoAfterDeletions()
-#         def BreakUndoAfterDeletions()
-#             if !deleting
-#                 return
-#             endif
-#             feedkeys("\<C-G>u", 'in')
-#             deleting = false
-#         enddef
-#         inoremap <expr> <C-W> C_w()
-#         def g:C_w(): string
-#             deleting = true
-#             return "\<C-W>"
-#         enddef
-#     EOF
-#     )
-#     " press: i C-w
-#     " press: v a l SPC
-#     " 'al' is replaced by 'la' ✘
-#     " this happens because `C-g u` has been executed after `v` and before `al`
+#     &backspace = 'start'
+#     inoreabbrev al la
+#     var deleting: bool = false
+#     autocmd InsertLeave * deleting = false
+#     autocmd InsertCharPre * BreakUndoAfterDeletions()
+#     def BreakUndoAfterDeletions()
+#         if !deleting
+#             return
+#         endif
+#         feedkeys("\<C-G>u", 'in')
+#         deleting = false
+#     enddef
+#     inoremap <expr> <C-W> C_w()
+#     def g:C_w(): string
+#         deleting = true
+#         return "\<C-W>"
+#     enddef
+#     # press: i C-w
+#     # press: v a l SPC
+#     # expected: 'al' remains unchanged
+#     # actual:   'al' is replaced by 'la'
 #
+# This happens because `C-g u` has been executed after `v` and before `al`.
 # In any case, no  matter what you do, Vim's behavior  when editing text becomes
 # less predictable.  I don't like that.
 #}}}
@@ -136,21 +127,21 @@ augroup MyGranularUndo | autocmd!
     # When they are invoked, we shouldn't reset those variables.
     # Otherwise:
     #
-    #     " press C-d
+    #     # press C-d
     #     echo b|ar
     #           ^
     #           cursor
     #
-    #     " press C-d
+    #     # press C-d
     #     echo br
     #
-    #     " press C-d
+    #     # press C-d
     #     echo b
     #
-    #     " press C-_ (✔)
+    #     # press C-_ (✔)
     #     echo br
     #
-    #     " press C-_ (✘ we should get bar)
+    #     # press C-_ (✘ we should get bar)
     #     echo br
     #}}}
     #   And why do you also include `>`?{{{
@@ -280,9 +271,9 @@ def readline#backwardKillWord(): string #{{{2
     # All functions using a `try` conditional causes an issue when we hit a breakpoint while debugging an issue.{{{
     #
     #     $ vim /tmp/vim.vim +'breakadd func vim#refactor#heredoc#main'
-    #     " press `=rh` (to run `:RefHeredoc`)
+    #     # press `=rh` (to run `:RefHeredoc`)
     #     >n
-    #     " press `M-b`
+    #     # press `M-b`
     #     :return  made pending˜
     #     :return  resumed˜
     #
@@ -340,11 +331,10 @@ def readline#beginningOfLine(): string #{{{2
     if Mode() == 'c'
         return "\<home>"
     endif
-    var col: number = col('.')
-    var after_first_nonws = col >= getline('.')->match('\S') + 1
+    var after_first_nonws = col('.') >= getline('.')->match('\S') + 1
     var pat: string = after_first_nonws
-        ?     '\S.*\%' .. col .. 'c'
-        :     '\%' .. col .. 'c\s*\ze\S'
+        ?     '\S.*\%.c'
+        :     '\%.c\s*\ze\S'
     var count: number = getline('.')->matchstr(pat)->strcharlen()
     # on a very long line, the `repeat(...)` sequence might be huge and too slow for Vim to type
     if count > &columns
@@ -528,7 +518,7 @@ def readline#killLine(): string #{{{2
     #     setlocal wrap scrolloff=3
     #     inoremap <expr> <C-K><C-K> repeat('<Del>', 11000)
     #     :% delete
-    #     put =['0123456789']->repeat(1000)
+    #     ['0123456789']->repeat(1000)->setline(1)
     #     :% join
     #     :0 put _
     #     normal! j
@@ -1063,17 +1053,14 @@ def Mode(): string #{{{2
     # https://github.com/vim/vim/issues/6127#issuecomment-633119610
     # Why do you compare `mode` to `t`?{{{
     #
-    #     $ vim -Nu NONE -S <(cat <<'EOF'
-    #         breakadd func Func
-    #         function Func()
-    #             call term_start(&shell, {'hidden': 1})->popup_create({})
-    #         endfunction
-    #         call Func()
-    #     EOF
-    #     )
-    #
-    #     > n
-    #     > echo mode()
+    #     breakadd func Func
+    #     def Func()
+    #         term_start(&shell, {hidden: true})
+    #             ->popup_create({})
+    #     enddef
+    #     Func()
+    #     # > next
+    #     # > echo mode()
     #     t˜
     #}}}
     if mode =~ "^[vV\<C-V>t]$"

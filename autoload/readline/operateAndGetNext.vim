@@ -1,8 +1,5 @@
 vim9script noclear
 
-if exists('loaded') | finish | endif
-var loaded = true
-
 const HISTORY_MAX_SIZE: number = 10
 var cmdline_history: list<string>
 
@@ -20,7 +17,7 @@ def readline#operateAndGetNext#remember(when: string) #{{{1
     if mode() != 'c'
         return
     endif
-    if when == 'on_leave'
+    if when == 'onLeave'
         autocmd CmdlineLeave : ++once readline#operateAndGetNext#remember('now')
     else
         var cmdline: string = getcmdline()
